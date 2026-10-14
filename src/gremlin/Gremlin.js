@@ -10,7 +10,7 @@ import { Effects } from './Effects.js';
 
 // ---- tuning: placeholders until playtesting (art units; the gremlin is ~800 units tall) ----
 export const TUNING = {
-  gravity: 5600, jumpV: 2600, doubleJumpV: 2300, slideTime: 0.9, spinTime: 0.42,
+  gravity: 5600, jumpV: 2600, doubleJumpV: 2300, slideTime: 1.3, spinTime: 0.42,
   hurtV: 1400, invulnTime: 1.5, dieV: 2000, attackTime: 0.32, attackCooldown: 0.24,
 };
 
