@@ -102,7 +102,7 @@ export class Boss extends Phaser.Scene {
   }
   say(text, dur = 1.8) {
     const b = this.bubble; b.txt.setText(text); b.life = dur; b.max = dur;
-    const w = b.txt.width + 44, h = b.txt.height + 26;
+    const w = b.txt.width + 44, h = b.txt.height + 26; b.hh = h + 18;
     b.bg.clear().fillStyle(0xf3efd8, 1).lineStyle(5, 0x1d230c, 1)
       .fillRoundedRect(-w / 2, -h - 18, w, h, 18).strokeRoundedRect(-w / 2, -h - 18, w, h, 18)
       .fillTriangle(-14, -20, 14, -20, 0, 6).lineBetween(-14, -20, 0, 6).lineBetween(14, -20, 0, 6);
@@ -418,7 +418,7 @@ export class Boss extends Phaser.Scene {
     if (this.mode === 'running') this.collide(dt);
     // speech bubble follows Eddie's head
     const b = this.bubble;
-    if (b.visible) { b.life -= dt; const h = this.e.headTop(); b.setPosition(clamp(h[0] - 40, 320, W - 320), clamp(h[1] - 30, 170, GROUND_Y - 260)); b.setAlpha(Math.min(1, b.life * 4)); if (b.life <= 0) b.setVisible(false); }
+    if (b.visible) { b.life -= dt; const h = this.e.headTop(); b.setPosition(clamp(h[0] - 40, 340, W - 340), clamp(h[1] - 30, 200 + b.hh, GROUND_Y - 260)); b.setAlpha(Math.min(1, b.life * 4)); if (b.life <= 0) b.setVisible(false); }
     this.drawBoxes();
   }
 

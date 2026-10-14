@@ -182,8 +182,8 @@ export class UI extends Phaser.Scene {
     bg.on('pointerdown', () => this.act('tap'));
     o.add(bg);
     o.add(this.add.text(W / 2, H * 0.27, title, { fontFamily: FONT, fontSize: title.length > 22 ? 70 : 110, color: INK, stroke: '#2b0d55', strokeThickness: 12, align: 'center' }).setOrigin(0.5));
-    o.add(this.add.text(W / 2, H * 0.27 + 100, sub, { fontFamily: FONT, fontSize: 40, color: '#c6f135', align: 'center' }).setOrigin(0.5));
-    if (help) o.add(this.add.text(W / 2, H * 0.27 + 180, help, { fontFamily: BODY, fontSize: 30, color: INK, align: 'center', lineSpacing: 10 }).setOrigin(0.5, 0).setAlpha(0.88));
+    o.add(this.add.text(W / 2, H * 0.27 + 112, sub, { fontFamily: FONT, fontSize: 58, color: '#c6f135', stroke: '#0b1210', strokeThickness: 8, align: 'center', wordWrap: { width: W - 200 } }).setOrigin(0.5));
+    if (help) o.add(this.add.text(W / 2, H * 0.27 + 190, help, { fontFamily: BODY, fontStyle: 'bold', fontSize: 42, color: INK, stroke: '#0b1210', strokeThickness: 6, align: 'center', lineSpacing: 12, wordWrap: { width: W - 160 } }).setOrigin(0.5, 0));
     if (bossLink) {
       const b = this.add.rectangle(W / 2, H - 150, 640, 96, 0x22341a, 1).setStrokeStyle(4, MOULD, 0.9).setInteractive({ useHandCursor: true });
       const t = this.add.text(W / 2, H - 150, 'Skip to the boss: THE MOULD KING', { fontFamily: FONT, fontSize: 36, color: '#d8ff8a' }).setOrigin(0.5);
