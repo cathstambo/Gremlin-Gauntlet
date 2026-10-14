@@ -9,6 +9,7 @@ import { Gremlin } from '../gremlin/Gremlin.js';
 import { Catalytik, ease } from '../overlord/Catalytik.js';
 import { Music } from '../audio/Music.js';
 import { loadMeadow } from '../worlds.js';
+import { mute, inkImage } from '../world/Readability.js';
 
 const W = 1920;
 const GREM_H = 330, BOSS_H = 620;
@@ -85,6 +86,7 @@ export class Overlord extends Boss {
     this.e = new Catalytik(this, SPOTS.groundR.x, GROUND_Y, BOSS_H);
     this.e.spot = 'groundR';
     this.e.onEvent = (name, ...a) => this.onBoss(name, ...a);
+    this.readable();
     this.bubble = this.makeBubble();
     this.addPickup('potion', 985, GROUND_Y - 390 - 60);   // high centre platform (double jump); two more appear at phases 2 and 3
   }
@@ -94,7 +96,13 @@ export class Overlord extends Boss {
     Music.play(this, 'boss');
     // her floating rainbow castle (cover the screen)
     const bg = this.add.image(W / 2, H / 2, 'm_arena_bg').setDepth(0);
-    bg.setScale(Math.max(W / bg.width, H / bg.height)); bg.setTint(0xd8d2e8);
+    bg.setScale(Math.max(W / bg.width, H / bg.height));
+    // her castle is all pinks and purples (the gremlin's own colours): grey it right down and darken it,
+    // with an extra dark band behind the middle of the screen where the fight happens
+    mute(bg, { sat: -0.55, bright: 0.72 });
+    const band = this.textures.exists('fightBand') ? null : this.textures.createCanvas('fightBand', 4, 512);
+    if (band) { const c = band.getContext(), gr = c.createLinearGradient(0, 0, 0, 512); gr.addColorStop(0, 'rgba(14,6,26,0)'); gr.addColorStop(0.45, 'rgba(14,6,26,.42)'); gr.addColorStop(1, 'rgba(14,6,26,.5)'); c.fillStyle = gr; c.fillRect(0, 0, 4, 512); band.refresh(); }
+    this.add.image(W / 2, GROUND_Y - 40, 'fightBand').setOrigin(0.5, 1).setDisplaySize(W, 760).setDepth(1);
     // the crystal floor: its walking surface sits on GROUND_Y
     const info = this.cache.json.get('meadowInfo');
     const F = info.arena_floor, fs = W / F.w * 1.02;
@@ -222,7 +230,7 @@ export class Overlord extends Boss {
   salmonStuck() {
     const e = this.e, x = e.x + 190 * this.edir;
     const img = this.add.image(x, GROUND_Y + 30, 'o_salmon').setOrigin(0.07, 0.55).setScale(1.15 * e.k / 0.8).setRotation(this.edir < 0 ? -1.15 : -2.0).setDepth(9).setFlipY(this.edir > 0);
-    this.stuck = { img, x }; this.dustBurst(x, GROUND_Y, 22, 0x8a6a8a); this.cameras.main.shake(260, 0.012);
+    inkImage(img, 3); this.stuck = { img, x }; this.dustBurst(x, GROUND_Y, 22, 0x8a6a8a); this.cameras.main.shake(260, 0.012);
     // the impact also hurts if you're standing right there
     const hb = this.g.hitbox(); if (hb && Math.abs(this.g.x - x) < 150 && hb.bottom > GROUND_Y - 20) this.takeHit('slam');
   }
@@ -367,6 +375,7 @@ export class Overlord extends Boss {
     this.updateMeadow(dt);
     this.updatePickups(dt);
     if (this.mode === 'running') this.collide(dt);
+    this.drawShadows();
     const b = this.bubble;
     if (b.visible) { b.life -= dt; const h = this.e.headTop(); b.setPosition(clamp(h[0] - 40, 340, W - 340), clamp(h[1] - 30, 200 + b.hh, GROUND_Y - 260)); b.setAlpha(Math.min(1, b.life * 4)); if (b.life <= 0) b.setVisible(false); }
     this.drawBoxes();
@@ -406,7 +415,7 @@ export class Overlord extends Boss {
         const k = Math.min(1, r.t / r.warn), p = 0.5 + 0.5 * Math.sin(now * 18);
         this.fxG.lineStyle(5, 0xff7ae0, 0.5 + 0.5 * p).strokeEllipse(r.x, r.floorY + 3, 150, 26).fillStyle(0xff7ae0, 0.15 + 0.2 * k).fillEllipse(r.x, r.floorY + 3, 150, 26);
         for (let i = 0; i < 4; i++) S.fillStyle(0xffffff, 0.6 * k).fillCircle(r.x + Math.cos(now * 6 + i * 1.6) * 60, r.floorY - 10 - 50 * ((now * 1.5 + i * 0.25) % 1), 4);
-        if (r.t >= r.warn) { r.state = 'fall'; r.img = this.add.image(r.x, -100, 'spoon').setDepth(11).setScale(1.15).setRotation(Math.PI / 2); }
+        if (r.t >= r.warn) { r.state = 'fall'; r.img = this.add.image(r.x, -100, 'spoon').setDepth(11).setScale(1.15).setRotation(Math.PI / 2); inkImage(r.img, 3); }
       } else if (r.state === 'fall') {
         r.y += 2600 * dt; r.img.setPosition(r.x, Math.min(r.y, r.floorY - 70));
         if (r.y >= r.floorY - 70) { r.state = 'stuck'; r.st = 0; this.sparkBurst(r.x, r.floorY, 10); r.hit = true; }

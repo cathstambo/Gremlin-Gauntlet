@@ -6,6 +6,7 @@ import { Eddie } from '../eddie/Eddie.js';
 import { Swamp } from '../world/Swamp.js';
 import { Music } from '../audio/Music.js';
 import { MAX_HEARTS } from './Run.js';
+import { inkOutline, inkImage, shadow, gremlinShadow, makePickupDisc } from '../world/Readability.js';
 
 export const GROUND_Y = 870;
 const W = 1920;
@@ -75,10 +76,23 @@ export class Boss extends Phaser.Scene {
     this.e = new Eddie(this, SPOTS.groundR.x, GROUND_Y, EDDIE_H);
     this.e.spot = 'groundR';
     this.e.onEvent = (name, ...a) => this.onEddie(name, ...a);
+    this.readable();
     this.bubble = this.makeBubble();
     // three potions in the arena: one waiting on the high centre platform (double jump),
     // then one more appears on a low root platform at the start of phase 2 and of phase 3 (see dropPotion)
     this.addPickup('potion', 985, GROUND_Y - 340 - 60);
+  }
+
+  /** Shared readability touches (all worlds): outlines on gremlin and boss, ground shadows, pickup discs. */
+  readable() {
+    inkOutline(this.g.root, 5); inkOutline(this.e.root, 5);
+    makePickupDisc(this);
+    this.shadowG = this.add.graphics().setDepth(4.6);
+  }
+  drawShadows() {
+    const S = this.shadowG; if (!S) return; S.clear();
+    if (!this.g.dead) gremlinShadow(S, this.g);
+    const e = this.e; if (e.sink < 100 && this.mode !== 'won') shadow(S, e.x, GROUND_Y - e.floor, 320, e.air);
   }
 
   // ---------- arena ----------
@@ -404,7 +418,9 @@ export class Boss extends Phaser.Scene {
   }
   addPickup(type, x, y) {
     const img = this.add.image(x, y, 'pick_' + type).setDepth(6).setScale(type === 'crystal' ? 0.42 : 0.47);
-    this.pickups.push({ type, x, y, img, t: Math.random() * 6 });
+    const disc = this.textures.exists('pickDisc') ? this.add.image(x, y, 'pickDisc').setDepth(5.9).setScale(0.78) : null;
+    inkImage(img, 2);
+    this.pickups.push({ type, x, y, img, disc, t: Math.random() * 6 });
   }
   takeHit(src = '') {
     const g = this.g;
@@ -435,11 +451,13 @@ export class Boss extends Phaser.Scene {
     // speech bubble follows Eddie's head
     const b = this.bubble;
     if (b.visible) { b.life -= dt; const h = this.e.headTop(); b.setPosition(clamp(h[0] - 40, 340, W - 340), clamp(h[1] - 30, 200 + b.hh, GROUND_Y - 260)); b.setAlpha(Math.min(1, b.life * 4)); if (b.life <= 0) b.setVisible(false); }
+    this.drawShadows();
     this.drawBoxes();
   }
 
   updateShots(dt) {
     const g = this.g;
+    for (const s of this.shots) if (s.img && !s.inked) { s.inked = true; s.img.type === 'Container' ? inkOutline(s.img, 4) : inkImage(s.img, 3); }   // dark outline on every projectile
     for (const s of this.shots) {
       if (s.k === 'rockLow') {
         s.vy += 2600 * dt; s.x += s.vx * dt; s.y += s.vy * dt;
@@ -557,10 +575,11 @@ export class Boss extends Phaser.Scene {
     }
     const hb = g.hitbox();
     for (const p of this.pickups) {
-      p.t += dt; p.img.y = p.y + 8 * Math.sin(p.t * 3);
+      p.t += dt; p.img.y = p.y + 8 * Math.sin(p.t * 3); p.disc?.setY(p.img.y);
       if (hb && !p.dead && Phaser.Geom.Intersects.RectangleToRectangle(hb, new Phaser.Geom.Rectangle(p.x - 35, p.img.y - 45, 70, 90))) {
         if (p.type === 'crystal') { p.dead = true; this.chaos = Math.min(100, this.chaos + 10); this.events.emit('chaos', this.chaos); g.fx.burst([p.x, p.img.y], 0.45); }
         else if (p.type === 'potion' && this.hearts < MAX_HEARTS) { p.dead = true; this.hearts++; this.events.emit('hearts', this.hearts); }
+        if (p.dead) p.disc?.destroy();
         if (p.dead) this.tweens.add({ targets: p.img, scale: 1.6, alpha: 0, duration: 200, onComplete: () => p.img.destroy() });
       }
     }

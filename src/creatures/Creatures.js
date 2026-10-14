@@ -1,6 +1,7 @@
 // World 1 swamp creatures, animated as cut-out puppets (same method as the gremlin and Eddie).
 // Each creature: update(dt, ctx) → moves itself; hitbox() → screen rect that hurts the gremlin;
 // shot() → called when magic hits it (returns true if the orb is used up). ctx = { gx, groundY, scroll }.
+import { inkOutline } from '../world/Readability.js';
 const TAU = Math.PI * 2;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const ease = k => (k < 0 ? 0 : k > 1 ? 1 : k * k * (3 - 2 * k));
@@ -22,6 +23,7 @@ export class Puppet {
       const im = scene.add.image(p.x - p.px, p.y - p.py, `c_${kind}_${n}`).setOrigin(0, 0).setScale(TEX);
       c.add(im); this.inner.add(c); this.parts[n] = c; this.images.push(im); c.img = im;
     }
+    this.ink = inkOutline(this.root);   // dark outline round the whole creature (turns red during its warning)
   }
   flash(on) { if (on === this._fl) return; this._fl = on; for (const im of this.images) on ? im.setTintFill(0xffffff) : im.clearTint(); }
   destroy() { this.root.destroy(); }
@@ -88,6 +90,7 @@ export class Frog extends Creature {
   }
   onHurt() { this.st = 'recoil'; this.stT = 0; }
   onDefeat() { this.vy = 900; }
+  get warning() { return !this.dead && this.st === 'crouch'; }
   hitbox() { if (this.dead) return null; const w = 170, h = 125; return new Phaser.Geom.Rectangle(this.x - w / 2 + 10, this.groundY - this.y - h, w, h); }
   get centre() { return [this.x, this.groundY - this.y - 70]; }
   destroy() { this.p.destroy(); }
@@ -143,6 +146,7 @@ export class Gator extends Creature {
     if (this.x < -700) this.gone = true;
   }
   onHurt() { this.st = 'recoil'; this.stT = 0; }
+  get warning() { return !this.dead && (this.st === 'warn' || this.st === 'lunge'); }
   hitbox() {
     if (this.dead) return null;
     return new Phaser.Geom.Rectangle(this.x - 220, this.groundY - 105, 360, 100);
@@ -244,6 +248,7 @@ export class Spider extends Creature {
     if (this.x < -400) this.gone = true;
   }
   onHurt() { this.recoilT = 0.25; }
+  get warning() { return !this.dead && (this.st === 'tremble' || this.st === 'drop'); }
   hitbox() { if (this.dead || this.st === 'hang' || this.st === 'climb' && this.y < this.dropY - 150) return null; return new Phaser.Geom.Rectangle(this.x - 110, this.y - 70, 220, 140); }
   get centre() { return [this.x, this.y]; }
   destroy() { this.p.destroy(); this.web.destroy(); this.branch.destroy(); }

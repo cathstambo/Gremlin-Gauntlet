@@ -2,6 +2,7 @@
 // Layers (back to front), each a seamless loop scrolling at its own speed:
 //   far (sky) → mid → near → decorations → ground (the running path).
 // Decorations sit behind the path and are dimmed so they never read as obstacles.
+import { mute } from './Readability.js';
 // One class (Backdrop) draws any world; SWAMP (World 1) and MEADOW (World 2) are its settings.
 
 const SWAMP_PROPS = ['prop_mush_orange', 'prop_stump', 'prop_bridge', 'prop_skull', 'prop_mush_purple', 'prop_barrel', 'prop_log', 'prop_sign'];
@@ -26,13 +27,16 @@ export const SWAMP = {
   groundSurface: 100,   // row in the ground strip the gremlin walks on: the middle of the lit path, so hazards sit IN the way
   midBottom: 603, nearBottom: 681, midS: 1.05, nearS: 0.95, gS: 1.0,
   midTint: 0x74827c, nearTint: 0x6c766e,   // background darkened a touch so creatures and hazards stand out
+  mute: { far: -0.15, mid: -0.2, near: -0.2 },   // the swamp is already dark: a light touch
   props: SWAMP_PROPS, propScale: k => k === 'prop_sign' ? 0.8 : 0.56, propTint: k => k === 'prop_sign' ? 0xb0bab0 : 0x6f7a72, propGap: [1150, 650],
 };
 export const MEADOW = {
   far: 'm_far', mid: 'm_mid', near: 'm_near', ground: 'm_ground',
   groundSurface: 104,
   midBottom: 693, nearBottom: 698, midS: 1.0, nearS: 0.9, gS: 1.0, midDrop: 70, nearDrop: 95,
-  midTint: 0xc9d2dc, nearTint: 0xb4bec4,   // the meadow is bright: soften the scenery so enemies and beams pop
+  midTint: 0xd6d8e4, nearTint: 0xc8cad8,
+  // the meadow is very bright and pink: take out a lot of colour and add a pale haze so the scenery sits well back
+  mute: { far: -0.35, mid: -0.45, near: -0.5 }, haze: { col: 0xf1e9ff, far: 0.18, near: 0.3 },
   props: MEADOW_PROPS, propScale: () => 0.62, propTint: () => 0xa9b4b0, propGap: [1500, 700],
 };
 
@@ -47,6 +51,11 @@ export class Backdrop {
     const midS = cfg.midS, nearS = cfg.nearS, gS = cfg.gS;
     this.mid = scene.add.tileSprite(0, groundY + (cfg.midDrop ?? 40) - cfg.midBottom * midS, W, t(cfg.mid).height * midS, cfg.mid).setOrigin(0, 0).setTileScale(midS).setDepth(1).setTint(cfg.midTint);
     this.near = scene.add.tileSprite(0, groundY + (cfg.nearDrop ?? 70) - cfg.nearBottom * nearS, W, t(cfg.near).height * nearS, cfg.near).setOrigin(0, 0).setTileScale(nearS).setDepth(2).setTint(cfg.nearTint);
+    if (cfg.mute) { mute(this.far, { sat: cfg.mute.far }); mute(this.mid, { sat: cfg.mute.mid }); mute(this.near, { sat: cfg.mute.near }); }
+    if (cfg.haze) {   // pale haze: one sheet over the sky, a stronger one over the near trees (they sit right behind the action)
+      scene.add.rectangle(W / 2, H / 2, W, H, cfg.haze.col, cfg.haze.far).setDepth(0.5);
+      scene.add.rectangle(W / 2, (groundY - 10) / 2, W, groundY - 10, cfg.haze.col, cfg.haze.near).setDepth(2.5);
+    }
     this.ground = scene.add.tileSprite(0, groundY - cfg.groundSurface * gS, W, t(cfg.ground).height * gS, cfg.ground).setOrigin(0, 0).setTileScale(gS).setDepth(4);
     // decorations: a fixed, repeating sequence so every run looks the same (fair-comparison rule)
     this.props = [];

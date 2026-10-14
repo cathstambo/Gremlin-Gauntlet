@@ -7,14 +7,13 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const ease = k => (k < 0 ? 0 : k > 1 ? 1 : k * k * (3 - 2 * k));
 const rnd = (a, b) => a + Math.random() * (b - a);
 const D = Math.PI / 180;
-// the meadow is busy and bright: a light outline keeps every creature readable against the flowers
-function outline(p, col = 0xffffff) { for (const im of p.images) if (im.preFX) im.preFX.addGlow(col, 3, 0, false, 0.1, 6); return p; }
+
 
 // ---------------- Killer bunny: hops at the gremlin in low bounding leaps. Jump it or blast it. ----------------
 export class Bunny extends Creature {
   constructor(scene, x, groundY) {
     super(scene, x, 'bunny');
-    this.groundY = groundY; this.p = outline(new Puppet(scene, 'bunny', 0.5, ['body', 'ears']), 0xff3a6a);
+    this.groundY = groundY; this.p = new Puppet(scene, 'bunny', 0.5, ['body', 'ears']);
     this.R = this.p.R; this.points = 50; this.st = 'sit'; this.stT = rnd(0, 0.5); this.y = 0; this.hopT = 0;
   }
   update(dt, ctx) {
@@ -30,7 +29,10 @@ export class Bunny extends Creature {
       const gap = this.x - ctx.gx;
       if (this.st === 'sit') {   // twitchy nose, ears flicking
         sq = 1 + 0.03 * Math.sin(this.t * 12); ears = 8 * Math.sin(this.t * 11);
-        if (gap < 950 && gap > 0 && this.stT > 0.3) { this.st = 'hop'; this.hopT = 0; }
+        if (gap < 1000 && gap > 0 && this.stT > 0.3) { this.st = 'ready'; this.stT = 0; }
+      } else if (this.st === 'ready') {   // the warning: crouches low, ears flat
+        sq = 0.82; ears = -30;
+        if (this.stT > 0.4) { this.st = 'hop'; this.hopT = 0; }
       } else if (this.st === 'hop') {   // bounding leaps straight at the gremlin
         this.hopT += dt; const T = 0.44, u = (this.hopT % T) / T;
         this.y = 115 * 4 * u * (1 - u); this.x -= 360 * dt;
@@ -47,6 +49,7 @@ export class Bunny extends Creature {
     if (this.x < -400) this.gone = true;
   }
   onHurt() { this.st = 'recoil'; this.stT = 0; }
+  get warning() { return !this.dead && this.st === 'ready'; }
   hitbox() { if (this.dead) return null; return new Phaser.Geom.Rectangle(this.x - 85, this.groundY - this.y - 125, 165, 120); }
   get centre() { return [this.x, this.groundY - this.y - 60]; }
   destroy() { this.p.destroy(); }
@@ -56,7 +59,7 @@ export class Bunny extends Creature {
 export class Kitten extends Creature {
   constructor(scene, x, groundY) {
     super(scene, x, 'kitten');
-    this.groundY = groundY; this.p = outline(new Puppet(scene, 'kitten', 0.5, ['tail', 'body']), 0xfff0ff);
+    this.groundY = groundY; this.p = new Puppet(scene, 'kitten', 0.5, ['tail', 'body']);
     this.R = this.p.R; this.points = 50; this.st = 'crouch'; this.stT = 0; this.y = 0;
   }
   update(dt, ctx) {
@@ -94,6 +97,7 @@ export class Kitten extends Creature {
     if (this.x < -400) this.gone = true;
   }
   onHurt() { this.st = 'recoil'; this.stT = 0; }
+  get warning() { return !this.dead && (this.st === 'wiggle' || this.st === 'pounce'); }
   hitbox() { if (this.dead) return null; return new Phaser.Geom.Rectangle(this.x - 105, this.groundY - this.y - 120, 200, 105); }
   get centre() { return [this.x, this.groundY - this.y - 55]; }
   destroy() { this.p.destroy(); }
@@ -103,7 +107,7 @@ export class Kitten extends Creature {
 export class Flower extends Creature {
   constructor(scene, x, groundY) {
     super(scene, x, 'flower');
-    this.groundY = groundY; this.p = outline(new Puppet(scene, 'flower', 0.56, ['body', 'head']), 0xffe14a);
+    this.groundY = groundY; this.p = new Puppet(scene, 'flower', 0.56, ['body', 'head']);
     this.R = this.p.R; this.points = 150; this.hp = 3; this.st = 'idle'; this.stT = 0; this.reach = 0;
   }
   update(dt, ctx) {
@@ -137,6 +141,7 @@ export class Flower extends Creature {
     if (this.x < -500) this.gone = true;
   }
   onHurt() { this.st = 'recoil'; this.stT = 0; }
+  get warning() { return !this.dead && (this.st === 'rear' || this.st === 'snap'); }
   hitbox() {
     if (this.dead) return null;
     const w = 230 + this.reach;

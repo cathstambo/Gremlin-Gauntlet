@@ -3,6 +3,7 @@
 import { Gremlin } from '../gremlin/Gremlin.js';
 import { WORLDS, worldNo, loadMeadow } from '../worlds.js';
 import { Music } from '../audio/Music.js';
+import { inkOutline, inkImage, dangerFlash, shadow, gremlinShadow, makePickupDisc } from '../world/Readability.js';
 import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js';
 import { Bunny, Kitten, Flower, Swarm } from '../creatures/Meadow.js';
 
@@ -67,6 +68,8 @@ export class Run extends Phaser.Scene {
 
     this.g = new Gremlin(this, GREMLIN_X, GROUND_Y, GREMLIN_H);
     this.g.floorAt = x => this.platformAt(x);
+    inkOutline(this.g.root, 5);   // dark outline round the gremlin
+    makePickupDisc(this);
     this.g.idle();
     this.g.on('shoot', p => this.spawnOrb(p));
     this.g.on('meltBlast', () => this.meltBlast());
@@ -122,7 +125,7 @@ export class Run extends Phaser.Scene {
     this.swamp.scroll(this.dist);
     this.updateItems(dt);
     const ctx = { gx: this.g.x, groundY: GROUND_Y, scroll: v * dt * (this.mode === 'ready' ? 0 : 1) };
-    for (const c of this.creatures) c.update(dt, ctx);
+    for (const c of this.creatures) { c.update(dt, ctx); dangerFlash(c.p.ink, c.warning, this.time.now / 1000); }
     for (const c of this.creatures) if (c.gone) c.destroy();
     this.creatures = this.creatures.filter(c => !c.gone);
     this.updateOrbs(dt);
@@ -140,11 +143,11 @@ export class Run extends Phaser.Scene {
       if (!it.obj && !it.done && x < W + 500) this.spawnItem(it, x);
       if (!it.obj) continue;
       it.obj.x = x;
-      if (PICKUPS.has(it.t)) it.obj.y = GROUND_Y - it.h + 8 * Math.sin(t * 3 + it.d);
+      if (PICKUPS.has(it.t)) { it.obj.y = GROUND_Y - it.h + 8 * Math.sin(t * 3 + it.d); it.disc?.setPosition(x, it.obj.y); }
       if (it.t === 'sludge' || it.t === 'sludgeWide') it.obj.scaleY = it.baseScale * (1 + 0.025 * Math.sin(t * 5 + it.d));   // slow bubbling heave
       if (it.t === 'vines') it.obj.rotation = 0.012 * Math.sin(t * 1.6 + it.d);                                                  // gentle sway
       if (it.glow) it.glow.outerStrength = 2.6 + 1.6 * (0.5 + 0.5 * Math.sin(t * 5));                                            // warning pulse
-      if (x < -600) { it.obj.destroy(); it.obj = null; it.done = true; }
+      if (x < -600) { it.obj.destroy(); it.disc?.destroy(); it.obj = null; it.done = true; }
       if (it.t === 'finish' && !it.reached && this.mode === 'running' && x <= GREMLIN_X) { it.reached = true; this.finish(); }
     }
   }
@@ -167,6 +170,8 @@ export class Run extends Phaser.Scene {
       o = this.add.image(x, GROUND_Y - 140, L.key).setOrigin(0.5, 1).setScale(L.s).setDepth(9);
     } else if (PICKUPS.has(it.t)) {
       o = this.add.image(x, GROUND_Y - it.h, L.key).setScale(L.s).setDepth(7);
+      it.disc = this.add.image(x, GROUND_Y - it.h, 'pickDisc').setDepth(6.9).setScale(0.78);   // dark disc behind every pickup
+      inkImage(o, 2);
     } else if (L) {
       o = this.add.image(x, GROUND_Y + L.sink, L.key).setOrigin(0.5, 1).setScale(L.s).setDepth(5);
       it.baseScale = L.s;
@@ -216,7 +221,7 @@ export class Run extends Phaser.Scene {
     }
   }
   collect(it) {
-    it.done = true; const o = it.obj;
+    it.done = true; const o = it.obj; it.disc?.destroy(); it.disc = null;
     this.g.fx.burst([o.x, o.y], 0.4);
     this.tweens.add({ targets: o, scale: o.scale * 1.6, alpha: 0, duration: 200, onComplete: () => { o.destroy(); } });
     it.obj = null;
@@ -236,6 +241,9 @@ export class Run extends Phaser.Scene {
   drawHazardFx() {
     const G = this.hazG; G.clear(); const t = this.time.now / 1000;
     const S = this.shadowG; S.clear();
+    // shadows under the gremlin and every creature on the ground
+    if (!this.g.dead) gremlinShadow(S, this.g);
+    for (const c of this.creatures) if (!c.dead && c.kind !== 'bat' && c.kind !== 'spider' && c.kind !== 'swarm') shadow(S, c.x + (c.kind === 'gator' ? -40 : 0), GROUND_Y, c.kind === 'gator' ? 380 : c.kind === 'flower' ? 220 : 170, c.y || 0);
     for (const it of this.items) {
       if (!it.obj || it.done) continue;
       const sw = SHADOW_W[it.t];
