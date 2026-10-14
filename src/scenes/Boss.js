@@ -6,7 +6,7 @@ import { Eddie } from '../eddie/Eddie.js';
 
 export const GROUND_Y = 870;
 const W = 1920;
-const GREM_H = 330, EDDIE_H = 540;
+const GREM_H = 330, EDDIE_H = 700;   // Eddie stands about 2× the gremlin's height
 const rnd = (a, b) => a + Math.random() * (b - a);
 const pick = a => a[Math.floor(Math.random() * a.length)];
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -24,13 +24,13 @@ export const BOSS_TUNING = {
 const PLATFORMS = [
   { name: 'root', x0: 300, x1: 610, h: 210 },
   { name: 'log', x0: 790, x1: 1130, h: 340 },
-  { name: 'stump', x0: 1590, x1: 1850, h: 240 },
+  { name: 'stump', x0: 1590, x1: 1850, h: 150 },
 ];
 // Where Eddie stands between attacks.
 const SPOTS = {
   ground: { x: 1360, floor: 0 },
-  stump: { x: 1720, floor: 240 },
-  log: { x: 960, floor: 340 },
+  stump: { x: 1720, floor: 150 },
+  middle: { x: 1060, floor: 0 },    // he's too tall to stand on the log now, so he stomps into the middle of the arena instead
 };
 
 const TAUNTS = {
@@ -156,7 +156,7 @@ export class Boss extends Phaser.Scene {
     } else {
       const choices = ph === 2
         ? [() => { rocks(2); q.push({ m: 'bomb' }); }, () => { q.push({ m: 'net' }, { wait: 0.3 }); rocks(2); }, () => q.push({ m: 'bomb' }, { wait: 0.4 }, { m: 'bomb' }),
-           () => q.push({ m: 'burp' }), () => q.push({ m: 'shrooms' }), () => q.push({ dive: 'ambush' }), () => q.push({ hop: pick(['log', 'stump', 'ground'].filter(s => s !== home)) })]
+           () => q.push({ m: 'burp' }), () => q.push({ m: 'shrooms' }), () => q.push({ dive: 'ambush' }), () => q.push({ hop: pick(['middle', 'stump', 'ground'].filter(s => s !== home)) })]
         : [() => { q.push({ m: 'bomb' }, { wait: 0.15 }, { m: 'rockHigh' }); }, () => q.push({ m: 'shrooms' }, { wait: 0.2 }, { m: 'splash' }), () => q.push({ slam: true }),
            () => q.push({ dive: 'ambush' }, { wait: 0.2 }, { m: 'burp' }), () => q.push({ m: 'net' }, { wait: 0.2 }, { m: 'bomb' }), () => { rocks(3); }];
       pick(choices)(); q.push({ wait: ph === 3 ? 0.35 : 0.6 });
@@ -263,7 +263,7 @@ export class Boss extends Phaser.Scene {
   gFloorY() { return GROUND_Y - this.g.S.floor * this.g.k; }   // the surface the gremlin is actually standing on
   throwRock(type) {
     const h = this.e.handPoint(), g = this.g;
-    const img = this.add.image(h[0], h[1], 'e_rock').setDepth(11).setScale(0.45);
+    const img = this.add.image(h[0], h[1], 'e_rock').setDepth(11).setScale(0.45 * EDDIE_H / 540);
     if (type === 'low') {
       // drops in front of him, then bounces and rolls along the ground all the way across: JUMP it
       this.shots.push({ k: 'rockLow', img, x: h[0], y: h[1], vx: -BOSS_TUNING.rockLowSpeed * 0.6, vy: -200, r: 40, bounces: 0 });
