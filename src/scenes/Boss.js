@@ -404,7 +404,8 @@ export class Boss extends Phaser.Scene {
   }
   addPickup(type, x, y) {
     const img = this.add.image(x, y, 'pick_' + type).setDepth(6).setScale(type === 'crystal' ? 0.42 : 0.47);
-    this.pickups.push({ type, x, y, img, t: Math.random() * 6 });
+    const disc = this.pickupDiscs ? this.add.image(x, y, 'pickDisc').setDepth(5.9).setScale(0.78) : null;   // World 2 only
+    this.pickups.push({ type, x, y, img, disc, t: Math.random() * 6 });
   }
   takeHit(src = '') {
     const g = this.g;
@@ -557,10 +558,11 @@ export class Boss extends Phaser.Scene {
     }
     const hb = g.hitbox();
     for (const p of this.pickups) {
-      p.t += dt; p.img.y = p.y + 8 * Math.sin(p.t * 3);
+      p.t += dt; p.img.y = p.y + 8 * Math.sin(p.t * 3); p.disc?.setY(p.img.y);
       if (hb && !p.dead && Phaser.Geom.Intersects.RectangleToRectangle(hb, new Phaser.Geom.Rectangle(p.x - 35, p.img.y - 45, 70, 90))) {
         if (p.type === 'crystal') { p.dead = true; this.chaos = Math.min(100, this.chaos + 10); this.events.emit('chaos', this.chaos); g.fx.burst([p.x, p.img.y], 0.45); }
         else if (p.type === 'potion' && this.hearts < MAX_HEARTS) { p.dead = true; this.hearts++; this.events.emit('hearts', this.hearts); }
+        if (p.dead) p.disc?.destroy();
         if (p.dead) this.tweens.add({ targets: p.img, scale: 1.6, alpha: 0, duration: 200, onComplete: () => p.img.destroy() });
       }
     }

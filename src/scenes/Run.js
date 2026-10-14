@@ -3,6 +3,7 @@
 import { Gremlin } from '../gremlin/Gremlin.js';
 import { WORLDS, worldNo, loadMeadow } from '../worlds.js';
 import { Music } from '../audio/Music.js';
+import { shadow, gremlinShadow, makePickupDisc, dangerTint } from '../world/Readability.js';
 import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js';
 import { Bunny, Kitten, Flower, Swarm } from '../creatures/Meadow.js';
 
@@ -65,6 +66,9 @@ export class Run extends Phaser.Scene {
     this.shadowG = this.add.graphics().setDepth(4.6);   // dark contact shadows that sit hazards ON the path
     this.boxG = this.add.graphics().setDepth(30);
 
+    this.w2 = this.world === 2;   // World 2 readability extras (World 1 stays exactly as approved)
+    this.gremlinTex = this.w2 ? 'g2_' : 'g_';
+    if (this.w2) makePickupDisc(this);
     this.g = new Gremlin(this, GREMLIN_X, GROUND_Y, GREMLIN_H);
     this.g.floorAt = x => this.platformAt(x);
     this.g.idle();
@@ -122,7 +126,7 @@ export class Run extends Phaser.Scene {
     this.swamp.scroll(this.dist);
     this.updateItems(dt);
     const ctx = { gx: this.g.x, groundY: GROUND_Y, scroll: v * dt * (this.mode === 'ready' ? 0 : 1) };
-    for (const c of this.creatures) c.update(dt, ctx);
+    for (const c of this.creatures) { c.update(dt, ctx); if (this.w2) dangerTint(c, this.time.now / 1000); }
     for (const c of this.creatures) if (c.gone) c.destroy();
     this.creatures = this.creatures.filter(c => !c.gone);
     this.updateOrbs(dt);
@@ -140,11 +144,11 @@ export class Run extends Phaser.Scene {
       if (!it.obj && !it.done && x < W + 500) this.spawnItem(it, x);
       if (!it.obj) continue;
       it.obj.x = x;
-      if (PICKUPS.has(it.t)) it.obj.y = GROUND_Y - it.h + 8 * Math.sin(t * 3 + it.d);
+      if (PICKUPS.has(it.t)) { it.obj.y = GROUND_Y - it.h + 8 * Math.sin(t * 3 + it.d); it.disc?.setPosition(x, it.obj.y); }
       if (it.t === 'sludge' || it.t === 'sludgeWide') it.obj.scaleY = it.baseScale * (1 + 0.025 * Math.sin(t * 5 + it.d));   // slow bubbling heave
       if (it.t === 'vines') it.obj.rotation = 0.012 * Math.sin(t * 1.6 + it.d);                                                  // gentle sway
       if (it.glow) it.glow.outerStrength = 2.6 + 1.6 * (0.5 + 0.5 * Math.sin(t * 5));                                            // warning pulse
-      if (x < -600) { it.obj.destroy(); it.obj = null; it.done = true; }
+      if (x < -600) { it.obj.destroy(); it.disc?.destroy(); it.obj = null; it.done = true; }
       if (it.t === 'finish' && !it.reached && this.mode === 'running' && x <= GREMLIN_X) { it.reached = true; this.finish(); }
     }
   }
@@ -161,12 +165,13 @@ export class Run extends Phaser.Scene {
       const B = BEAM[it.lane], T = this.cache.json.get('meadowInfo').turret;
       o = this.add.image(x, GROUND_Y + B.sink, 'm_turret').setOrigin(0.35, 1).setScale(B.s * 2).setDepth(3.5);
       it.state = 'idle'; it.st = 0;
-      if (o.preFX) it.glow = o.preFX.addGlow(0xff4fd8, 2, 0, false, 0.1, 10);
+
     } else if (it.t === 'vines') {
       // a slimy branch hanging overhead: vine tips stop ~150 px above the ground, so you have to slide
       o = this.add.image(x, GROUND_Y - 140, L.key).setOrigin(0.5, 1).setScale(L.s).setDepth(9);
     } else if (PICKUPS.has(it.t)) {
       o = this.add.image(x, GROUND_Y - it.h, L.key).setScale(L.s).setDepth(7);
+      if (this.w2) it.disc = this.add.image(x, GROUND_Y - it.h, 'pickDisc').setDepth(6.9).setScale(0.78);   // dark disc behind pickups (World 2)
     } else if (L) {
       o = this.add.image(x, GROUND_Y + L.sink, L.key).setOrigin(0.5, 1).setScale(L.s).setDepth(5);
       it.baseScale = L.s;
@@ -216,7 +221,7 @@ export class Run extends Phaser.Scene {
     }
   }
   collect(it) {
-    it.done = true; const o = it.obj;
+    it.done = true; const o = it.obj; it.disc?.destroy(); it.disc = null;
     this.g.fx.burst([o.x, o.y], 0.4);
     this.tweens.add({ targets: o, scale: o.scale * 1.6, alpha: 0, duration: 200, onComplete: () => { o.destroy(); } });
     it.obj = null;
@@ -236,6 +241,10 @@ export class Run extends Phaser.Scene {
   drawHazardFx() {
     const G = this.hazG; G.clear(); const t = this.time.now / 1000;
     const S = this.shadowG; S.clear();
+    if (this.w2) {   // shadows under the gremlin and the ground creatures (World 2)
+      if (!this.g.dead) gremlinShadow(S, this.g);
+      for (const c of this.creatures) if (!c.dead && c.kind !== 'swarm') shadow(S, c.x, GROUND_Y, c.kind === 'flower' ? 230 : 180, c.y || 0);
+    }
     for (const it of this.items) {
       if (!it.obj || it.done) continue;
       const sw = SHADOW_W[it.t];
@@ -267,7 +276,7 @@ export class Run extends Phaser.Scene {
       else if (it.state === 'fire' && it.st >= BEAM.fire) { it.state = 'done'; it.st = 0; }
       if (it.state === 'warn') {   // the lens glows brighter and a sparkling guide line shows exactly where the beam will go
         const k = it.st / BEAM.warn, blink = 0.5 + 0.5 * Math.sin(now * (14 + 20 * k));
-        if (it.glow) it.glow.outerStrength = 2 + 8 * k;
+        o.setTint(Phaser.Display.Color.GetColor(255, Math.round(255 - 120 * k * blink), 255));   // the turret flushes pink as it charges
         G.fillStyle(0xff7ae0, 0.25 + 0.4 * k * blink).fillCircle(lensX, yc, 30 + 30 * k);
         for (let x = lensX - 40; x > -40; x -= 46) G.fillStyle(0xffffff, (0.25 + 0.55 * k) * (0.5 + 0.5 * Math.sin(now * 20 + x * 0.05))).fillCircle(x, yc, 4 + 3 * k);
         G.lineStyle(2, 0xff9ce8, 0.35 + 0.4 * k).lineBetween(-40, yc - th / 2, lensX, yc - th / 2).lineBetween(-40, yc + th / 2, lensX, yc + th / 2);
@@ -276,7 +285,7 @@ export class Run extends Phaser.Scene {
         const w = Math.max(0, lensX + 20); it.beam.setPosition(0, yc + 3 * Math.sin(now * 40)).setSize(w, th * 1.6).setTileScale(1, th * 1.6 / 200);
         it.beam.tilePositionX -= dt * 2400; it.beam.setAlpha(Math.min(1, it.st * 12, (BEAM.fire - it.st) * 10));
         G.fillStyle(0xffffff, 0.8).fillCircle(lensX, yc, th * 0.7);
-      } else if (it.beam) { it.beam.destroy(); it.beam = null; if (it.glow) it.glow.outerStrength = 2; }
+      } else if (it.beam) { it.beam.destroy(); it.beam = null; o.clearTint(); }
     }
   }
   blinded() {

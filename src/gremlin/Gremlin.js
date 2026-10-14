@@ -88,7 +88,7 @@ export class Gremlin extends Phaser.Events.EventEmitter {
     };
     const img = (name, parent) => {
       const p = R[name];
-      const im = sc.add.image(p.x - p.px, p.y - p.py, 'g_' + name).setOrigin(0, 0);
+      const im = sc.add.image(p.x - p.px, p.y - p.py, (sc.gremlinTex || 'g_') + name).setOrigin(0, 0);   // World 2 uses the outlined copy (g2_)
       parent.add(im); (this.images ||= []).push(im); return im;
     };
     // back-to-front drawing order

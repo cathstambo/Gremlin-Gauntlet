@@ -9,6 +9,7 @@ import { Gremlin } from '../gremlin/Gremlin.js';
 import { Catalytik, ease } from '../overlord/Catalytik.js';
 import { Music } from '../audio/Music.js';
 import { loadMeadow } from '../worlds.js';
+import { shadow, gremlinShadow, makePickupDisc } from '../world/Readability.js';
 
 const W = 1920;
 const GREM_H = 330, BOSS_H = 620;
@@ -74,6 +75,8 @@ export class Overlord extends Boss {
     this.sparkG = this.add.graphics().setDepth(13).setBlendMode(Phaser.BlendModes.ADD);
     this.boxG = this.add.graphics().setDepth(30);
 
+    this.gremlinTex = 'g2_'; makePickupDisc(this); this.pickupDiscs = true;
+    this.shadowG = this.add.graphics().setDepth(4.6);
     this.g = new Gremlin(this, 420, GROUND_Y, GREM_H);
     this.g.arena = { minX: 110, maxX: 1820 };
     this.g.floorAt = x => { for (const p of PLATFORMS) if (x >= p.x0 && x <= p.x1) return p.h; return 0; };
@@ -94,7 +97,7 @@ export class Overlord extends Boss {
     Music.play(this, 'boss');
     // her floating rainbow castle (cover the screen)
     const bg = this.add.image(W / 2, H / 2, 'm_arena_bg').setDepth(0);
-    bg.setScale(Math.max(W / bg.width, H / bg.height)); bg.setTint(0xd8d2e8);
+    bg.setScale(Math.max(W / bg.width, H / bg.height));   // (greyed, darkened and banded in the file itself)
     // the crystal floor: its walking surface sits on GROUND_Y
     const info = this.cache.json.get('meadowInfo');
     const F = info.arena_floor, fs = W / F.w * 1.02;
@@ -367,6 +370,9 @@ export class Overlord extends Boss {
     this.updateMeadow(dt);
     this.updatePickups(dt);
     if (this.mode === 'running') this.collide(dt);
+    const S = this.shadowG; S.clear();
+    if (!this.g.dead) gremlinShadow(S, this.g);
+    if (this.e.sink < 100 && !this.flowerbed) shadow(S, this.e.x, GROUND_Y - this.e.floor, 330, this.e.air);
     const b = this.bubble;
     if (b.visible) { b.life -= dt; const h = this.e.headTop(); b.setPosition(clamp(h[0] - 40, 340, W - 340), clamp(h[1] - 30, 200 + b.hh, GROUND_Y - 260)); b.setAlpha(Math.min(1, b.life * 4)); if (b.life <= 0) b.setVisible(false); }
     this.drawBoxes();

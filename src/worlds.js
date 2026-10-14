@@ -2,6 +2,7 @@
 import { STAGE1, STAGE2, W2_STAGE1, W2_STAGE2 } from './course.js';
 import { Swamp, Meadow, MEADOW_FILES } from './world/Swamp.js';
 import { MEADOW_CREATURE_PARTS } from './creatures/Creatures.js';
+import { PARTS } from './scenes/Boot.js';
 
 export const WORLDS = {
   1: {
@@ -23,6 +24,7 @@ export const worldNo = registry => registry.get('world') || 1;
 /** Queue World 2's art on a scene's loader (only what isn't loaded yet). Call from preload(). */
 export function loadMeadow(scene) {
   for (const [k, f] of Object.entries(MEADOW_FILES)) if (!scene.textures.exists(k)) scene.load.image(k, f);
+  for (const n of PARTS) if (!scene.textures.exists('g2_' + n)) scene.load.image('g2_' + n, `assets/gremlin2/${n}.png`);   // gremlin with a dark outline
   if (!scene.cache.json.exists('meadowInfo')) scene.load.json('meadowInfo', 'assets/meadow/meadow.json');
   for (const [kind, parts] of Object.entries(MEADOW_CREATURE_PARTS)) for (const n of parts) if (!scene.textures.exists(`c_${kind}_${n}`)) scene.load.image(`c_${kind}_${n}`, `assets/creatures/${kind}_${n}.png`);
 }
