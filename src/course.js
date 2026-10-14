@@ -61,13 +61,19 @@ export const STAGE2 = [
   { t: 'plat', size: 'small', d: 17200, h: 240 }, { t: 'margarita', d: 17200, h: 325 },
   { t: 'gator', d: 18300 },
   ...row('crystal', 19000, 3, 70, 180),
-  // the crowded stretch: a good place for Gremlin Meltdown
-  { t: 'frog', d: 20200 }, { t: 'bat', d: 20700, lane: 'high' }, { t: 'frog', d: 21200 }, { t: 'spider', d: 22000 },
-  { t: 'mould', d: 22900 },
-  { t: 'roots', d: 23600 },
-  { t: 'vines', d: 24300 },
-  { t: 'sludgeWide', d: 25300 },
-  { t: 'gator', d: 26500 },
-  ...row('taco', 27200, 4, 70),
-  { t: 'finish', d: 28400 },
+  // the closing stretch: still the busiest part of the swamp (a good place for Gremlin Meltdown), but with about a
+  // second between each threat so you can deal with them one at a time (spread out 14 Oct 2026 after playtesting)
+  { t: 'frog', d: 20200 },
+  { t: 'bat', d: 21200, lane: 'high' },
+  ...row('taco', 21650, 3, 70),
+  { t: 'frog', d: 22400 },
+  { t: 'spider', d: 23500 },
+  { t: 'mould', d: 24600 },
+  ...row('crystal', 25150, 2, 70, 200),
+  { t: 'roots', d: 25900 },
+  { t: 'vines', d: 27000 },
+  { t: 'sludgeWide', d: 28300 },
+  { t: 'gator', d: 30300 },
+  ...row('taco', 31000, 4, 70),
+  { t: 'finish', d: 32200 },
 ];
