@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#13201c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Gremlin Gauntlet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+  html, body { margin: 0; height: 100%; background: #13201c; overflow: hidden; touch-action: none;
+    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+  #game { position: fixed; inset: 0; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+  #rotate { position: fixed; inset: 0; display: none; place-items: center; text-align: center; background: #13201c; color: #ece6f5;
+    font: 26px "Lilita One", "Trebuchet MS", sans-serif; padding: 24px; z-index: 10; }
+  #rotate small { display: block; margin-top: 10px; font: 15px "Atkinson Hyperlegible", system-ui, sans-serif; color: #a9b9b1; }
+  @media (orientation: portrait) and (max-width: 900px) { #rotate { display: grid; } }
+</style>
+</head>
+<body>
+<div id="game"></div>
+<div id="rotate"><div>Turn your phone sideways<small>Gremlin Gauntlet plays in landscape.</small></div></div>
+<script src="lib/phaser.min.js"></script>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>
