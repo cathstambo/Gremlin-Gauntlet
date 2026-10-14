@@ -346,8 +346,9 @@ export class Boss extends Phaser.Scene {
     this.after(2.6, () => {
       const hand = this.add.container(e.x + 20, GROUND_Y + 160).setDepth(9);
       const hs = e.k * 1.5;   // drawn a bit larger than life so it reads at phone size
-      const arm = this.add.image(0, 0, 'e_foN').setOrigin(0.58, 0.07).setScale(hs).setAngle(180);
-      const rock = this.add.image(43 * hs, -175 * hs, 'e_rock_s1').setScale(0.9);
+      const f = e.RIG.foN, hd = e.RIG._hand;   // forearm turned upside down so the hand points at the sky
+      const arm = this.add.image(0, 0, 'e_foN').setOrigin((f.px - f.x) / f.w, (f.py - f.y) / f.h).setScale(hs).setAngle(180);
+      const rock = this.add.image(-(hd[0] - f.px) * hs, -(hd[1] - f.py) * hs + 10, 'e_rock_s1').setScale(0.9);
       hand.add([arm, rock]);
       const mg = this.make.graphics({ add: false }); mg.fillStyle(0xffffff).fillRect(0, 0, W, GROUND_Y + 4);
       hand.setMask(mg.createGeometryMask());
@@ -405,7 +406,7 @@ export class Boss extends Phaser.Scene {
     if (this.mode === 'running') this.collide();
     // speech bubble follows Eddie's head
     const b = this.bubble;
-    if (b.visible) { b.life -= dt; const h = this.e.headTop(); b.setPosition(clamp(h[0] - 40, 320, W - 320), Math.max(170, h[1] - 30)); b.setAlpha(Math.min(1, b.life * 4)); if (b.life <= 0) b.setVisible(false); }
+    if (b.visible) { b.life -= dt; const h = this.e.headTop(); b.setPosition(clamp(h[0] - 40, 320, W - 320), clamp(h[1] - 30, 170, GROUND_Y - 260)); b.setAlpha(Math.min(1, b.life * 4)); if (b.life <= 0) b.setVisible(false); }
     this.drawBoxes();
   }
 

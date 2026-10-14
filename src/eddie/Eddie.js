@@ -39,7 +39,7 @@ export class Eddie {
     img('thF', chain(['thF'])); img('shF', chain(['thF', 'shF']));
     img('thN', chain(['thN'])); img('shN', chain(['thN', 'shN']));
     // torso: top as one piece, the rag skirt below the belt as thin strips that sway like cloth
-    const tp = R.torso, split = 575 - tp.y;
+    const tp = R.torso, split = 590 - tp.y;   // below the belt, the rag skirt sways
     const top = sc.add.image(tp.x - T[0], tp.y - T[1], 'e_torso').setOrigin(0, 0).setCrop(0, 0, tp.w, split);
     this.torsoC.add(top); this.images.push(top);
     this.strips = [];
