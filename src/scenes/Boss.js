@@ -389,7 +389,7 @@ export class Boss extends Phaser.Scene {
     if (!this.damaged) parts.push(['No damage!', POINTS.noDamage]);
     for (const [, n] of parts) this.score += n;
     this.events.emit('score', this.score);
-    return { time: t, hearts: this.hearts, score: this.score, breakdown: parts.map(([l, n]) => `${l}: +${n.toLocaleString()}`).join('   ·   ') };
+    return { time: t, hearts: this.hearts, score: this.score, breakdown: parts.map(([l, n]) => `${l}: +${n.toLocaleString()}`).join('\n') };
   }
 
   // ---------- helpers ----------
