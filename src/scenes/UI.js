@@ -98,7 +98,7 @@ export class UI extends Phaser.Scene {
     ev.on('score', n => this.setScore(n));
     ev.on('bosshp', (f, ph) => this.setBoss(f, ph));
     ev.on('bossvuln', d => { this.tweens.killTweensOf(this.vulTxt); this.vulTxt.setAlpha(1); this.tweens.add({ targets: this.vulTxt, alpha: 0, delay: d * 1000 - 300, duration: 300 }); });
-    ev.on('gameover', msg => this.showMessage(msg || 'SPLAT.', this.isBoss ? 'Tap to retry the boss (3 hearts, Chaos Meter reset)' : 'Tap to restart the swamp from the beginning'));
+    ev.on('gameover', msg => this.showMessage(msg || 'SPLAT.', this.isBoss ? 'Tap to retry the boss (3 hearts, Chaos Meter reset)' : this.scene.get('Run').stage === 2 ? 'Tap to retry part 2 (3 hearts, score kept from part 1)' : 'Tap to restart part 1'));
     ev.on('finished', info => this.time.delayedCall(this.isBoss ? 300 : 1200, () => {
       if (this.isBoss) this.showMessage('BOSS DEFEATED', `The Mould King has been mouldered · ${info.time.toFixed(1)} s · score ${info.score.toLocaleString()}`, info.breakdown + '\n\nTap to play World 1 again');
       else if (info.stage === 1) this.showMessage('SWAMP PART 1 CLEARED', 'Tap for part 2', `Score so far: ${info.score.toLocaleString()}`);

@@ -38,6 +38,7 @@ export class Run extends Phaser.Scene {
     this.stage = this.registry.get('stage') || 1;
     const carry = this.registry.get('carry') || { hearts: 3, chaos: 0, score: 0, damaged: false };
     this.mode = 'ready';            // ready → running → finished | dying → gameover
+    this.startCarry = carry;        // checkpoint: what you had when this part began
     this.hearts = carry.hearts; this.chaos = carry.chaos; this.score = carry.score; this.damaged = carry.damaged;
     this.dist = 0; this.timeScale = 1; this.showBoxes = false;
     this.sizes = this.cache.json.get('swampSizes');
@@ -61,8 +62,13 @@ export class Run extends Phaser.Scene {
   startRun() { if (this.mode === 'ready') { this.mode = 'running'; this.g.run(); } }
   restart() { this.scene.restart(); this.scene.get('UI').scene.restart(); }
   carry() { return { hearts: this.hearts, chaos: this.chaos, score: this.score, damaged: this.damaged }; }
-  /** After a death in a running stage: back to the start of the level, fresh hearts and score. */
-  restartLevel() { this.registry.set('stage', 1); this.registry.remove('carry'); this.restart(); }
+  /** After a death in a running stage. Part 1: start again from scratch. Part 2 is a checkpoint: restart part 2 with
+   *  3 hearts and the score / Chaos Meter you had when you reached it (points picked up on the failed try are dropped). */
+  restartLevel() {
+    if (this.stage === 2) this.registry.set('carry', { ...this.startCarry, hearts: 3, damaged: true });
+    else { this.registry.set('stage', 1); this.registry.remove('carry'); }
+    this.restart();
+  }
   /** Stage cleared: on to stage 2, or to the boss. */
   next() {
     this.registry.set('carry', this.carry());
