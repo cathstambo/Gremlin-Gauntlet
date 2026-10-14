@@ -30,7 +30,7 @@ const BOX = {
 const PICKUPS = new Set(['taco', 'margarita', 'crystal', 'potion']);
 const HAZARDS = new Set(['roots', 'vines', 'mould', 'sludge', 'sludgeWide']);
 const SHADOW_W = { roots: 300, mould: 300, sludge: 300, sludgeWide: 680 };
-export const MAX_HEARTS = 4;   // 3 normal + 1 gold bonus heart from a potion drunk at full health
+export const MAX_HEARTS = 6;   // 3 normal + up to 3 gold bonus hearts from potions drunk at full health
 
 export class Run extends Phaser.Scene {
   constructor() { super('Run'); }
@@ -177,7 +177,7 @@ export class Run extends Phaser.Scene {
       if (it.t === 'crystal') { this.collect(it); this.chaos = Math.min(100, this.chaos + 10); this.events.emit('chaos', this.chaos); }
       else if (it.t === 'taco' || it.t === 'margarita') { this.collect(it); this.addScore(POINTS[it.t]); }
       else if (it.t === 'potion') {
-        // +1 heart; at full health it gives a gold bonus heart (max 4). Already on 4: it stays put for later.
+        // +1 heart; at full health it gives a gold bonus heart (max 6). Already on 6: it stays put for later.
         if (this.hearts < MAX_HEARTS) { this.collect(it); this.hearts++; this.events.emit('hearts', this.hearts); }
       } else if (it.t === 'mould') {
         inMould = true; g.slow(0.5);

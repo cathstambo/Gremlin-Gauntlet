@@ -5,6 +5,7 @@ import { Gremlin } from '../gremlin/Gremlin.js';
 import { Eddie } from '../eddie/Eddie.js';
 import { Swamp } from '../world/Swamp.js';
 import { Music } from '../audio/Music.js';
+import { MAX_HEARTS } from './Run.js';
 
 export const GROUND_Y = 870;
 const W = 1920;
@@ -75,7 +76,8 @@ export class Boss extends Phaser.Scene {
     this.e.spot = 'groundR';
     this.e.onEvent = (name, ...a) => this.onEddie(name, ...a);
     this.bubble = this.makeBubble();
-    // this arena's potion: up on the high centre platform (double jump to reach it)
+    // three potions in the arena: one waiting on the high centre platform (double jump),
+    // then one more appears on a low root platform at the start of phase 2 and of phase 3 (see dropPotion)
     this.addPickup('potion', 985, GROUND_Y - 340 - 60);
   }
 
@@ -329,8 +331,10 @@ export class Boss extends Phaser.Scene {
     if (this.hp <= 0) return this.win();
     const ph = this.hp <= BOSS_TUNING.phase3At ? 3 : this.hp <= BOSS_TUNING.phase2At ? 2 : 1;
     if (ph !== this.phase) {
+      const skipped = ph - this.phase;   // a big Meltdown hit can jump two phases: still drop both potions
       this.phase = ph; this.queue = []; this.e.timeScale = ph === 3 ? BOSS_TUNING.phase3Speed : 1;
       this.say(ph === 2 ? 'Right. MOULD TIME.' : 'NOW I’M ANGRY. AND HUNGRY.', 1.8);
+      for (let i = 0; i < skipped; i++) this.dropPotion();
       this.events.emit('bosshp', this.hp / BOSS_TUNING.hp, this.phase);
     }
   }
@@ -390,6 +394,14 @@ export class Boss extends Phaser.Scene {
 
   // ---------- helpers ----------
   dustBurst(x, y, n, col = 0x6a5a3a) { for (let i = 0; i < n; i++) (this.chips ||= []).push({ x: x + rnd(-120, 120), y, vx: rnd(-420, 420), vy: rnd(-520, -120), life: rnd(0.4, 0.9), sz: rnd(8, 18), col, dust: true }); }
+  /** A fresh potion pops up on a low root platform (a single jump reaches it): one that's still empty, as far from Eddie as possible. */
+  dropPotion() {
+    const y = GROUND_Y - 215 - 60, taken = x => this.pickups.some(q => q.type === 'potion' && !q.dead && Math.abs(q.x - x) < 50);
+    const spots = [585, 1375].sort((a, b) => Math.abs(b - this.e.x) - Math.abs(a - this.e.x));
+    const x = spots.find(x => !taken(x)) ?? spots[0];
+    this.addPickup('potion', x, y);
+    this.g.fx.burst([x, y], 0.6);
+  }
   addPickup(type, x, y) {
     const img = this.add.image(x, y, 'pick_' + type).setDepth(6).setScale(type === 'crystal' ? 0.42 : 0.47);
     this.pickups.push({ type, x, y, img, t: Math.random() * 6 });
@@ -548,7 +560,7 @@ export class Boss extends Phaser.Scene {
       p.t += dt; p.img.y = p.y + 8 * Math.sin(p.t * 3);
       if (hb && !p.dead && Phaser.Geom.Intersects.RectangleToRectangle(hb, new Phaser.Geom.Rectangle(p.x - 35, p.img.y - 45, 70, 90))) {
         if (p.type === 'crystal') { p.dead = true; this.chaos = Math.min(100, this.chaos + 10); this.events.emit('chaos', this.chaos); g.fx.burst([p.x, p.img.y], 0.45); }
-        else if (p.type === 'potion' && this.hearts < 4) { p.dead = true; this.hearts++; this.events.emit('hearts', this.hearts); }
+        else if (p.type === 'potion' && this.hearts < MAX_HEARTS) { p.dead = true; this.hearts++; this.events.emit('hearts', this.hearts); }
         if (p.dead) this.tweens.add({ targets: p.img, scale: 1.6, alpha: 0, duration: 200, onComplete: () => p.img.destroy() });
       }
     }
