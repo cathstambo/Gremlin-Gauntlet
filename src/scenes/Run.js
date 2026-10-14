@@ -13,10 +13,10 @@ const MOULD_HURT_AFTER = 0.55;   // seconds standing in mould before it costs a 
 
 // how each hazard / pickup is drawn: texture, display scale, and how far the image bottom sits below the ground line
 const LOOK = {
-  roots: { key: 'haz_roots', s: 0.75, sink: 16 },
-  mould: { key: 'haz_mould', s: 0.75, sink: 16 },
-  sludge: { key: 'haz_sludge', s: 0.75, sink: 34 },
-  sludgeWide: { key: 'haz_sludge', s: 1.85, sink: 80 },
+  roots: { key: 'haz_roots', s: 0.92, sink: 22 },
+  mould: { key: 'haz_mould', s: 0.92, sink: 22 },
+  sludge: { key: 'haz_sludge', s: 0.92, sink: 34 },
+  sludgeWide: { key: 'haz_sludge', s: 2.0, sink: 74 },
   vines: { key: 'haz_vines_hang', s: 1.3 },
   taco: { key: 'pick_taco', s: 0.47 }, margarita: { key: 'pick_margarita', s: 0.5 },
   crystal: { key: 'pick_crystal', s: 0.42 }, potion: { key: 'pick_potion', s: 0.47 },
@@ -27,6 +27,8 @@ const BOX = {
   taco: { w: 90, h: 80 }, margarita: { w: 80, h: 90 }, crystal: { w: 70, h: 90 }, potion: { w: 80, h: 90 },
 };
 const PICKUPS = new Set(['taco', 'margarita', 'crystal', 'potion']);
+const HAZARDS = new Set(['roots', 'vines', 'mould', 'sludge', 'sludgeWide']);
+const SHADOW_W = { roots: 300, mould: 300, sludge: 300, sludgeWide: 680 };
 export const MAX_HEARTS = 4;   // 3 normal + 1 gold bonus heart from a potion drunk at full health
 
 export class Run extends Phaser.Scene {
@@ -44,6 +46,7 @@ export class Run extends Phaser.Scene {
     this.orbs = []; this.creatures = [];
     this.orbG = this.add.graphics().setDepth(13).setBlendMode(Phaser.BlendModes.ADD);
     this.hazG = this.add.graphics().setDepth(6);
+    this.shadowG = this.add.graphics().setDepth(4.6);   // dark contact shadows that sit hazards ON the path
     this.boxG = this.add.graphics().setDepth(30);
 
     this.g = new Gremlin(this, GREMLIN_X, GROUND_Y, GREMLIN_H);
@@ -117,6 +120,7 @@ export class Run extends Phaser.Scene {
       if (PICKUPS.has(it.t)) it.obj.y = GROUND_Y - it.h + 8 * Math.sin(t * 3 + it.d);
       if (it.t === 'sludge' || it.t === 'sludgeWide') it.obj.scaleY = it.baseScale * (1 + 0.025 * Math.sin(t * 5 + it.d));   // slow bubbling heave
       if (it.t === 'vines') it.obj.rotation = 0.012 * Math.sin(t * 1.6 + it.d);                                                  // gentle sway
+      if (it.glow) it.glow.outerStrength = 2.6 + 1.6 * (0.5 + 0.5 * Math.sin(t * 5));                                            // warning pulse
       if (x < -600) { it.obj.destroy(); it.obj = null; it.done = true; }
       if (it.t === 'finish' && !it.reached && this.mode === 'running' && x <= GREMLIN_X) { it.reached = true; this.finish(); }
     }
@@ -140,8 +144,8 @@ export class Run extends Phaser.Scene {
     } else if (it.t === 'finish') {
       o = this.add.image(x, GROUND_Y + 6, 'flag').setOrigin(0.15, 1).setDepth(5);
     }
-    // hazards get a pale rim-light so they always read as dangerous against the scenery (WebGL only; harmless elsewhere)
-    if (['roots', 'vines', 'mould', 'sludge', 'sludgeWide'].includes(it.t) && o.preFX) o.preFX.addGlow(0xffd23a, 1.4, 0, false, 0.1, 8);
+    // hazards get a warm pulsing rim-light so they always read as dangerous against the green scenery (WebGL only; harmless elsewhere)
+    if (HAZARDS.has(it.t) && o.preFX) it.glow = o.preFX.addGlow(0xffb02a, 3, 0, false, 0.1, 10);
     it.obj = o;
   }
   /** Height (px) of the floating platform under screen x, or 0 for the ground. */
@@ -196,8 +200,11 @@ export class Run extends Phaser.Scene {
   // bubbles rising out of sludge pools, spores drifting off mould
   drawHazardFx() {
     const G = this.hazG; G.clear(); const t = this.time.now / 1000;
+    const S = this.shadowG; S.clear();
     for (const it of this.items) {
       if (!it.obj || it.done) continue;
+      const sw = SHADOW_W[it.t];
+      if (sw) { S.fillStyle(0x050805, 0.55).fillEllipse(it.obj.x, GROUND_Y + 8, sw, 38); S.fillStyle(0x050805, 0.35).fillEllipse(it.obj.x, GROUND_Y + 8, sw * 1.15, 54); }
       if (it.t === 'sludge' || it.t === 'sludgeWide') {
         const w = (it.t === 'sludgeWide' ? 520 : 200);
         for (let i = 0; i < (it.t === 'sludgeWide' ? 7 : 3); i++) {

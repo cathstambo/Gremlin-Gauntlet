@@ -12,7 +12,7 @@ export const SWAMP_FILES = {
 };
 
 // art measurements (pixels in the prepared files)
-const GROUND_SURFACE = 74;      // row of the path's walking surface in ground.webp
+const GROUND_SURFACE = 100;     // row in ground.webp the gremlin walks on: the middle of the lit path, so hazards sit IN the way, not behind it
 const MID_BOTTOM = 603, NEAR_BOTTOM = 681;
 
 export class Swamp {
@@ -33,7 +33,8 @@ export class Swamp {
       let x = 700;
       for (let i = 0; i < 24; i++) {
         const key = PROPS[i % PROPS.length];
-        const im = scene.add.image(0, groundY + 30, key).setOrigin(0.5, 1).setScale(key === 'prop_sign' ? 0.8 : 0.62).setDepth(3).setTint(key === 'prop_sign' ? 0xb0bab0 : 0x8a948a);
+        // decorations stand at the back edge of the path and are dimmed, so only real hazards look bright and "in the way"
+        const im = scene.add.image(0, groundY + 4, key).setOrigin(0.5, 1).setScale(key === 'prop_sign' ? 0.8 : 0.56).setDepth(3).setTint(key === 'prop_sign' ? 0xb0bab0 : 0x6f7a72);
         this.props.push({ im, base: x }); x += 1150 + ((i * 397) % 650);
       }
       this.propSpan = x;
