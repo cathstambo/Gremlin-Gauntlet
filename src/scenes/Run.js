@@ -3,6 +3,7 @@
 import { Gremlin } from '../gremlin/Gremlin.js';
 import { STAGE1, STAGE2 } from '../course.js';
 import { Swamp } from '../world/Swamp.js';
+import { Music } from '../audio/Music.js';
 import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js';
 
 const CREATURES = { frog: Frog, gator: Gator, bat: Bat, spider: Spider };
@@ -43,6 +44,7 @@ export class Run extends Phaser.Scene {
     this.dist = 0; this.timeScale = 1; this.showBoxes = false;
     this.sizes = this.cache.json.get('swampSizes');
     this.swamp = new Swamp(this, GROUND_Y);
+    Music.play(this, 'run');
     this.items = (this.stage === 1 ? STAGE1 : STAGE2).map(c => ({ ...c, obj: null, done: false }));
     this.orbs = []; this.creatures = [];
     this.orbG = this.add.graphics().setDepth(13).setBlendMode(Phaser.BlendModes.ADD);

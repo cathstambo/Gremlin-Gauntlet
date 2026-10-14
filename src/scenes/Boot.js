@@ -1,4 +1,5 @@
 import { SWAMP_FILES } from '../world/Swamp.js';
+import { Music } from '../audio/Music.js';
 import { CREATURE_PARTS } from '../creatures/Creatures.js';
 // Loads the gremlin's parts and makes the simple placeholder textures used by the test run.
 export const PARTS = ['body', 'head', 'eye', 'ear', 'tail', 'pouch', 'upperArm', 'foreArm', 'upperArmFar', 'foreArmFar',
@@ -24,6 +25,7 @@ export class Boot extends Phaser.Scene {
     for (const n of EDDIE_PARTS) this.load.image('e_' + n, `assets/eddie/${n}.png`);
   }
   create() {
+    Music.init();
     this.makeTextures();
     const first = location.hash === '#boss' ? 'Boss' : 'Run';   // add #boss to the address to go straight to the boss fight
     this.registry.set('gameScene', first);

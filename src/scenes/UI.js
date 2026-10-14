@@ -1,5 +1,6 @@
 // HUD and controls for whichever game scene is active ('Run' = test course, 'Boss' = Eddie's arena):
 // hearts, Chaos Meter, boss health, pause, touch buttons, swipe gestures, keyboard, overlays.
+import { Music } from '../audio/Music.js';
 const FONT = 'Lilita One, Arial Rounded MT Bold, Trebuchet MS, sans-serif';
 const BODY = 'Atkinson Hyperlegible, system-ui, sans-serif';
 const INK = '#ece6f5', VIOLET = 0x9b4dff, ACID = 0xc6f135, MOULD = 0x9fcc1e;
@@ -38,6 +39,7 @@ export class UI extends Phaser.Scene {
 
     // pause + fullscreen
     this.roundButton(W - 70, 70, 52, 'II', () => this.togglePause(), 30);
+    this.speakerButton(W - 70, 190);
     if (this.scale.fullscreenAvailable) this.roundButton(W - 190, 70, 52, '⛶', () => this.scale.isFullscreen ? this.scale.stopFullscreen() : this.scale.startFullscreen(), 34);
 
     // action buttons (big, thumb-sized)
@@ -120,6 +122,25 @@ export class UI extends Phaser.Scene {
     return c;
   }
 
+  /** Music on/off. Off by default; the choice is remembered on this device. */
+  speakerButton(x, y) {
+    const r = 46, c = this.add.container(x, y).setDepth(60);   // above the overlays, so it works on the start and pause screens too
+    const bg = this.add.circle(0, 0, r, 0x0e1614, 0.5).setStrokeStyle(4, 0xece6f5, 0.7);
+    const g = this.add.graphics();
+    const draw = () => {
+      g.clear().fillStyle(0xece6f5, 1);
+      g.fillRect(-22, -9, 12, 18).fillTriangle(-12, -9, 4, -22, 4, 22).fillTriangle(-12, 9, 4, -22, 4, 22);   // speaker
+      if (Music.on) { g.lineStyle(4, 0xc6f135, 1); g.beginPath(); g.arc(6, 0, 10, -0.9, 0.9); g.strokePath(); g.beginPath(); g.arc(6, 0, 19, -0.9, 0.9); g.strokePath(); }
+      else { g.lineStyle(5, 0xee2a8a, 1).lineBetween(10, -10, 26, 10).lineBetween(26, -10, 10, 10); }   // muted: red cross
+      bg.setStrokeStyle(4, Music.on ? 0xc6f135 : 0xece6f5, 0.7);
+    };
+    draw();
+    c.add([bg, g]); c.setSize(r * 2, r * 2);
+    c.setInteractive(new Phaser.Geom.Circle(r, r, r), Phaser.Geom.Circle.Contains);
+    c.on('pointerdown', (p, lx, ly, e) => { e && e.stopPropagation(); Music.toggle(this); if (this.paused) Music.pause(true); draw(); });
+    return c;
+  }
+
   /** Start World 1 again from swamp part 1. */
   newLevel() { this.registry.set('stage', 1); this.registry.remove('carry'); this.goTo('Run'); }
   /** Testing shortcut: part 1 → part 2 → boss → back to part 1 (fresh hearts each time). */
@@ -155,6 +176,7 @@ export class UI extends Phaser.Scene {
     this.paused = !this.paused;
     if (this.paused) { this.scene.pause(this.run.scene.key); this.showPauseMenu(); }
     else { this.scene.resume(this.run.scene.key); this.overlay.setVisible(false); }
+    Music.pause(this.paused);
   }
   showPauseMenu() {
     const W = this.scale.width, H = this.scale.height, o = this.overlay; o.removeAll(true);

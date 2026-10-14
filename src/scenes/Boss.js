@@ -4,6 +4,7 @@
 import { Gremlin } from '../gremlin/Gremlin.js';
 import { Eddie } from '../eddie/Eddie.js';
 import { Swamp } from '../world/Swamp.js';
+import { Music } from '../audio/Music.js';
 
 export const GROUND_Y = 870;
 const W = 1920;
@@ -82,6 +83,7 @@ export class Boss extends Phaser.Scene {
   drawArena() {
     const H = this.scale.height;
     this.swamp = new Swamp(this, GROUND_Y, { props: false });
+    Music.play(this, 'boss');
     this.swamp.scroll(1500);   // a fixed view of the swamp
     // a couple of decorations at the arena edges (behind the action)
     this.add.image(700, GROUND_Y + 30, 'prop_sign').setOrigin(0.5, 1).setScale(0.8).setDepth(3).setTint(0xb0bab0);
