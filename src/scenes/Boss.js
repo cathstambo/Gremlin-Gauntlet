@@ -3,6 +3,7 @@
 // roots and logs give high ground; attacks are aimed at the gremlin and always telegraphed.
 import { Gremlin } from '../gremlin/Gremlin.js';
 import { Eddie } from '../eddie/Eddie.js';
+import { Swamp } from '../world/Swamp.js';
 
 export const GROUND_Y = 870;
 const W = 1920;
@@ -73,22 +74,13 @@ export class Boss extends Phaser.Scene {
   // ---------- arena ----------
   drawArena() {
     const H = this.scale.height;
-    this.add.image(0, 0, 'swampBg').setOrigin(0, 0).setDisplaySize(W, H).setDepth(0);
-    const bg = this.add.graphics().setDepth(1);
-    // distant trunks and hanging moss
-    for (let i = 0; i < 14; i++) {
-      const x = i * 150 + (i * 37) % 60, w = 60 + (i * 53) % 70;
-      bg.fillStyle(0x0f1b13, 0.85).fillRect(x, 0, w, GROUND_Y);
-      bg.fillStyle(0x2c4a1c, 0.5); for (let j = 0; j < 3; j++) bg.fillRect(x + 10 + j * 18, 0, 5, 140 + ((i + j) * 61) % 220);
-    }
-    bg.fillStyle(0x203421, 1).fillEllipse(400, GROUND_Y, 900, 160).fillEllipse(1500, GROUND_Y, 1100, 200);
-    // muddy ground with puddles
-    const gr = this.add.graphics().setDepth(2);
-    gr.fillStyle(0x2c2a1a, 1).fillRect(0, GROUND_Y, W, H - GROUND_Y);
-    gr.fillStyle(0x3b3a22, 1).fillRect(0, GROUND_Y, W, 8);
-    gr.fillStyle(0x4b5a1e, 0.55); for (const [x, w] of [[180, 260], [760, 340], [1300, 300], [1720, 220]]) gr.fillEllipse(x, GROUND_Y + 60, w, 34);
+    this.swamp = new Swamp(this, GROUND_Y, { props: false });
+    this.swamp.scroll(1500);   // a fixed view of the swamp
+    // a couple of decorations at the arena edges (behind the action)
+    this.add.image(700, GROUND_Y + 30, 'prop_sign').setOrigin(0.5, 1).setScale(0.8).setDepth(3).setTint(0xb0bab0);
+    this.add.image(1420, GROUND_Y + 30, 'prop_mush_orange').setOrigin(0.5, 1).setScale(0.75).setDepth(3).setTint(0xb0bab0);
     // platforms
-    const pg = this.add.graphics().setDepth(4);
+    const pg = this.add.graphics().setDepth(5);
     for (const p of PLATFORMS) {
       const top = GROUND_Y - p.h, w = p.x1 - p.x0;
       if (p.name === 'stump') {

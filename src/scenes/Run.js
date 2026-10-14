@@ -1,6 +1,7 @@
 // The test run: scrolling swamp-dusk placeholder world, fixed course, hearts, Chaos Meter, Meltdown.
 import { Gremlin } from '../gremlin/Gremlin.js';
 import { COURSE } from '../course.js';
+import { Swamp } from '../world/Swamp.js';
 import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js';
 
 const CREATURES = { frog: Frog, gator: Gator, bat: Bat, spider: Spider };
@@ -21,9 +22,7 @@ export class Run extends Phaser.Scene {
     const W = this.scale.width, H = this.scale.height;
     this.mode = 'ready';            // ready → running → dead / finished
     this.hearts = 3; this.chaos = 0; this.dist = 0; this.timeScale = 1; this.showBoxes = false;
-    this.add.image(0, 0, 'sky').setOrigin(0, 0).setDisplaySize(W, H).setDepth(0);
-    this.reeds = this.add.tileSprite(0, GROUND_Y - 360 + 6, W, 360, 'reeds').setOrigin(0, 0).setDepth(1);
-    this.ground = this.add.tileSprite(0, GROUND_Y, W, H - GROUND_Y, 'ground').setOrigin(0, 0).setDepth(2);
+    this.swamp = new Swamp(this, GROUND_Y);
     this.items = COURSE.map(c => ({ ...c, obj: null, done: false }));
     this.orbs = []; this.creatures = []; this.score = 0;
     this.orbG = this.add.graphics().setDepth(13).setBlendMode(Phaser.BlendModes.ADD);
@@ -68,7 +67,7 @@ export class Run extends Phaser.Scene {
     this.g.update(dt);
     const v = this.g.worldSpeed;
     if (this.mode === 'running' || this.mode === 'finished' || this.mode === 'gameover') this.dist += v * dt;
-    this.ground.tilePositionX = this.dist; this.reeds.tilePositionX = this.dist * 0.3;
+    this.swamp.scroll(this.dist);
     this.updateItems(dt);
     const ctx = { gx: this.g.x, groundY: GROUND_Y, scroll: v * dt * (this.mode === 'ready' ? 0 : 1) };
     for (const c of this.creatures) c.update(dt, ctx);

@@ -1,3 +1,4 @@
+import { SWAMP_FILES } from '../world/Swamp.js';
 import { CREATURE_PARTS } from '../creatures/Creatures.js';
 // Loads the gremlin's parts and makes the simple placeholder textures used by the test run.
 export const PARTS = ['body', 'head', 'eye', 'ear', 'tail', 'pouch', 'upperArm', 'foreArm', 'upperArmFar', 'foreArmFar',
@@ -17,6 +18,7 @@ export class Boot extends Phaser.Scene {
     for (const n of PARTS) this.load.image('g_' + n, `assets/gremlin/${n}.png`);
     this.load.json('eddieRig', 'assets/eddie/rig.json');
     this.load.json('creatures', 'assets/creatures/creatures.json');
+    for (const [k, f] of Object.entries(SWAMP_FILES)) this.load.image(k, f);
     for (const [kind, parts] of Object.entries(CREATURE_PARTS)) for (const n of parts) this.load.image(`c_${kind}_${n}`, `assets/creatures/${kind}_${n}.png`);
     for (const n of EDDIE_PARTS) this.load.image('e_' + n, `assets/eddie/${n}.png`);
   }
