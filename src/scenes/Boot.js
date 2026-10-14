@@ -2,6 +2,8 @@
 export const PARTS = ['body', 'head', 'eye', 'ear', 'tail', 'pouch', 'upperArm', 'foreArm', 'upperArmFar', 'foreArmFar',
   'thighN', 'bootN', 'thighFfar', 'bootFfar'];
 
+export const EDDIE_PARTS = ['torso', 'head', 'face_shout', 'face_chomp', 'face_hurt', 'upN', 'foN', 'upF', 'foF', 'thN', 'shN', 'thF', 'shF', 'rock', 'rock_s1'];
+
 export class Boot extends Phaser.Scene {
   constructor() { super('Boot'); }
   preload() {
@@ -12,10 +14,14 @@ export class Boot extends Phaser.Scene {
     this.load.on('progress', p => { bar.width = 600 * p; });
     this.load.json('rig', 'assets/gremlin/rig.json');
     for (const n of PARTS) this.load.image('g_' + n, `assets/gremlin/${n}.png`);
+    this.load.json('eddieRig', 'assets/eddie/rig.json');
+    for (const n of EDDIE_PARTS) this.load.image('e_' + n, `assets/eddie/${n}.png`);
   }
   create() {
     this.makeTextures();
-    const start = () => { this.scene.start('Run'); this.scene.launch('UI'); };
+    const first = location.hash === '#boss' ? 'Boss' : 'Run';   // add #boss to the address to go straight to the boss fight
+    this.registry.set('gameScene', first);
+    const start = () => { this.scene.start(first); this.scene.launch('UI'); };
     // wait for the display font so text doesn't jump when it arrives
     if (document.fonts && document.fonts.load) Promise.race([document.fonts.load('40px "Lilita One"'), new Promise(r => setTimeout(r, 1500))]).then(start);
     else start();
@@ -88,6 +94,33 @@ export class Boot extends Phaser.Scene {
       c.beginPath(); c.arc(w / 2, h - 44, 38, 0, Math.PI * 2); c.fill(); c.stroke();
       c.fillStyle = '#d9c9b0'; c.fillRect(w / 2 - 14, 10, 28, 30); c.strokeRect(w / 2 - 14, 10, 28, 30);
       c.fillStyle = '#fff'; c.font = 'bold 40px sans-serif'; c.textAlign = 'center'; c.fillText('♥', w / 2, h - 30);
+    });
+    // ---- Eddie's mould attacks (drawn here so they stay crisp at any size) ----
+    this.canvasTex('mouldBomb', 120, 120, (c, w) => {
+      const g = c.createRadialGradient(46, 44, 6, 60, 60, 56); g.addColorStop(0, '#e8ff7a'); g.addColorStop(0.45, '#9fcc1e'); g.addColorStop(1, '#3f5a08');
+      c.fillStyle = g; c.beginPath();
+      for (let i = 0; i <= 24; i++) { const a = i / 24 * Math.PI * 2, r = 48 + 6 * Math.sin(i * 2.7) + 4 * Math.cos(i * 5.1); c.lineTo(60 + Math.cos(a) * r, 60 + Math.sin(a) * r); }
+      c.closePath(); c.fill(); c.strokeStyle = '#25330a'; c.lineWidth = 4; c.stroke();
+      c.fillStyle = 'rgba(60,40,20,.7)'; for (const [x, y, r] of [[42, 70, 7], [70, 40, 5], [78, 74, 9], [52, 46, 4]]) { c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); }
+      c.fillStyle = '#b8e02a'; for (const x of [40, 64, 84]) { c.beginPath(); c.ellipse(x, 104 + (x % 3) * 4, 5, 10, 0, 0, 7); c.fill(); }
+    });
+    this.canvasTex('mouldNet', 260, 260, (c, w) => {
+      c.strokeStyle = '#c4e534'; c.lineWidth = 6; c.lineCap = 'round';
+      const cx = w / 2, cy = w / 2;
+      for (let i = 0; i < 9; i++) { const a = i / 9 * Math.PI * 2; c.beginPath(); c.moveTo(cx, cy); c.lineTo(cx + Math.cos(a) * 120, cy + Math.sin(a) * 120); c.stroke(); }
+      for (const r of [32, 62, 92, 118]) { c.beginPath(); for (let i = 0; i <= 9; i++) { const a = i / 9 * Math.PI * 2; c.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r); } c.stroke(); }
+      c.fillStyle = '#9fcc1e'; for (let i = 0; i < 14; i++) { const a = i * 0.9, r = 30 + (i * 23) % 90; c.beginPath(); c.ellipse(cx + Math.cos(a) * r, cy + Math.sin(a) * r + 8, 5, 11, 0, 0, 7); c.fill(); }
+    });
+    this.canvasTex('shroom', 140, 200, (c, w, h) => {
+      c.fillStyle = '#efe6cf'; c.strokeStyle = '#3a2214'; c.lineWidth = 5;
+      c.beginPath(); c.moveTo(52, h); c.quadraticCurveTo(46, 110, 58, 70); c.lineTo(84, 70); c.quadraticCurveTo(94, 110, 88, h); c.closePath(); c.fill(); c.stroke();
+      const g = c.createLinearGradient(0, 0, 0, 80); g.addColorStop(0, '#f05a36'); g.addColorStop(1, '#a8241a');
+      c.fillStyle = g; c.beginPath(); c.moveTo(8, 78); c.quadraticCurveTo(20, 6, 70, 6); c.quadraticCurveTo(122, 6, 132, 78); c.closePath(); c.fill(); c.stroke();
+      c.fillStyle = '#fff4dc'; for (const [x, y, r] of [[40, 40, 9], [70, 24, 8], [98, 44, 10], [62, 56, 6], [24, 62, 5], [114, 64, 5]]) { c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); }
+    });
+    this.canvasTex('swampBg', 4, 1080, (c, w, h) => {
+      const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#16261c'); g.addColorStop(0.75, '#1f3324'); g.addColorStop(1, '#141f15');
+      c.fillStyle = g; c.fillRect(0, 0, w, h);
     });
     this.canvasTex('heart', 96, 88, (c, w, h) => {
       c.fillStyle = '#ee2a8a'; c.strokeStyle = '#2b0b1c'; c.lineWidth = 6;

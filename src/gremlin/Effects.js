@@ -30,7 +30,7 @@ export class Effects {
   muzzle(c) { this.p.push({ k: 'ring', x: c[0], y: c[1], r: 6, life: 0.18, max: 0.18, grow: 500 }); }
   shock(c) { for (let i = 0; i < 6; i++) this.p.push({ k: 'line', x: c[0], y: c[1], a: -Math.PI / 2 + (i - 2.5) * 0.42, life: 0.32, max: 0.32 }); }
   dust(n, str, pos) {
-    const c = pos || [this.g.x - 60 * this.k, this.g.groundY];
+    const c = pos || [this.g.x - 60 * this.k, this.g.groundY - this.g.S.h * this.k];
     for (let i = 0; i < n; i++) this.p.push({ k: 'dust', x: c[0] + rnd(-25, 25), y: c[1] - Math.random() * 8,
       vx: -rnd(80, 340) * str, vy: -rnd(30, 150) * str, life: rnd(0.4, 0.7), max: 0.7, sz: rnd(7, 18) });
   }
@@ -74,8 +74,9 @@ export class Effects {
     B.clear(); F.clear(); A.clear(); AG.clear();
     const c = g.centre();
     // shadow, shrinking as the gremlin rises
-    const air = clamp(S.h / 600, 0, 1), wide = (S.st === 'slide' || S.st === 'dead') ? 230 : 170;
-    B.fillStyle(0x000000, 0.28 * (1 - air * 0.7)).fillEllipse(g.x, g.groundY + 2, wide * 2 * k * (1 - air * 0.5), 32 * k);
+    const fl = g.floorAt ? g.floorAt(g.x) : 0;
+    const air = clamp((S.h - fl / k) / 600, 0, 1), wide = (S.st === 'slide' || S.st === 'dead') ? 230 : 170;
+    B.fillStyle(0x000000, 0.28 * (1 - air * 0.7)).fillEllipse(g.x, g.groundY - fl + 2, wide * 2 * k * (1 - air * 0.5), 32 * k);
     for (const p of this.p) {
       const a = clamp(p.life / p.max, 0, 1);
       if (p.k === 'dust') B.fillStyle(0x786850, 0.5 * a).fillCircle(p.x, p.y, p.sz * (1.6 - a));

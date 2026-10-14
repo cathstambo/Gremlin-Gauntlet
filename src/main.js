@@ -3,6 +3,7 @@
 import { Boot } from './scenes/Boot.js';
 import { Run } from './scenes/Run.js';
 import { UI } from './scenes/UI.js';
+import { Boss } from './scenes/Boss.js';
 
 window.game = new Phaser.Game({
   type: Phaser.AUTO,
@@ -12,5 +13,5 @@ window.game = new Phaser.Game({
   render: { antialias: true, powerPreference: 'high-performance' },
   input: { activePointers: 4 },
   fps: { target: 60 },
-  scene: [Boot, Run, UI],
+  scene: [Boot, Run, Boss, UI],
 });

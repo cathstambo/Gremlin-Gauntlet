@@ -45,7 +45,10 @@ export class Gremlin extends Phaser.Events.EventEmitter {
       atkT: -1, shotFired: false, inv: 0, flash: 0, blasted: false,
       ear: { a: 0, v: 0 }, pouch: { a: 0, v: 0 }, prevRootY: null, prevVy: 0,
       speed: 1500, move: 0, prevFoot: null, rootY: 0, stompQ: -1,
+      floor: 0, vx: 0, moveDir: 0, dashT: 0, trapT: 0,
     };
+    /** Boss arenas: {minX, maxX} lets the gremlin move left/right; floorAt(x) gives platform height in px above the ground. */
+    this.arena = null; this.floorAt = null;
     this.fx = new Effects(scene, this);
     this.buildDisplay();
     this.update(0);
@@ -149,15 +152,25 @@ export class Gremlin extends Phaser.Events.EventEmitter {
 
   // ---------- moves ----------
   go(st, blend) { const S = this.S; S.from = S.last || runPose(S.t); S.st = st; S.stT = 0; S.blend = blend; this.emit('state', st); }
-  leaveGround() { const S = this.S; if (!AIRBORNE.has(S.st)) { S.airL = S.lockL; S.h = 0; } S.lock = 0; }
+  leaveGround() { const S = this.S; if (!AIRBORNE.has(S.st)) { S.airL = S.lockL; S.h = S.floor; } S.lock = 0; }
+  /** Platform height under a screen x, in art units. */
+  floorUnder(x) { return this.floorAt ? this.floorAt(x) / this.k : 0; }
+  get trapped() { return this.S.trapT > 0; }
+  /** Caught in a mould net: frozen in place; every jump press shortens it. */
+  trap(t) { const S = this.S; S.trapT = t; S.vx = 0; S.dashT = 0; }
+  /** Hold-to-move in boss arenas: dir = -1, 0 or 1. */
+  setMove(dir) { this.S.moveDir = dir; }
+  /** Quick dash in boss arenas (swipe left/right). */
+  dash(dir) { const S = this.S; if (!this.arena || this.dead || S.trapT > 0 || ['victory', 'melt'].includes(S.st)) return false; S.dashT = 0.2; S.dashDir = dir; return true; }
   get state() { return this.S.st; }
   get dead() { return this.S.st === 'die' || this.S.st === 'dead'; }
   get invulnerable() { return this.S.inv > 0 || this.S.st === 'melt' || this.dead; }
   /** Scroll speed of the world in screen pixels per second (matches the planted foot, so feet never skate). */
-  get worldSpeed() { return this.S.speed * this.S.move * this.k * (this.S.st === 'slide' ? 1.05 : 1); }
+  get worldSpeed() { if (this.arena) return 0; return this.S.speed * this.S.move * this.k * (this.S.st === 'slide' ? 1.05 : 1); }
 
   jump() {
     const S = this.S;
+    if (S.trapT > 0) { S.trapT = Math.max(0, S.trapT - 0.17); this.emit('struggle'); return false; }   // mash jump to break free
     if (FREE.has(S.st) || S.st === 'slide') { this.go('crouch', 0.05); return true; }   // jumping cancels a slide
     if (S.st === 'air' && !S.usedDouble) {     // double jump always adds height, so it always lasts longer than a single jump
       S.usedDouble = true; S.vy = Math.max(TUNING.doubleJumpV, S.vy + TUNING.doubleJumpV * 0.5);
@@ -165,10 +178,10 @@ export class Gremlin extends Phaser.Events.EventEmitter {
     }
     return false;
   }
-  slide() { if (FREE.has(this.S.st)) { this.go('slide', 0.12); this.fx.dust(10, 1.4); return true; } return false; }
+  slide() { if (this.S.trapT > 0) return false; if (FREE.has(this.S.st)) { this.go('slide', 0.12); this.fx.dust(10, 1.4); return true; } return false; }
   attack() {
     const S = this.S;
-    if (['spin', 'hurt', 'die', 'dead', 'melt', 'crouch', 'victory'].includes(S.st)) return false;
+    if (S.trapT > 0 || ['spin', 'hurt', 'die', 'dead', 'melt', 'crouch', 'victory'].includes(S.st)) return false;
     if (S.atkT >= 0 && S.atkT < TUNING.attackCooldown) return false;
     S.atkT = 0; S.shotFired = false; return true;
   }
@@ -192,7 +205,7 @@ export class Gremlin extends Phaser.Events.EventEmitter {
   idle() { this.S.move = 0; this.go('idle', 0.2); }
   /** Start running from idle. */
   run() { if (this.S.st === 'idle') this.go('run', 0.2); }
-  revive() { const S = this.S; S.inv = 0; S.h = 0; S.vy = 0; S.lock = 1; S.move = 0; this.go('run', 0.25); }
+  revive() { const S = this.S; S.inv = 0; S.h = 0; S.floor = 0; S.trapT = 0; S.vy = 0; S.lock = 1; S.move = 0; this.go('run', 0.25); }
 
   targetPose() {
     const S = this.S, t = S.t;
@@ -207,7 +220,12 @@ export class Gremlin extends Phaser.Events.EventEmitter {
       case 'victory': return winPose(S.stT);
       case 'melt': return meltPose(S.stT, t);
       case 'idle': return idlePose(S.stT);
-      default: return runPose(t);
+      default:
+        if (this.arena) {   // boss arena: ready stance when standing, running legs when moving
+          const k = clamp(Math.abs(S.vx) / 450, 0, 1);
+          return k <= 0.01 ? idlePose(S.t) : lerpPose(idlePose(S.t), runPose(t), k);
+        }
+        return runPose(t);
     }
   }
   // The magic attack only moves the near arm, so it layers over running, jumping or sliding.
@@ -239,30 +257,46 @@ export class Gremlin extends Phaser.Events.EventEmitter {
     const S = this.S, T = TUNING;
     S.t += dt; S.stT += dt;
     S.inv = Math.max(0, S.inv - dt); S.flash = Math.max(0, S.flash - dt);
-    if (S.st === 'crouch' && S.stT >= 0.07) { S.vy = T.jumpV; S.h = 0; S.usedDouble = false; S.airL = S.lockL; S.lock = 0; this.go('air', 0.1); }
+    if (S.st === 'crouch' && S.stT >= 0.07) { S.vy = T.jumpV; S.h = S.floor; S.usedDouble = false; S.airL = S.lockL; S.lock = 0; this.go('air', 0.1); }
     if (S.st === 'spin') { S.spinT += dt; if (S.spinT >= T.spinTime) { S.spinT = -1; this.go('air', 0.12); } }
     if (['air', 'spin', 'hurt', 'die'].includes(S.st)) {
-      S.vy -= T.gravity * dt; S.h += S.vy * dt;
-      if (S.h <= 0 && S.vy < 0) {
-        S.h = 0; S.vy = 0; S.lock = 0;
+      const prevH = S.h; S.vy -= T.gravity * dt; S.h += S.vy * dt;
+      let fl = this.floorUnder(this.x);
+      if (prevH < fl - 2) fl = 0;                         // one-way platforms: below one, the ground is the floor
+      if (S.h <= fl && S.vy < 0) {
+        S.h = fl; S.floor = fl; S.vy = 0; S.lock = 0;
         if (S.st === 'die') { this.go('dead', 0.22); this.scene.cameras.main.shake(250, 0.006); this.fx.dust(14, 1.2); this.emit('died'); }
         else { this.go('land', 0.06); this.fx.dust(8, 0.8); this.emit('landed'); }
       }
     }
     if (S.st === 'melt') {
-      const t = S.stT; S.h = meltLift(t);
+      const t = S.stT; S.h = S.floor + meltLift(t);
       this.fx.meltdownTick(dt, t);
       if (t >= MELT_BLAST_AT && !S.blasted) {
         S.blasted = true; const h = this.handPoint();
         this.scene.cameras.main.shake(400, 0.012); this.scene.cameras.main.flash(250, 230, 200, 255);
         this.fx.burst(h, 1.6); this.emit('meltBlast', { x: h[0], y: h[1] });
       }
-      if (t >= MELT_T) { S.blasted = false; S.h = 0; S.vy = 0; this.go('run', 0.1); S.lock = 0; }
+      if (t >= MELT_T) { S.blasted = false; S.h = S.floor; S.vy = 0; this.go('run', 0.1); S.lock = 0; }
     }
     if (S.st === 'land' && S.stT >= 0.13) this.go('run', 0.16);
     if (S.st === 'slide') { if (Math.random() < dt * 28) this.fx.dust(1, 1); if (S.stT >= T.slideTime) this.go('slideOut', 0.16); }
     if (S.st === 'slideOut' && S.stT >= 0.16) this.go('run', 0.1);
     if (S.lock < 1 && !AIRBORNE.has(S.st)) S.lock = Math.min(1, S.lock + dt / 0.08);
+    // ---- boss arena: moving, dashing, walking off ledges, nets ----
+    if (this.arena) {
+      S.trapT = Math.max(0, S.trapT - dt);
+      const canMove = !this.dead && S.trapT <= 0 && !['victory', 'melt', 'idle'].includes(S.st);
+      let target = canMove ? S.moveDir * 620 : 0;
+      if (canMove && S.dashT > 0) { S.dashT -= dt; target = S.dashDir * 1500; }
+      S.vx += (target - S.vx) * Math.min(1, dt * (S.dashT > 0 ? 30 : 14));
+      this.x = clamp(this.x + S.vx * dt, this.arena.minX, this.arena.maxX);
+      if (this.x === this.arena.minX || this.x === this.arena.maxX) S.vx = 0;
+      if (!AIRBORNE.has(S.st) && S.st !== 'crouch') {
+        const fl = this.floorUnder(this.x);
+        if (fl < S.floor - 2) { S.airL = S.lockL; S.h = S.floor; S.vy = 0; S.usedDouble = false; S.lock = 0; this.go('air', 0.1); }   // walked off a ledge
+      }
+    }
     if (S.atkT >= 0) {
       S.atkT += dt;
       if (!S.shotFired && S.atkT >= 0.08) { S.shotFired = true; const h = this.handPoint(); this.fx.muzzle(h); this.emit('shoot', { x: h[0], y: h[1] }); }
@@ -281,7 +315,7 @@ export class Gremlin extends Phaser.Events.EventEmitter {
     const L = this.lowest(X);
     if (S.lock >= 1 || ['run', 'slide', 'slideOut', 'victory', 'dead', 'idle'].includes(S.st)) S.lockL = L;
     S.last = P;
-    const groundRoot = -(L + P.hop), airRoot = -(S.airL + S.h);
+    const groundRoot = -(L + P.hop + S.floor), airRoot = -(S.airL + S.h);
     const rootY = AIRBORNE.has(S.st) ? airRoot : airRoot + (groundRoot - airRoot) * S.lock;
     S.rootY = rootY;
     // ears and pouch are springs pushed around by vertical motion
@@ -296,7 +330,7 @@ export class Gremlin extends Phaser.Events.EventEmitter {
     // world speed follows the planted foot while running
     const moveTarget = (S.st === 'victory' || S.st === 'dead' || S.st === 'idle') ? 0 : S.st === 'die' ? 0.4 : S.st === 'melt' ? 0.45 : 1;
     S.move += (moveTarget - S.move) * Math.min(1, dt * (moveTarget < S.move ? 3 : 6));
-    if (S.st === 'run') {
+    if (S.st === 'run' && !this.arena) {
       const sp = this.soles(X);
       const nearLow = Math.max(...sp.near.map(q => q[1])) >= Math.max(...sp.far.map(q => q[1]));
       const foot = nearLow ? 'near' : 'far', fx = (sp[foot][0][0] + sp[foot][1][0]) / 2;

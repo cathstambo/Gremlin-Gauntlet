@@ -1,8 +1,9 @@
 # Gremlin Gauntlet
 
-A landscape mobile browser game. This is the **gremlin test run**: the approved purple gremlin as a fully animated, playable character in a short placeholder course.
+A landscape mobile browser game. Current build: the **gremlin test run** (short placeholder course) and the **level 1 boss fight: Eddie, The Mould King**.
 
-**Play:** https://cathstambo.github.io/Gremlin-Gauntlet/ (turn your phone sideways)
+**Play:** https://cathstambo.github.io/Gremlin-Gauntlet/ (turn your phone sideways)  
+**Straight to the boss:** https://cathstambo.github.io/Gremlin-Gauntlet/#boss
 
 ## Controls
 
@@ -10,9 +11,10 @@ A landscape mobile browser game. This is the **gremlin test run**: the approved 
 |---|---|---|
 | Jump / double jump | Tap, swipe up, or JUMP | Space, ↑, W |
 | Slide | Swipe down or SLIDE | ↓, S |
-| Purple magic | Swipe right or MAGIC | →, D, F |
+| Purple magic | MAGIC (or swipe right in the run) | F, J, Enter (→ in the run) |
 | Gremlin Meltdown (Chaos Meter full) | MELTDOWN button | M, E |
-| Pause (hitboxes, slow motion) | II button | P, Esc |
+| Move left / right (boss arena only) | Hold ◀ ▶, or swipe left/right to dash | ← →, A D |
+| Pause (hitboxes, slow motion, switch level) | II button | P, Esc |
 
 ## How the gremlin is animated
 
@@ -26,5 +28,7 @@ The gremlin is a **cut-out rig**: the approved right-side artwork is cut into 15
 - `src/gremlin/` – the reusable character: `Gremlin.js` (rig, moves, hitbox), `poses.js` (every pose), `Effects.js`
 - `src/scenes/` – `Boot` (loading, placeholder art), `Run` (the test course), `UI` (HUD and controls)
 - `src/course.js` – the fixed test course layout
+- `assets/eddie/`, `src/eddie/` – Eddie's rig parts, poses and moves
+- `src/scenes/Boss.js` – Eddie's arena, attacks, phases and AI; numbers to tune are in `BOSS_TUNING`
 
 Obstacles, enemies and background are deliberately plain placeholders. Jump height, slide length and other numbers in `TUNING` (in `Gremlin.js`) are placeholders until playtesting.
