@@ -140,6 +140,8 @@ export class Boss extends Phaser.Scene {
     else if (name === 'magic') g.attack();
     else if (name === 'left') g.setMove(down ? -1 : (g.S.moveDir === -1 ? 0 : g.S.moveDir));
     else if (name === 'right') g.setMove(down ? 1 : (g.S.moveDir === 1 ? 0 : g.S.moveDir));
+    else if (name === 'stick') g.setMove(down);                                   // joystick: down = -1 / 0 / 1
+    else if (name === 'slideDir') { if (down) { g.setMove(down); g.face = down; } g.slide(); }   // slide towards the side the stick leans
     else if (name === 'dashL') g.dash(-1);
     else if (name === 'dashR') g.dash(1);
     else if (name === 'meltdown' && this.chaos >= 100 && g.meltdown()) { this.chaos = 0; this.events.emit('chaos', 0); }

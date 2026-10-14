@@ -49,24 +49,22 @@ export class UI extends Phaser.Scene {
     this.meltBtn = this.roundButton(W - 260, by - 220, 84, 'MELT\nDOWN', () => this.act('meltdown'), 26, ACID);
     this.meltBtn.setVisible(false);
     if (this.isBoss) {
-      // left thumb: hold arrows to move, SLIDE above them
-      this.roundButton(120, by, 84, '◀', () => this.act('left', true), 46, 0xece6f5, () => this.act('left', false));
-      this.roundButton(320, by, 84, '▶', () => this.act('right', true), 46, 0xece6f5, () => this.act('right', false));
-      this.roundButton(220, by - 200, 80, 'SLIDE', () => this.act('slide'), 28);
+      this.makeStick(240, by - 40);   // left thumb: floating joystick (move, pull down = slide, flick up = jump)
     } else {
       this.roundButton(150, by, R, 'SLIDE', () => this.act('slide'));
     }
 
     // swipe / tap anywhere else
-    this.input.on('pointerdown', (p, over) => { if (over.length) return; this.gesture = { x: p.x, y: p.y, done: false, id: p.id }; });
+    this.input.on('pointerdown', (p, over) => { if (over.length) return; if (this.stickDown(p)) return; this.gesture = { x: p.x, y: p.y, done: false, id: p.id }; });
     this.input.on('pointermove', p => {
+      if (this.stickMove(p)) return;
       const g = this.gesture; if (!g || g.done || g.id !== p.id) return;
       const dx = p.x - g.x, dy = p.y - g.y;
       if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 70) { g.done = true; this.act(this.isBoss ? (dx > 0 ? 'dashR' : 'dashL') : (dx > 0 ? 'magic' : 'none')); }
       else if (dy > 60) { g.done = true; this.act('slide'); }
       else if (dy < -60) { g.done = true; this.act('jump'); }
     });
-    this.input.on('pointerup', p => { const g = this.gesture; if (g && !g.done && g.id === p.id) this.act('jump'); this.gesture = null; });
+    this.input.on('pointerup', p => { if (this.stickUp(p)) return;  const g = this.gesture; if (g && !g.done && g.id === p.id) this.act('jump'); this.gesture = null; });
     // keyboard
     this.input.keyboard.on('keydown', e => {
       if (e.repeat) return;
@@ -90,7 +88,7 @@ export class UI extends Phaser.Scene {
     this.overlay = this.add.container(0, 0).setDepth(50);
     const stage = this.registry.get('stage') || 1, fresh = !this.registry.get('carry');
     if (this.isBoss) this.showMessage('THE MOULD KING', 'Level 1 boss · The Festering Swamp · tap to start',
-      '◀ ▶ or swipe left/right: move   ·   Tap / swipe up: jump (tap again for double jump)\nSwipe down: slide   ·   MAGIC: only hurts Eddie while he’s VULNERABLE\nWatch the markers: green = mould bomb, red = danger, gold = where Eddie lands');
+      'Left thumb: drag to run · pull down (or diagonally) to slide · flick up to jump\nJUMP button: jump and double jump   ·   MAGIC: only hurts Eddie while he’s VULNERABLE\nWatch the markers: green = mould bomb, red = danger, gold = where Eddie lands');
     else if (stage === 2) this.showMessage('THE MOULD SWAMP · PART 2', 'Deeper in. Nastier. · tap to start', 'Eddie waits at the end of this one.');
     else this.showMessage('GREMLIN GAUNTLET', 'World 1 · The Mould Swamp · tap to start', 'Tap / swipe up: jump (tap again in the air to double jump)\nSwipe down: slide   ·   Swipe right: magic\nCollect 10 crystals to fill the Chaos Meter, then hit MELTDOWN', true);
 
@@ -120,6 +118,45 @@ export class UI extends Phaser.Scene {
     c.on('pointerdown', () => { c.held = true; });
     c.on('pointerup', up); c.on('pointerout', up);
     return c;
+  }
+
+  // ---------- boss joystick ----------
+  // Put a thumb anywhere on the left side: the stick appears under it. Lean left/right to run; pull down (straight or
+  // diagonally) to slide that way; flick up to jump (lean to jump sideways). Let go to stop.
+  makeStick(x, y) {
+    const R = 120;
+    this.stick = { home: [x, y], R, id: null, base: [x, y], dir: 0, slideArmed: true, jumpArmed: true };
+    this.stickBase = this.add.circle(x, y, R, 0x0e1614, 0.45).setStrokeStyle(4, 0xece6f5, 0.55);
+    this.stickKnob = this.add.circle(x, y, 52, 0xece6f5, 0.35).setStrokeStyle(4, 0xece6f5, 0.8);
+    this.stickHint = this.add.text(x, y + R + 30, 'MOVE · pull ↓ to SLIDE', { fontFamily: FONT, fontSize: 26, color: INK }).setOrigin(0.5).setAlpha(0.6);
+    this.stickZone = p => p.x < this.scale.width * 0.42 && p.y > 260;
+  }
+  stickDown(p) {
+    const s = this.stick; if (!s || s.id !== null || !this.stickZone(p) || (this.overlay.visible)) return false;
+    s.id = p.id; s.base = [p.x, p.y]; s.slideArmed = s.jumpArmed = true;
+    this.stickBase.setPosition(p.x, p.y).setAlpha(1); this.stickKnob.setPosition(p.x, p.y).setFillStyle(0x9b4dff, 0.7);
+    this.stickHint.setAlpha(0);
+    return true;
+  }
+  stickMove(p) {
+    const s = this.stick; if (!s || s.id !== p.id) return false;
+    let dx = p.x - s.base[0], dy = p.y - s.base[1];
+    const d = Math.hypot(dx, dy); if (d > s.R) { dx *= s.R / d; dy *= s.R / d; }
+    this.stickKnob.setPosition(s.base[0] + dx, s.base[1] + dy);
+    const nx = dx / s.R, ny = dy / s.R;
+    const dir = Math.abs(nx) > 0.3 ? Math.sign(nx) : 0;
+    if (dir !== s.dir) { s.dir = dir; this.act('stick', dir); }
+    if (ny > 0.5 && s.slideArmed) { s.slideArmed = false; this.act('slideDir', Math.abs(nx) > 0.2 ? Math.sign(nx) : 0); }
+    if (ny < 0.3) s.slideArmed = true;
+    if (ny < -0.6 && s.jumpArmed) { s.jumpArmed = false; this.act('jump'); }
+    if (ny > -0.3) s.jumpArmed = true;
+    return true;
+  }
+  stickUp(p) {
+    const s = this.stick; if (!s || s.id !== p.id) return false;
+    s.id = null; s.dir = 0; this.act('stick', 0);
+    this.stickBase.setPosition(...s.home).setAlpha(0.6); this.stickKnob.setPosition(...s.home).setFillStyle(0xece6f5, 0.35);
+    return true;
   }
 
   /** Music on/off. Off by default; the choice is remembered on this device. */

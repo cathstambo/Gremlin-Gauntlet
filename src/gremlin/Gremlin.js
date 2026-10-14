@@ -294,7 +294,7 @@ export class Gremlin extends Phaser.Events.EventEmitter {
       const canMove = !this.dead && S.trapT <= 0 && !['victory', 'melt', 'idle'].includes(S.st);
       let target = canMove ? S.moveDir * 620 * (S.slowT > 0 ? 0.5 : 1) : 0;
       if (canMove && S.dashT > 0) { S.dashT -= dt; target = S.dashDir * 1500; }
-      if (canMove && S.st === 'slide') target = this.face * 760;   // slides carry you forward (and under a boss's legs)
+      if (canMove && S.st === 'slide') target = (S.moveDir || this.face) * 760;   // slides carry you the way you're steering (and under a boss's legs)   // slides carry you forward (and under a boss's legs)
       S.vx += (target - S.vx) * Math.min(1, dt * (S.dashT > 0 ? 30 : 14));
       this.x = clamp(this.x + S.vx * dt, this.arena.minX, this.arena.maxX);
       if (this.x === this.arena.minX || this.x === this.arena.maxX) S.vx = 0;
