@@ -17,6 +17,7 @@ export class UI extends Phaser.Scene {
 
     // hearts
     this.heartIcons = [0, 1, 2].map(i => this.add.image(70 + i * 92, 70, 'heart').setScale(0.8));
+    this.scoreTxt = this.add.text(30, 120, '0', { fontFamily: FONT, fontSize: 40, color: '#ffd76a', stroke: '#2b1a05', strokeThickness: 8 }).setOrigin(0, 0);
     // Chaos Meter
     const cx = this.isBoss ? 760 : W / 2, mw = this.isBoss ? 420 : 520;
     this.add.text(cx, 34, 'CHAOS', { fontFamily: FONT, fontSize: 30, color: INK }).setOrigin(0.5).setAlpha(0.85);
@@ -85,21 +86,25 @@ export class UI extends Phaser.Scene {
 
     // overlays
     this.overlay = this.add.container(0, 0).setDepth(50);
+    const stage = this.registry.get('stage') || 1, fresh = !this.registry.get('carry');
     if (this.isBoss) this.showMessage('THE MOULD KING', 'Level 1 boss · The Festering Swamp · tap to start',
       '◀ ▶ or swipe left/right: move   ·   Tap / swipe up: jump (tap again for double jump)\nSwipe down: slide   ·   MAGIC: only hurts Eddie while he’s VULNERABLE\nWatch the markers: green = mould bomb, red = danger, gold = where Eddie lands');
-    else this.showMessage('GREMLIN GAUNTLET', 'Test run · tap to start', 'Tap / swipe up: jump (tap again in the air to double jump)\nSwipe down: slide   ·   Swipe right: magic\nCollect 10 crystals to fill the Chaos Meter, then hit MELTDOWN', true);
+    else if (stage === 2) this.showMessage('THE MOULD SWAMP · PART 2', 'Deeper in. Nastier. · tap to start', 'Eddie waits at the end of this one.');
+    else this.showMessage('GREMLIN GAUNTLET', 'World 1 · The Mould Swamp · tap to start', 'Tap / swipe up: jump (tap again in the air to double jump)\nSwipe down: slide   ·   Swipe right: magic\nCollect 10 crystals to fill the Chaos Meter, then hit MELTDOWN', true);
 
     const ev = this.run.events;
     ev.on('hearts', n => this.setHearts(n));
     ev.on('chaos', c => this.setChaos(c));
+    ev.on('score', n => this.setScore(n));
     ev.on('bosshp', (f, ph) => this.setBoss(f, ph));
     ev.on('bossvuln', d => { this.tweens.killTweensOf(this.vulTxt); this.vulTxt.setAlpha(1); this.tweens.add({ targets: this.vulTxt, alpha: 0, delay: d * 1000 - 300, duration: 300 }); });
-    ev.on('gameover', msg => this.showMessage(msg || 'SPLAT.', this.isBoss ? 'Tap to retry the boss (3 hearts, Chaos Meter reset)' : 'Tap to try again'));
+    ev.on('gameover', msg => this.showMessage(msg || 'SPLAT.', this.isBoss ? 'Tap to retry the boss (3 hearts, Chaos Meter reset)' : 'Tap to restart the swamp from the beginning'));
     ev.on('finished', info => this.time.delayedCall(this.isBoss ? 300 : 1200, () => {
-      if (this.isBoss) this.showMessage('BOSS DEFEATED', `The Mould King has been mouldered · ${info.time.toFixed(1)} s · ${info.hearts} heart${info.hearts === 1 ? '' : 's'} left`, 'Tap to fight him again');
-      else this.showMessage('YOU MAGNIFICENT LITTLE BASTARD!', 'Course complete · tap to face THE MOULD KING');
+      if (this.isBoss) this.showMessage('BOSS DEFEATED', `The Mould King has been mouldered · ${info.time.toFixed(1)} s · score ${info.score.toLocaleString()}`, info.breakdown + '\n\nTap to play World 1 again');
+      else if (info.stage === 1) this.showMessage('SWAMP PART 1 CLEARED', 'Tap for part 2', `Score so far: ${info.score.toLocaleString()}`);
+      else this.showMessage('SWAMP CLEARED', 'Tap to face THE MOULD KING', `Score so far: ${info.score.toLocaleString()}`);
     }));
-    this.setHearts(3); this.setChaos(0);
+    this.setHearts(this.run.hearts ?? 3); this.setChaos(this.run.chaos ?? 0); this.setScore(this.run.score ?? 0);
   }
 
   roundButton(x, y, r, label, fn, size = 30, ring = 0xece6f5, onUp = null) {
@@ -115,7 +120,17 @@ export class UI extends Phaser.Scene {
     return c;
   }
 
-  // switch between the test course and the boss arena
+  /** Start World 1 again from swamp part 1. */
+  newLevel() { this.registry.set('stage', 1); this.registry.remove('carry'); this.goTo('Run'); }
+  /** Testing shortcut: part 1 → part 2 → boss → back to part 1 (fresh hearts each time). */
+  skipAhead() {
+    if (this.isBoss) return this.newLevel();
+    this.registry.remove('carry');
+    if ((this.registry.get('stage') || 1) === 1) { this.registry.set('stage', 2); this.goTo('Run'); } else this.goTo('Boss');
+  }
+  setScore(n) { this.scoreTxt.setText(n.toLocaleString()); }
+
+  // switch between the running stages and the boss arena
   goTo(sceneKey) {
     const cur = this.registry.get('gameScene') || 'Run';
     this.registry.set('gameScene', sceneKey);
@@ -127,9 +142,9 @@ export class UI extends Phaser.Scene {
     if (this.overlay.visible && !this.paused) {
       if (!down) return;
       if (r.mode === 'ready') { this.overlay.setVisible(false); r.startRun(); }
-      else if (r.mode === 'gameover') r.restart();
-      else if (r.mode === 'finished') this.goTo('Boss');
-      else if (r.mode === 'won') r.restart();
+      else if (r.mode === 'gameover') this.isBoss ? r.retry() : r.restartLevel();
+      else if (r.mode === 'finished') r.next();
+      else if (r.mode === 'won') this.newLevel();
       return;
     }
     if (this.paused) return;
@@ -148,7 +163,7 @@ export class UI extends Phaser.Scene {
     const opts = [
       ['Resume', () => this.togglePause()],
       [this.isBoss ? 'Restart boss fight' : 'Restart run', () => { this.paused = false; this.scene.resume(this.run.scene.key); this.run.restart(); }],
-      [this.isBoss ? 'Go to the test run' : 'Skip to the boss', () => { this.paused = false; this.goTo(this.isBoss ? 'Run' : 'Boss'); }],
+      [this.isBoss ? 'Back to swamp part 1' : (this.registry.get('stage') === 2 ? 'Skip to the boss' : 'Skip to swamp part 2'), () => { this.paused = false; this.skipAhead(); }],
       [() => `Hitboxes: ${this.run.showBoxes ? 'ON' : 'OFF'}`, () => { this.run.showBoxes = !this.run.showBoxes; }],
       [() => `Slow motion: ${this.run.timeScale < 1 ? 'ON' : 'OFF'}`, () => { this.run.timeScale = this.run.timeScale < 1 ? 1 : 0.25; }],
     ];
@@ -172,7 +187,7 @@ export class UI extends Phaser.Scene {
     if (bossLink) {
       const b = this.add.rectangle(W / 2, H - 150, 640, 96, 0x22341a, 1).setStrokeStyle(4, MOULD, 0.9).setInteractive({ useHandCursor: true });
       const t = this.add.text(W / 2, H - 150, 'Skip to the boss: THE MOULD KING', { fontFamily: FONT, fontSize: 36, color: '#d8ff8a' }).setOrigin(0.5);
-      b.on('pointerdown', (p, x, y, e) => { e.stopPropagation(); this.goTo('Boss'); });
+      b.on('pointerdown', (p, x, y, e) => { e.stopPropagation(); this.registry.remove('carry'); this.goTo('Boss'); });
       o.add([b, t]);
     }
     o.setVisible(true);

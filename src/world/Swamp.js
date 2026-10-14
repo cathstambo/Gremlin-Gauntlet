@@ -7,6 +7,8 @@ const PROPS = ['prop_mush_orange', 'prop_stump', 'prop_bridge', 'prop_skull', 'p
 export const SWAMP_FILES = {
   bg_far: 'assets/swamp/bg_far.jpg', bg_mid: 'assets/swamp/bg_mid.webp', bg_near: 'assets/swamp/bg_near.webp', swamp_ground: 'assets/swamp/ground.webp',
   ...Object.fromEntries(PROPS.map(p => [p, `assets/swamp/${p}.webp`])),
+  ...Object.fromEntries(['haz_roots', 'haz_vines_hang', 'haz_mould', 'haz_sludge', 'plat_small', 'plat_medium', 'plat_large', 'plat_wood',
+    'pick_taco', 'pick_margarita', 'pick_crystal', 'pick_potion'].map(p => [p, `assets/swamp/${p}.webp`])),
 };
 
 // art measurements (pixels in the prepared files)
@@ -22,8 +24,8 @@ export class Swamp {
     const farS = H / t('bg_far').height;
     this.far = scene.add.tileSprite(0, 0, W, H, 'bg_far').setOrigin(0, 0).setTileScale(farS).setDepth(0);
     const midS = 1.05, nearS = 0.95, gS = 1.0;
-    this.mid = scene.add.tileSprite(0, groundY + 40 - MID_BOTTOM * midS, W, t('bg_mid').height * midS, 'bg_mid').setOrigin(0, 0).setTileScale(midS).setDepth(1).setTint(0x8c9a94);   // background darkened a touch so creatures and hazards stand out
-    this.near = scene.add.tileSprite(0, groundY + 70 - NEAR_BOTTOM * nearS, W, t('bg_near').height * nearS, 'bg_near').setOrigin(0, 0).setTileScale(nearS).setDepth(2).setTint(0x8f9a8f);
+    this.mid = scene.add.tileSprite(0, groundY + 40 - MID_BOTTOM * midS, W, t('bg_mid').height * midS, 'bg_mid').setOrigin(0, 0).setTileScale(midS).setDepth(1).setTint(0x74827c);   // background darkened a touch so creatures and hazards stand out
+    this.near = scene.add.tileSprite(0, groundY + 70 - NEAR_BOTTOM * nearS, W, t('bg_near').height * nearS, 'bg_near').setOrigin(0, 0).setTileScale(nearS).setDepth(2).setTint(0x6c766e);
     this.ground = scene.add.tileSprite(0, groundY - GROUND_SURFACE * gS, W, t('swamp_ground').height * gS, 'swamp_ground').setOrigin(0, 0).setTileScale(gS).setDepth(4);
     // decorations: a fixed, repeating sequence so every run looks the same (fair-comparison rule)
     this.props = [];
@@ -31,7 +33,7 @@ export class Swamp {
       let x = 700;
       for (let i = 0; i < 24; i++) {
         const key = PROPS[i % PROPS.length];
-        const im = scene.add.image(0, groundY + 30, key).setOrigin(0.5, 1).setScale(key === 'prop_sign' ? 0.85 : 0.75).setDepth(3).setTint(0xb0bab0);
+        const im = scene.add.image(0, groundY + 30, key).setOrigin(0.5, 1).setScale(key === 'prop_sign' ? 0.8 : 0.62).setDepth(3).setTint(key === 'prop_sign' ? 0xb0bab0 : 0x8a948a);
         this.props.push({ im, base: x }); x += 1150 + ((i * 397) % 650);
       }
       this.propSpan = x;

@@ -45,10 +45,12 @@ export class Gremlin extends Phaser.Events.EventEmitter {
       atkT: -1, shotFired: false, inv: 0, flash: 0, blasted: false,
       ear: { a: 0, v: 0 }, pouch: { a: 0, v: 0 }, prevRootY: null, prevVy: 0,
       speed: 1500, move: 0, prevFoot: null, rootY: 0, stompQ: -1,
-      floor: 0, vx: 0, moveDir: 0, dashT: 0, trapT: 0,
+      floor: 0, vx: 0, moveDir: 0, dashT: 0, trapT: 0, slowT: 0,
     };
     /** Boss arenas: {minX, maxX} lets the gremlin move left/right; floorAt(x) gives platform height in px above the ground. */
     this.arena = null; this.floorAt = null;
+    this.face = 1;             // 1 = facing right (as drawn), -1 = facing left (boss arenas only)
+    this.faceTarget = null;    // x the gremlin turns towards when standing still (the boss)
     this.fx = new Effects(scene, this);
     this.buildDisplay();
     this.update(0);
@@ -148,7 +150,7 @@ export class Gremlin extends Phaser.Events.EventEmitter {
     return Math.max(...ys);
   }
   // art-space point → screen
-  toScreen(X, n, x, y) { const q = n === 'root' ? [x, y] : this.at(X, n, x, y); return [this.x + q[0] * this.k, this.groundY + (this.S.rootY + q[1]) * this.k]; }
+  toScreen(X, n, x, y) { const q = n === 'root' ? [x, y] : this.at(X, n, x, y); return [this.x + q[0] * this.k * this.face, this.groundY + (this.S.rootY + q[1]) * this.k]; }
 
   // ---------- moves ----------
   go(st, blend) { const S = this.S; S.from = S.last || runPose(S.t); S.st = st; S.stT = 0; S.blend = blend; this.emit('state', st); }
@@ -156,6 +158,9 @@ export class Gremlin extends Phaser.Events.EventEmitter {
   /** Platform height under a screen x, in art units. */
   floorUnder(x) { return this.floorAt ? this.floorAt(x) / this.k : 0; }
   get trapped() { return this.S.trapT > 0; }
+  /** Stuck in mould: moves at half speed for a moment. */
+  slow(t) { this.S.slowT = Math.max(this.S.slowT, t); }
+  get slowed() { return this.S.slowT > 0; }
   /** Caught in a mould net: frozen in place; every jump press shortens it. */
   trap(t) { const S = this.S; S.trapT = t; S.vx = 0; S.dashT = 0; }
   /** Hold-to-move in boss arenas: dir = -1, 0 or 1. */
@@ -166,7 +171,7 @@ export class Gremlin extends Phaser.Events.EventEmitter {
   get dead() { return this.S.st === 'die' || this.S.st === 'dead'; }
   get invulnerable() { return this.S.inv > 0 || this.S.st === 'melt' || this.dead; }
   /** Scroll speed of the world in screen pixels per second (matches the planted foot, so feet never skate). */
-  get worldSpeed() { if (this.arena) return 0; return this.S.speed * this.S.move * this.k * (this.S.st === 'slide' ? 1.05 : 1); }
+  get worldSpeed() { if (this.arena) return 0; return this.S.speed * this.S.move * this.k * (this.S.st === 'slide' ? 1.05 : 1) * (this.S.slowT > 0 ? 0.5 : 1); }
 
   jump() {
     const S = this.S;
@@ -248,15 +253,15 @@ export class Gremlin extends Phaser.Events.EventEmitter {
     const S = this.S; if (this.dead) return null;
     const b = (S.st === 'slide') ? BOX_SLIDE : BOX_STAND, k = this.k;
     const feet = this.groundY - S.h * k;
-    const bx = this.x - this.B[0] * k;
-    return new Phaser.Geom.Rectangle(bx + b.x0 * k, feet - (812 - b.y0) * k, (b.x1 - b.x0) * k, (b.y1 - b.y0) * k);
+    const xa = this.x + (b.x0 - this.B[0]) * k * this.face, xb = this.x + (b.x1 - this.B[0]) * k * this.face;
+    return new Phaser.Geom.Rectangle(Math.min(xa, xb), feet - (812 - b.y0) * k, Math.abs(xb - xa), (b.y1 - b.y0) * k);
   }
 
   // ---------- simulation ----------
   update(dt) {
     const S = this.S, T = TUNING;
     S.t += dt; S.stT += dt;
-    S.inv = Math.max(0, S.inv - dt); S.flash = Math.max(0, S.flash - dt);
+    S.inv = Math.max(0, S.inv - dt); S.flash = Math.max(0, S.flash - dt); S.slowT = Math.max(0, S.slowT - dt);
     if (S.st === 'crouch' && S.stT >= 0.07) { S.vy = T.jumpV; S.h = S.floor; S.usedDouble = false; S.airL = S.lockL; S.lock = 0; this.go('air', 0.1); }
     if (S.st === 'spin') { S.spinT += dt; if (S.spinT >= T.spinTime) { S.spinT = -1; this.go('air', 0.12); } }
     if (['air', 'spin', 'hurt', 'die'].includes(S.st)) {
@@ -287,15 +292,22 @@ export class Gremlin extends Phaser.Events.EventEmitter {
     if (this.arena) {
       S.trapT = Math.max(0, S.trapT - dt);
       const canMove = !this.dead && S.trapT <= 0 && !['victory', 'melt', 'idle'].includes(S.st);
-      let target = canMove ? S.moveDir * 620 : 0;
+      let target = canMove ? S.moveDir * 620 * (S.slowT > 0 ? 0.5 : 1) : 0;
       if (canMove && S.dashT > 0) { S.dashT -= dt; target = S.dashDir * 1500; }
+      if (canMove && S.st === 'slide') target = this.face * 760;   // slides carry you forward (and under a boss's legs)
       S.vx += (target - S.vx) * Math.min(1, dt * (S.dashT > 0 ? 30 : 14));
       this.x = clamp(this.x + S.vx * dt, this.arena.minX, this.arena.maxX);
       if (this.x === this.arena.minX || this.x === this.arena.maxX) S.vx = 0;
-      if (!AIRBORNE.has(S.st) && S.st !== 'crouch') {
-        const fl = this.floorUnder(this.x);
-        if (fl < S.floor - 2) { S.airL = S.lockL; S.h = S.floor; S.vy = 0; S.usedDouble = false; S.lock = 0; this.go('air', 0.1); }   // walked off a ledge
+      // turn to face where you're going; when standing still, face the boss
+      if (!this.dead && !['melt', 'victory'].includes(S.st)) {
+        const want = S.dashT > 0 ? S.dashDir : S.moveDir !== 0 ? S.moveDir : (this.faceTarget != null ? Math.sign(this.faceTarget - this.x) || this.face : this.face);
+        if (want !== this.face && S.trapT <= 0) this.face = want;
       }
+    }
+    // walked off a ledge (or a floating platform scrolled away underneath)
+    if (this.floorAt && !AIRBORNE.has(S.st) && !['crouch', 'melt', 'dead', 'victory'].includes(S.st)) {
+      const fl = this.floorUnder(this.x);
+      if (fl < S.floor - 2) { S.airL = S.lockL; S.h = S.floor; S.vy = 0; S.usedDouble = false; S.lock = 0; this.go('air', 0.1); }
     }
     if (S.atkT >= 0) {
       S.atkT += dt;
@@ -345,6 +357,7 @@ export class Gremlin extends Phaser.Events.EventEmitter {
   render(P) {
     const S = this.S, ang = this.angles(P);
     this.root.setPosition(this.x, this.groundY + S.rootY * this.k);
+    this.root.scaleX = this.k * this.face;
     this.spinC.rotation = (P.spin || 0) * Math.PI / 180;
     this.squash.setScale(P.sx, P.sy);
     this.bodyC.rotation = P.lean * Math.PI / 180;
@@ -361,8 +374,8 @@ export class Gremlin extends Phaser.Events.EventEmitter {
     // Meltdown fur spikes
     this.drawSpikes(P.glow);
     // hit flash (white silhouette) and invulnerability blink (separate from the short ouch reaction)
-    const flash = S.flash > 0;
-    if (flash !== this._flashing) { this._flashing = flash; for (const im of this.images) flash ? im.setTintFill(0xffffff) : im.clearTint(); }
+    const tint = S.flash > 0 ? 'flash' : S.slowT > 0 ? 'slow' : 'none';
+    if (tint !== this._tint) { this._tint = tint; for (const im of this.images) tint === 'flash' ? im.setTintFill(0xffffff) : tint === 'slow' ? im.setTint(0xb8f070) : im.clearTint(); }
     this.root.visible = !(S.inv > 0 && S.st !== 'hurt' && Math.floor(S.inv * 12.5) % 2 === 0);
   }
   drawSpikes(g) {

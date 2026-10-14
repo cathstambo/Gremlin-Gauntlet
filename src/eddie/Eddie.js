@@ -14,6 +14,7 @@ export class Eddie {
     this.sink = 0;           // px pushed below the ground (dives, defeat)
     this.t = 0; this.move = null; this.mt = 0; this.evI = 0; this.from = null; this.blendIn = 0.18; this.last = null;
     this.flashT = 0; this.vulnT = 0; this.timeScale = 1;
+    this.face = 1;   // 1 = facing left (as drawn), -1 = facing right
     this.onEvent = () => {};
     this.build();
     this.update(0);
@@ -101,6 +102,7 @@ export class Eddie {
   render(P) {
     const ang = n => this.R.angle(P, n) * Math.PI / 180;
     this.root.setPosition(this.x, this.rootY);
+    this.root.scaleX = this.k * this.face;
     this.dxC.x = P.dx; this.scaleC.setScale(P.sx, P.sy); this.torsoC.rotation = P.lean * Math.PI / 180;
     for (const n of ORDER) for (const c of this.jointCs[n]) c.rotation = ang(n);
     const amp = 10 * (P.sway ?? 1), t = this.t;
@@ -123,7 +125,7 @@ export class Eddie {
   }
 
   // ---------- geometry in screen space ----------
-  toScreen(n, x, y) { const q = this.R.at(this.X, n, x, y); return [this.x + q[0] * this.k, this.rootY + q[1] * this.k]; }
+  toScreen(n, x, y) { const q = this.R.at(this.X, n, x, y); return [this.x + q[0] * this.k * this.face, this.rootY + q[1] * this.k]; }
   handPoint() { return this.toScreen('foN', this.RIG._hand[0], this.RIG._hand[1]); }
   mouthPoint() { return this.toScreen('head', this.RIG._mouth[0], this.RIG._mouth[1]); }
   headTop() { return this.toScreen('head', 190, 40); }

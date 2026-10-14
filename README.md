@@ -1,6 +1,6 @@
 # Gremlin Gauntlet
 
-A landscape mobile browser game. Current build: the **gremlin test run** (short placeholder course) and the **level 1 boss fight: Eddie, The Mould King**.
+A landscape mobile browser game. Current build: **World 1, The Mould Swamp**: two running stages (part 1 easier, part 2 harder) and the boss fight with **Eddie, The Mould King**.
 
 **Play:** https://cathstambo.github.io/Gremlin-Gauntlet/ (turn your phone sideways)  
 **Straight to the boss:** https://cathstambo.github.io/Gremlin-Gauntlet/#boss
@@ -27,7 +27,9 @@ The gremlin is a **cut-out rig**: the approved right-side artwork is cut into 15
 - `assets/gremlin/` – the 15 rig parts and `rig.json` (pivot points)
 - `src/gremlin/` – the reusable character: `Gremlin.js` (rig, moves, hitbox), `poses.js` (every pose), `Effects.js`
 - `src/scenes/` – `Boot` (loading, placeholder art), `Run` (the test course), `UI` (HUD and controls)
-- `src/course.js` – the fixed test course layout
+- `src/course.js` – the two fixed swamp stage layouts (`STAGE1`, `STAGE2`)
+- `src/world/Swamp.js` – the scrolling swamp backdrop; `assets/swamp/` – backgrounds, ground, decorations, hazards, platforms, pickups
+- `src/creatures/` – frog, alligator, bat and web spider
 - `assets/eddie/`, `src/eddie/` – Eddie's rig parts, poses and moves
 - `src/scenes/Boss.js` – Eddie's arena, attacks, phases and AI; numbers to tune are in `BOSS_TUNING`
 

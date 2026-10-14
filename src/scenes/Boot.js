@@ -19,6 +19,7 @@ export class Boot extends Phaser.Scene {
     this.load.json('eddieRig', 'assets/eddie/rig.json');
     this.load.json('creatures', 'assets/creatures/creatures.json');
     for (const [k, f] of Object.entries(SWAMP_FILES)) this.load.image(k, f);
+    this.load.json('swampSizes', 'assets/swamp/sizes.json');
     for (const [kind, parts] of Object.entries(CREATURE_PARTS)) for (const n of parts) this.load.image(`c_${kind}_${n}`, `assets/creatures/${kind}_${n}.png`);
     for (const n of EDDIE_PARTS) this.load.image('e_' + n, `assets/eddie/${n}.png`);
   }

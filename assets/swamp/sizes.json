@@ -1,0 +1,62 @@
+{
+ "haz_roots": {
+  "w": 388,
+  "h": 173,
+  "top": 54
+ },
+ "haz_vines_hang": {
+  "w": 364,
+  "h": 268,
+  "top": 54
+ },
+ "haz_mould": {
+  "w": 378,
+  "h": 160,
+  "top": 51
+ },
+ "haz_sludge": {
+  "w": 378,
+  "h": 196,
+  "top": 89
+ },
+ "plat_small": {
+  "w": 226,
+  "h": 184,
+  "top": 28
+ },
+ "plat_medium": {
+  "w": 396,
+  "h": 206,
+  "top": 45
+ },
+ "plat_large": {
+  "w": 452,
+  "h": 262,
+  "top": 86
+ },
+ "plat_wood": {
+  "w": 290,
+  "h": 268,
+  "top": 98
+ },
+ "pick_taco": {
+  "w": 204,
+  "h": 169,
+  "top": 23
+ },
+ "pick_margarita": {
+  "w": 179,
+  "h": 183,
+  "top": 12
+ },
+ "pick_crystal": {
+  "w": 123,
+  "h": 200,
+  "top": 38
+ },
+ "pick_potion": {
+  "w": 167,
+  "h": 192,
+  "top": 49
+ }
+}

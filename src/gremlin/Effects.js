@@ -30,9 +30,9 @@ export class Effects {
   muzzle(c) { this.p.push({ k: 'ring', x: c[0], y: c[1], r: 6, life: 0.18, max: 0.18, grow: 500 }); }
   shock(c) { for (let i = 0; i < 6; i++) this.p.push({ k: 'line', x: c[0], y: c[1], a: -Math.PI / 2 + (i - 2.5) * 0.42, life: 0.32, max: 0.32 }); }
   dust(n, str, pos) {
-    const c = pos || [this.g.x - 60 * this.k, this.g.groundY - this.g.S.h * this.k];
+    const c = pos || [this.g.x - 60 * this.k * this.g.face, this.g.groundY - this.g.S.h * this.k];
     for (let i = 0; i < n; i++) this.p.push({ k: 'dust', x: c[0] + rnd(-25, 25), y: c[1] - Math.random() * 8,
-      vx: -rnd(80, 340) * str, vy: -rnd(30, 150) * str, life: rnd(0.4, 0.7), max: 0.7, sz: rnd(7, 18) });
+      vx: -rnd(80, 340) * str * this.g.face, vy: -rnd(30, 150) * str, life: rnd(0.4, 0.7), max: 0.7, sz: rnd(7, 18) });
   }
   meltdownTick(dt, t) {
     const c = this.g.centre(), k = this.k;
@@ -112,7 +112,7 @@ export class Effects {
       const e = g.pupilPoint(), r = 90 * k * (0.8 + 0.2 * Math.sin(S.t * 30));
       this.eyeGlow.setPosition(e[0], e[1]).setDisplaySize(r * 2.4, r * 2.4).setAlpha(gl);
       A.lineStyle(5, ACID, 0.8 * gl);
-      for (let i = 0; i < 3; i++) A.lineBetween(e[0] - 10 * k, e[1] + (i - 1) * 14 * k, e[0] - (120 + 40 * i) * k * gl, e[1] + (i - 1) * 24 * k - 20 * k);
+      for (let i = 0; i < 3; i++) A.lineBetween(e[0] - 10 * k * g.face, e[1] + (i - 1) * 14 * k, e[0] - (120 + 40 * i) * k * gl * g.face, e[1] + (i - 1) * 24 * k - 20 * k);
     }
     // lightning
     if (gl > 0.55) for (const b of this.bolts) {
@@ -122,7 +122,7 @@ export class Effects {
     // Meltdown blast beam
     if (S.st === 'melt' && S.stT >= 1.3 && S.stT <= 1.9) {
       const t = S.stT, kk = seg(t, 1.3, 1.38), f = 1 - seg(t, 1.55, 1.9), w = (90 + 40 * Math.sin(t * 60)) * k * kk * f;
-      const h = g.handPoint(), x1 = this.scene.scale.width + 50;
+      const h = g.handPoint(), x1 = g.face > 0 ? this.scene.scale.width + 50 : -50;
       [[2.6, 0x7828e6, 0.35], [1.7, VIOLET, 0.6], [1.1, MAGENTA, 0.55], [0.55, 0xfff0ff, 0.95]].forEach(([mm, col, al]) => {
         A.fillStyle(col, al);
         A.fillPoints([{ x: h[0], y: h[1] - w * mm * 0.3 }, { x: x1, y: h[1] - w * mm }, { x: x1, y: h[1] + w * mm }, { x: h[0], y: h[1] + w * mm * 0.3 }], true);

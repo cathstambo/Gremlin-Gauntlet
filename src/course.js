@@ -1,30 +1,72 @@
-// The test run: a fixed, finite course (same every attempt, per the GDD's fair-comparison rule).
-// d = distance in pixels from the start line; h = height of a pickup's centre above the ground.
-// Obstacles: log (jump), stump (double jump), vines (slide under).
-// Creatures: frog (jump/blast), gator (jump the lunge/blast ×3), bat low (jump) / bat high (slide), spider (slide/blast).
-// Pickups: crystal (+10% Chaos Meter), potion (+1 heart, the level's single fixed potion), finish.
-export const COURSE = [
-  { t: 'log', d: 1900 },
-  { t: 'crystal', d: 2700, h: 70 }, { t: 'crystal', d: 2950, h: 70 },
-  { t: 'vines', d: 3700 },
-  { t: 'frog', d: 4800 },
-  { t: 'crystal', d: 5400, h: 70 }, { t: 'crystal', d: 5600, h: 170 },
-  { t: 'bat', d: 6500, lane: 'high' },
-  { t: 'log', d: 7300 },
-  { t: 'stump', d: 8300 }, { t: 'crystal', d: 8300, h: 470 },
-  { t: 'gator', d: 9800 },
-  { t: 'potion', d: 10600, h: 60 },
+// World 1, The Mould Swamp: two fixed running stages before Eddie (same layout every attempt, per the GDD's fair-comparison rule).
+// d = distance in pixels from the start line.
+//   Hazards:   roots (jump), vines (slide under), mould (jump; stepping in slows you, staying in costs a heart),
+//              sludge (jump), sludgeWide (double jump).
+//   Creatures: frog (jump / blast), gator (jump the lunge / blast ×3), bat 'low' (jump) / 'high' (slide), spider (slide / blast).
+//   Platforms: plat 'small' | 'medium' floating at height h (px above the ground); optional, a bonus route.
+//   Pickups:   taco (100), margarita (250), crystal (+10% Chaos Meter), potion (+1 heart; the level's single fixed potion).
+//              h = height of the pickup's centre above the ground.
+const row = (t, d, n, h, gap = 110) => Array.from({ length: n }, (_, i) => ({ t, d: d + i * gap, h }));
+
+// ---- Stage 1: easy to medium. Hazards and creatures are introduced one at a time, with room to breathe. ----
+export const STAGE1 = [
+  ...row('taco', 1100, 3, 70),
+  { t: 'roots', d: 2000 },
+  ...row('crystal', 2600, 2, 70, 200),
+  { t: 'vines', d: 3500 },
+  ...row('taco', 4000, 3, 70),
+  { t: 'frog', d: 5000 },
+  { t: 'plat', size: 'medium', d: 6100, h: 210 }, ...row('taco', 5990, 3, 290),
+  { t: 'mould', d: 7300 },
+  ...row('crystal', 7900, 2, 70, 200),
+  { t: 'roots', d: 8700 },
+  { t: 'bat', d: 9700, lane: 'high' },
+  ...row('taco', 10300, 4, 70),
+  { t: 'sludge', d: 11200 },
+  { t: 'crystal', d: 11200, h: 300 },
+  { t: 'plat', size: 'small', d: 12300, h: 230 }, { t: 'margarita', d: 12300, h: 315 },
+  { t: 'vines', d: 13300 },
+  { t: 'frog', d: 14300 },
+  ...row('crystal', 14900, 2, 70, 200),
+  { t: 'roots', d: 15700 },
+  { t: 'gator', d: 17000 },
+  ...row('taco', 17700, 3, 70),
+  { t: 'sludgeWide', d: 18700 },
+  { t: 'finish', d: 20000 },
+];
+
+// ---- Stage 2: busier and a touch harder. Hazards come in pairs, creatures overlap, more double jumps. ----
+export const STAGE2 = [
+  { t: 'roots', d: 1700 },
+  { t: 'frog', d: 2500 },
+  ...row('taco', 2900, 3, 70),
+  { t: 'vines', d: 3500 },
+  { t: 'mould', d: 4200 },
+  { t: 'bat', d: 5100, lane: 'low' },
+  ...row('crystal', 5500, 2, 70, 200),
+  { t: 'sludge', d: 6100 },
+  { t: 'spider', d: 7000 },
+  { t: 'plat', size: 'medium', d: 7900, h: 220 }, ...row('taco', 7790, 3, 300), { t: 'margarita', d: 8130, h: 300 },
+  { t: 'roots', d: 8800 }, { t: 'crystal', d: 8800, h: 300 },
+  { t: 'gator', d: 9900 },
+  { t: 'potion', d: 10700, h: 70 },
   { t: 'vines', d: 11300 },
-  { t: 'spider', d: 12400 },
-  { t: 'log', d: 13300 }, { t: 'crystal', d: 13320, h: 300 },
-  { t: 'bat', d: 14200, lane: 'low' },
-  { t: 'frog', d: 15000 },
-  { t: 'crystal', d: 15600, h: 70 },
-  { t: 'vines', d: 16300 }, { t: 'log', d: 17200 },
-  { t: 'crystal', d: 17800, h: 70 }, { t: 'crystal', d: 18050, h: 70 },
-  // the swamp gets crowded: a good place to try Gremlin Meltdown
-  { t: 'frog', d: 19300 }, { t: 'bat', d: 19800, lane: 'high' }, { t: 'frog', d: 20300 }, { t: 'gator', d: 21200 }, { t: 'spider', d: 22300 },
-  { t: 'stump', d: 23300 },
+  { t: 'frog', d: 11900 }, { t: 'bat', d: 12400, lane: 'high' },
+  { t: 'mould', d: 13200 },
+  ...row('taco', 13700, 3, 70),
+  { t: 'sludgeWide', d: 14500 }, { t: 'crystal', d: 14500, h: 470 },
+  { t: 'spider', d: 15600 },
+  { t: 'roots', d: 16300 },
+  { t: 'plat', size: 'small', d: 17200, h: 240 }, { t: 'margarita', d: 17200, h: 325 },
+  { t: 'gator', d: 18300 },
+  ...row('crystal', 19000, 3, 70, 180),
+  // the crowded stretch: a good place for Gremlin Meltdown
+  { t: 'frog', d: 20200 }, { t: 'bat', d: 20700, lane: 'high' }, { t: 'frog', d: 21200 }, { t: 'spider', d: 22000 },
+  { t: 'mould', d: 22900 },
+  { t: 'roots', d: 23600 },
   { t: 'vines', d: 24300 },
-  { t: 'finish', d: 25500 },
+  { t: 'sludgeWide', d: 25300 },
+  { t: 'gator', d: 26500 },
+  ...row('taco', 27200, 4, 70),
+  { t: 'finish', d: 28400 },
 ];
