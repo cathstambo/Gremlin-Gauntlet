@@ -10,7 +10,7 @@ import { Effects } from './Effects.js';
 
 // ---- tuning: placeholders until playtesting (art units; the gremlin is ~800 units tall) ----
 export const TUNING = {
-  gravity: 5600, jumpV: 2600, doubleJumpV: 2300, slideTime: 1.3, spinTime: 0.42,
+  gravity: 5000, jumpV: 2650, doubleJumpV: 2300, slideTime: 1.6, spinTime: 0.42,
   hurtV: 1400, invulnTime: 1.5, dieV: 2000, attackTime: 0.32, attackCooldown: 0.24,
 };
 
@@ -158,7 +158,7 @@ export class Gremlin extends Phaser.Events.EventEmitter {
 
   jump() {
     const S = this.S;
-    if (FREE.has(S.st)) { this.go('crouch', 0.05); return true; }
+    if (FREE.has(S.st) || S.st === 'slide') { this.go('crouch', 0.05); return true; }   // jumping cancels a slide
     if (S.st === 'air' && !S.usedDouble) {     // double jump always adds height, so it always lasts longer than a single jump
       S.usedDouble = true; S.vy = Math.max(TUNING.doubleJumpV, S.vy + TUNING.doubleJumpV * 0.5);
       this.go('spin', 0.06); S.spinT = 0; this.fx.burst(this.centre(), 1); return true;

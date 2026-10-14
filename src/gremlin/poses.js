@@ -8,7 +8,7 @@ export const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 export const ease = k => (k < 0 ? 0 : k > 1 ? 1 : k * k * (3 - 2 * k));
 export const seg = (t, a, b) => clamp((t - a) / (b - a), 0, 1);
 
-export const RUN_CYCLE = 0.36; // seconds per run cycle (two strides)
+export const RUN_CYCLE = 0.30; // seconds per run cycle (two strides)
 
 const BASE = {
   lean: 0, head: 0, armN: 0, foreN: 0, armF: 0, foreF: 0,
@@ -32,13 +32,13 @@ export function runPose(t) {
   const leg = o => {
     const p = ph + o, s = Math.sin(p);
     const swing = Math.max(0, Math.cos(p + 0.25)), stance = Math.max(0, -Math.cos(p + 0.25));
-    const thighW = -50 * s - 8 - 22 * Math.pow(swing, 1.5) * Math.max(0, s + 0.4);
+    const thighW = -54 * s - 8 - 22 * Math.pow(swing, 1.5) * Math.max(0, s + 0.4);
     const toeOff = 24 * Math.pow(Math.max(0, Math.sin(p - 2.0)), 2);
     const bootW = (1 - swing) * (-6 * stance + toeOff) +
       swing * (thighW + 78 * Math.pow(Math.sin(Math.min(Math.PI, (p + 0.25 + Math.PI / 2) % TAU)), 1.1));
     return { thighW, knee: bootW - thighW };
   };
-  const lean = 21 + 3 * Math.sin(2 * ph + 0.6);
+  const lean = 23 + 3 * Math.sin(2 * ph + 0.6);
   return pose({
     lean, near: leg(0), far: leg(Math.PI), head: -lean * 0.55 + 3 * Math.sin(2 * ph + 1.2),
     armN: 48 * Math.sin(ph) - 6, foreN: -(42 + 30 * Math.max(0, -Math.sin(ph))),

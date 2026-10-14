@@ -7,7 +7,7 @@ const VIEW_W = 1920;
 
 // collision boxes per placeholder type, relative to the item's anchor (bottom-centre on the ground, or centre for pickups)
 const SHAPES = {
-  log: { w: 140, h: 70 }, stump: { w: 110, h: 250 }, frog: { w: 110, h: 80 },
+  log: { w: 140, h: 70 }, stump: { w: 110, h: 330 }, frog: { w: 110, h: 80 },
   crystal: { w: 70, h: 90 }, potion: { w: 70, h: 90 },
 };
 

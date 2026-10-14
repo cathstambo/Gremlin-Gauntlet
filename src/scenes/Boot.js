@@ -57,7 +57,7 @@ export class Boot extends Phaser.Scene {
       c.fillStyle = '#8a6440'; c.beginPath(); c.ellipse(w - 34, h / 2 + 4, 26, (h - 26) / 2, 0, 0, Math.PI * 2); c.fill(); c.stroke();
       c.strokeStyle = 'rgba(0,0,0,.3)'; c.lineWidth = 3; c.beginPath(); c.ellipse(w - 34, h / 2 + 4, 12, 20, 0, 0, Math.PI * 2); c.stroke();
     });
-    this.canvasTex('stump', 160, 270, (c, w, h) => {
+    this.canvasTex('stump', 160, 350, (c, w, h) => {
       c.fillStyle = '#4e3622'; c.strokeStyle = '#2a1a0e'; c.lineWidth = 6;
       c.beginPath(); c.moveTo(14, h); c.lineTo(24, 30); c.lineTo(w - 24, 30); c.lineTo(w - 14, h); c.closePath(); c.fill(); c.stroke();
       c.fillStyle = '#8a6440'; c.beginPath(); c.ellipse(w / 2, 32, w / 2 - 24, 22, 0, 0, Math.PI * 2); c.fill(); c.stroke();
