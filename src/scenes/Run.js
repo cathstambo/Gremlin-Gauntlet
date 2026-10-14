@@ -27,6 +27,7 @@ const BOX = {
   taco: { w: 90, h: 80 }, margarita: { w: 80, h: 90 }, crystal: { w: 70, h: 90 }, potion: { w: 80, h: 90 },
 };
 const PICKUPS = new Set(['taco', 'margarita', 'crystal', 'potion']);
+export const MAX_HEARTS = 4;   // 3 normal + 1 gold bonus heart from a potion drunk at full health
 
 export class Run extends Phaser.Scene {
   constructor() { super('Run'); }
@@ -164,8 +165,8 @@ export class Run extends Phaser.Scene {
       if (it.t === 'crystal') { this.collect(it); this.chaos = Math.min(100, this.chaos + 10); this.events.emit('chaos', this.chaos); }
       else if (it.t === 'taco' || it.t === 'margarita') { this.collect(it); this.addScore(POINTS[it.t]); }
       else if (it.t === 'potion') {
-        // Potion at full health: GDD marks this TO DECIDE. For now it stays put and is only used when a heart is missing.
-        if (this.hearts < 3) { this.collect(it); this.hearts++; this.events.emit('hearts', this.hearts); }
+        // +1 heart; at full health it gives a gold bonus heart (max 4). Already on 4: it stays put for later.
+        if (this.hearts < MAX_HEARTS) { this.collect(it); this.hearts++; this.events.emit('hearts', this.hearts); }
       } else if (it.t === 'mould') {
         inMould = true; g.slow(0.5);
         this.mouldT = (this.mouldT || 0) + dt;

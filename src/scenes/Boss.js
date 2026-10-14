@@ -74,6 +74,8 @@ export class Boss extends Phaser.Scene {
     this.e.spot = 'groundR';
     this.e.onEvent = (name, ...a) => this.onEddie(name, ...a);
     this.bubble = this.makeBubble();
+    // this arena's potion: up on the high centre platform (double jump to reach it)
+    this.addPickup('potion', 985, GROUND_Y - 340 - 60);
   }
 
   // ---------- arena ----------
@@ -542,7 +544,7 @@ export class Boss extends Phaser.Scene {
       p.t += dt; p.img.y = p.y + 8 * Math.sin(p.t * 3);
       if (hb && !p.dead && Phaser.Geom.Intersects.RectangleToRectangle(hb, new Phaser.Geom.Rectangle(p.x - 35, p.img.y - 45, 70, 90))) {
         if (p.type === 'crystal') { p.dead = true; this.chaos = Math.min(100, this.chaos + 10); this.events.emit('chaos', this.chaos); g.fx.burst([p.x, p.img.y], 0.45); }
-        else if (p.type === 'potion' && this.hearts < 3) { p.dead = true; this.hearts++; this.events.emit('hearts', this.hearts); }
+        else if (p.type === 'potion' && this.hearts < 4) { p.dead = true; this.hearts++; this.events.emit('hearts', this.hearts); }
         if (p.dead) this.tweens.add({ targets: p.img, scale: 1.6, alpha: 0, duration: 200, onComplete: () => p.img.destroy() });
       }
     }

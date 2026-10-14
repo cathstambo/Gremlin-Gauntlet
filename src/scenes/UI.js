@@ -16,7 +16,7 @@ export class UI extends Phaser.Scene {
     this.paused = false;
 
     // hearts
-    this.heartIcons = [0, 1, 2].map(i => this.add.image(70 + i * 92, 70, 'heart').setScale(0.8));
+    this.heartIcons = [0, 1, 2, 3].map(i => this.add.image(70 + i * 92, 70, i === 3 ? 'heartGold' : 'heart').setScale(0.8));   // 4th = gold bonus heart
     this.scoreTxt = this.add.text(30, 120, '0', { fontFamily: FONT, fontSize: 40, color: '#ffd76a', stroke: '#2b1a05', strokeThickness: 8 }).setOrigin(0, 0);
     // Chaos Meter
     const cx = this.isBoss ? 760 : W / 2, mw = this.isBoss ? 420 : 520;
@@ -192,7 +192,7 @@ export class UI extends Phaser.Scene {
     }
     o.setVisible(true);
   }
-  setHearts(n) { this.heartIcons.forEach((h, i) => { h.setAlpha(i < n ? 1 : 0.18); if (i === n) this.tweens.add({ targets: h, scale: { from: 1.3, to: 0.8 }, duration: 250 }); }); }
+  setHearts(n) { this.heartIcons.forEach((h, i) => { h.setVisible(i < 3 || n > 3); h.setAlpha(i < n ? 1 : 0.18); if (i === n) this.tweens.add({ targets: h, scale: { from: 1.3, to: 0.8 }, duration: 250 }); }); }
   setChaos(c) {
     this.tweens.add({ targets: this.meter, width: this.meterW * c / 100, duration: 200 });
     const full = c >= 100;

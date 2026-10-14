@@ -20,6 +20,7 @@ export const STAGE1 = [
   { t: 'mould', d: 7300 },
   ...row('crystal', 7900, 2, 70, 200),
   { t: 'roots', d: 8700 },
+  { t: 'potion', d: 9200, h: 70 },
   { t: 'bat', d: 9700, lane: 'high' },
   ...row('taco', 10300, 4, 70),
   { t: 'sludge', d: 11200 },

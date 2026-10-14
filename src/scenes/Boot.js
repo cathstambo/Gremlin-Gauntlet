@@ -133,6 +133,11 @@ export class Boot extends Phaser.Scene {
       c.beginPath(); c.moveTo(w / 2, h - 8); c.bezierCurveTo(-10, h * 0.45, 12, 2, w / 2, 24); c.bezierCurveTo(w - 12, 2, w + 10, h * 0.45, w / 2, h - 8); c.fill(); c.stroke();
       c.fillStyle = 'rgba(255,255,255,.45)'; c.beginPath(); c.ellipse(28, 30, 10, 7, -0.6, 0, Math.PI * 2); c.fill();
     });
+    this.canvasTex('heartGold', 96, 88, (c, w, h) => {
+      c.fillStyle = '#ffc93a'; c.strokeStyle = '#4a3000'; c.lineWidth = 6;
+      c.beginPath(); c.moveTo(w / 2, h - 8); c.bezierCurveTo(-10, h * 0.45, 12, 2, w / 2, 24); c.bezierCurveTo(w - 12, 2, w + 10, h * 0.45, w / 2, h - 8); c.fill(); c.stroke();
+      c.fillStyle = 'rgba(255,255,255,.45)'; c.beginPath(); c.ellipse(28, 30, 10, 7, -0.6, 0, Math.PI * 2); c.fill();
+    });
     this.canvasTex('flag', 120, 420, (c, w, h) => {
       c.fillStyle = '#d9c9b0'; c.fillRect(10, 0, 12, h);
       c.fillStyle = '#9b4dff'; c.beginPath(); c.moveTo(22, 10); c.lineTo(w, 50); c.lineTo(22, 90); c.fill();
