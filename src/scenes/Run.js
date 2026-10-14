@@ -1,13 +1,16 @@
 // The test run: scrolling swamp-dusk placeholder world, fixed course, hearts, Chaos Meter, Meltdown.
 import { Gremlin } from '../gremlin/Gremlin.js';
 import { COURSE } from '../course.js';
+import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js';
+
+const CREATURES = { frog: Frog, gator: Gator, bat: Bat, spider: Spider };
 
 export const GROUND_Y = 870, GREMLIN_X = 520, GREMLIN_H = 330;
 const VIEW_W = 1920;
 
 // collision boxes per placeholder type, relative to the item's anchor (bottom-centre on the ground, or centre for pickups)
 const SHAPES = {
-  log: { w: 140, h: 70 }, stump: { w: 110, h: 330 }, frog: { w: 110, h: 80 },
+  log: { w: 140, h: 70 }, stump: { w: 110, h: 330 },
   crystal: { w: 70, h: 90 }, potion: { w: 70, h: 90 },
 };
 
@@ -22,7 +25,7 @@ export class Run extends Phaser.Scene {
     this.reeds = this.add.tileSprite(0, GROUND_Y - 360 + 6, W, 360, 'reeds').setOrigin(0, 0).setDepth(1);
     this.ground = this.add.tileSprite(0, GROUND_Y, W, H - GROUND_Y, 'ground').setOrigin(0, 0).setDepth(2);
     this.items = COURSE.map(c => ({ ...c, obj: null, done: false }));
-    this.orbs = [];
+    this.orbs = []; this.creatures = []; this.score = 0;
     this.orbG = this.add.graphics().setDepth(13).setBlendMode(Phaser.BlendModes.ADD);
     this.boxG = this.add.graphics().setDepth(30);
 
@@ -47,19 +50,16 @@ export class Run extends Phaser.Scene {
   // ---------- magic ----------
   spawnOrb(p) {
     const glow = this.add.image(p.x, p.y, 'glow').setBlendMode(Phaser.BlendModes.ADD).setTint(0x9b4dff).setDepth(13).setDisplaySize(150, 150);
-    // fired from the ground, the bolt dips to frog height; fired mid-air it flies straight
-    const ty = this.g.S.h < 320 ? GROUND_Y - 60 : p.y;
+    // the bolt curves towards the nearest creature ahead (easy aiming on a phone); otherwise it flies straight
+    let ty = p.y, best = 1300;
+    for (const c of this.creatures) { if (!c.alive) continue; const d = c.centre[0] - p.x; if (d > 0 && d < best) { best = d; ty = c.centre[1]; } }
     this.orbs.push({ x: p.x, y: p.y, ty, vx: 1100, r: 20, glow, trail: [] });
   }
   meltBlast() {
     // Provisional rule: the blast clears every enemy ahead of the gremlin on screen (to be confirmed in playtesting).
-    for (const it of this.items) if (it.obj && !it.done && it.t === 'frog' && it.obj.x > this.g.x && it.obj.x < this.scale.width + 100) this.popFrog(it);
+    for (const c of this.creatures) if (c.alive && c.x > this.g.x - 100 && c.x < this.scale.width + 100) { c.hurt(99); this.defeated(c); }
   }
-  popFrog(it) {
-    it.done = true; const f = it.obj;
-    this.g.fx.burst([f.x, f.y - 40], 0.8);
-    this.tweens.add({ targets: f, scaleX: 1.5, scaleY: 0.2, alpha: 0, angle: 30, duration: 220, onComplete: () => f.destroy() });
-  }
+  defeated(c) { this.g.fx.burst(c.centre, 0.8); this.score += c.points; }
 
   // ---------- main loop ----------
   update(time, deltaMs) {
@@ -70,6 +70,10 @@ export class Run extends Phaser.Scene {
     if (this.mode === 'running' || this.mode === 'finished' || this.mode === 'gameover') this.dist += v * dt;
     this.ground.tilePositionX = this.dist; this.reeds.tilePositionX = this.dist * 0.3;
     this.updateItems(dt);
+    const ctx = { gx: this.g.x, groundY: GROUND_Y, scroll: v * dt * (this.mode === 'ready' ? 0 : 1) };
+    for (const c of this.creatures) c.update(dt, ctx);
+    for (const c of this.creatures) if (c.gone) c.destroy();
+    this.creatures = this.creatures.filter(c => !c.gone);
     this.updateOrbs(dt);
     if (this.mode === 'running') this.collide();
     this.drawBoxes();
@@ -80,20 +84,20 @@ export class Run extends Phaser.Scene {
     for (const it of this.items) {
       const x = GREMLIN_X + (it.d - this.dist);
       if (!it.obj && !it.done && x < W + 400) this.spawnItem(it, x);
+      if (it.creature) continue;
       if (!it.obj) continue;
       if (it.obj.active) it.obj.x = x + (it.dx || 0);
-      if (it.t === 'frog' && !it.done) { const s = Math.abs(Math.sin(this.time.now / 260 + it.d)); it.obj.setScale(1 + 0.08 * (1 - s), 1 - 0.1 * (1 - s)); it.obj.y = GROUND_Y - 30 * s * s; }
       if ((it.t === 'crystal' || it.t === 'potion') && !it.done) it.obj.y = GROUND_Y - it.h + 8 * Math.sin(this.time.now / 300 + it.d);
       if (x < -400 && it.obj.active) { it.obj.destroy(); it.obj = null; it.done = true; }
       if (it.t === 'finish' && !it.done && this.mode === 'running' && x <= GREMLIN_X) this.finish(it);
     }
   }
   spawnItem(it, x) {
+    if (CREATURES[it.t]) { const C = CREATURES[it.t]; const c = new C(this, x, GROUND_Y, it.lane); this.creatures.push(c); it.creature = c; it.done = true; return; }
     let o;
     switch (it.t) {
       case 'log': o = this.add.image(x, GROUND_Y + 6, 'log').setOrigin(0.5, 1); break;
       case 'stump': o = this.add.image(x, GROUND_Y + 6, 'stump').setOrigin(0.5, 1); break;
-      case 'frog': o = this.add.image(x, GROUND_Y, 'frog').setOrigin(0.5, 1); break;
       case 'vines': o = this.add.image(x, GROUND_Y - 135, 'branch').setOrigin(0.5, 1).setDisplaySize(280, GROUND_Y - 135); break;
       case 'crystal': o = this.add.image(x, GROUND_Y - it.h, 'crystal').setScale(0.8); break;
       case 'potion': o = this.add.image(x, GROUND_Y - it.h, 'potion').setScale(0.8); break;
@@ -122,6 +126,7 @@ export class Run extends Phaser.Scene {
         if (this.hearts < 3) { it.done = true; this.hearts++; this.events.emit('hearts', this.hearts); this.tweens.add({ targets: it.obj, scale: 1.6, alpha: 0, duration: 200 }); }
       } else this.takeHit();
     }
+    for (const c of this.creatures) { const r = c.hitbox(); if (r && Phaser.Geom.Intersects.RectangleToRectangle(hb, r)) this.takeHit(); }
   }
   takeHit() {
     if (this.g.invulnerable) return;
@@ -143,10 +148,9 @@ export class Run extends Phaser.Scene {
       const t = this.time.now / 50; G.lineStyle(3, 0xee2a8a, 0.8);
       for (let i = 0; i < 3; i++) { const a0 = t + i * 2.1; G.lineBetween(o.x + Math.cos(a0) * o.r * 1.3, o.y + Math.sin(a0) * o.r * 1.3, o.x + Math.cos(a0 + 0.6) * o.r * 1.9, o.y + Math.sin(a0 + 0.6) * o.r * 1.9); }
       o.glow.setPosition(o.x, o.y);
-      for (const it of this.items) {
-        if (it.t !== 'frog' || it.done || !it.obj) continue;
-        const r = this.itemRect(it);
-        if (Phaser.Geom.Intersects.CircleToRectangle(new Phaser.Geom.Circle(o.x, o.y, o.r), r)) { this.popFrog(it); o.dead = true; break; }
+      for (const c of this.creatures) {
+        const r = c.hitbox(); if (!r) continue;
+        if (Phaser.Geom.Intersects.CircleToRectangle(new Phaser.Geom.Circle(o.x, o.y, o.r + 10), r)) { o.dead = true; c.shot(); this.g.fx.burst([o.x, o.y], 0.4); if (c.dead) this.defeated(c); break; }
       }
       if (o.x > this.scale.width + 100) o.dead = true;
       if (o.dead) o.glow.destroy();
@@ -158,5 +162,6 @@ export class Run extends Phaser.Scene {
     const hb = this.g.hitbox();
     if (hb) G.lineStyle(3, this.g.invulnerable ? 0xffffff : 0xc6f135, 1).strokeRectShape(hb);
     for (const it of this.items) { if (!it.obj || it.done) continue; const r = this.itemRect(it); if (r) G.lineStyle(3, it.t === 'crystal' || it.t === 'potion' ? 0x9b4dff : 0xee2a8a, 1).strokeRectShape(r); }
+    for (const c of this.creatures) { const r = c.hitbox(); if (r) G.lineStyle(3, 0xee2a8a, 1).strokeRectShape(r); }
   }
 }
