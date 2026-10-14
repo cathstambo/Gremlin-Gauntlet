@@ -1,53 +1,81 @@
-// World 1 backdrop: The Mould Swamp, built from the approved artwork.
+// Scrolling world backdrops, built from the approved artwork.
 // Layers (back to front), each a seamless loop scrolling at its own speed:
-//   far (sky, moon, ruins) → mid (trees, waterfalls) → near (bridges, stumps, mushrooms) → decorations → ground (the running path).
-// Decorations sit behind the path and are slightly darkened so they never read as obstacles.
-const PROPS = ['prop_mush_orange', 'prop_stump', 'prop_bridge', 'prop_skull', 'prop_mush_purple', 'prop_barrel', 'prop_log', 'prop_sign'];
+//   far (sky) → mid → near → decorations → ground (the running path).
+// Decorations sit behind the path and are dimmed so they never read as obstacles.
+// One class (Backdrop) draws any world; SWAMP (World 1) and MEADOW (World 2) are its settings.
+
+const SWAMP_PROPS = ['prop_mush_orange', 'prop_stump', 'prop_bridge', 'prop_skull', 'prop_mush_purple', 'prop_barrel', 'prop_log', 'prop_sign'];
+const MEADOW_PROPS = ['m_prop_log', 'm_prop_arch', 'm_prop_rocks', 'm_prop_falls'];
 
 export const SWAMP_FILES = {
   bg_far: 'assets/swamp/bg_far.jpg', bg_mid: 'assets/swamp/bg_mid.webp', bg_near: 'assets/swamp/bg_near.webp', swamp_ground: 'assets/swamp/ground.webp',
-  ...Object.fromEntries(PROPS.map(p => [p, `assets/swamp/${p}.webp`])),
+  ...Object.fromEntries(SWAMP_PROPS.map(p => [p, `assets/swamp/${p}.webp`])),
   ...Object.fromEntries(['haz_roots', 'haz_vines_hang', 'haz_mould', 'haz_sludge', 'plat_small', 'plat_medium', 'plat_large', 'plat_wood',
     'pick_taco', 'pick_margarita', 'pick_crystal', 'pick_potion'].map(p => [p, `assets/swamp/${p}.webp`])),
 };
+// World 2 art is only downloaded when World 2 starts (see Run/Overlord preload)
+export const MEADOW_FILES = {
+  m_far: 'assets/meadow/bg_far.jpg', m_mid: 'assets/meadow/bg_mid.webp', m_near: 'assets/meadow/bg_near.webp', m_ground: 'assets/meadow/ground.webp',
+  m_prop_log: 'assets/meadow/prop_log.webp', m_prop_arch: 'assets/meadow/prop_arch.webp', m_prop_rocks: 'assets/meadow/prop_rocks.webp', m_prop_falls: 'assets/meadow/prop_falls.webp',
+  m_plat_long: 'assets/meadow/plat_long.webp', m_plat_fence: 'assets/meadow/plat_fence.webp', m_plat_arch: 'assets/meadow/plat_arch.webp',
+  m_turret: 'assets/meadow/haz_turret.webp', m_beam: 'assets/meadow/haz_beam.webp',
+};
 
-// art measurements (pixels in the prepared files)
-const GROUND_SURFACE = 100;     // row in ground.webp the gremlin walks on: the middle of the lit path, so hazards sit IN the way, not behind it
-const MID_BOTTOM = 603, NEAR_BOTTOM = 681;
+export const SWAMP = {
+  far: 'bg_far', mid: 'bg_mid', near: 'bg_near', ground: 'swamp_ground',
+  groundSurface: 100,   // row in the ground strip the gremlin walks on: the middle of the lit path, so hazards sit IN the way
+  midBottom: 603, nearBottom: 681, midS: 1.05, nearS: 0.95, gS: 1.0,
+  midTint: 0x74827c, nearTint: 0x6c766e,   // background darkened a touch so creatures and hazards stand out
+  props: SWAMP_PROPS, propScale: k => k === 'prop_sign' ? 0.8 : 0.56, propTint: k => k === 'prop_sign' ? 0xb0bab0 : 0x6f7a72, propGap: [1150, 650],
+};
+export const MEADOW = {
+  far: 'm_far', mid: 'm_mid', near: 'm_near', ground: 'm_ground',
+  groundSurface: 104,
+  midBottom: 693, nearBottom: 698, midS: 1.0, nearS: 0.9, gS: 1.0, midDrop: 70, nearDrop: 95,
+  midTint: 0xc9d2dc, nearTint: 0xb4bec4,   // the meadow is bright: soften the scenery so enemies and beams pop
+  props: MEADOW_PROPS, propScale: () => 0.62, propTint: () => 0xa9b4b0, propGap: [1500, 700],
+};
 
-export class Swamp {
+export class Backdrop {
   /** groundY = screen y of the walking surface. props = scatter decorations along the run. */
-  constructor(scene, groundY, { props = true } = {}) {
+  constructor(scene, groundY, cfg, { props = true } = {}) {
     const W = scene.scale.width, H = scene.scale.height;
-    this.scene = scene; this.groundY = groundY;
+    this.scene = scene; this.groundY = groundY; this.cfg = cfg;
     const t = k => scene.textures.get(k).getSourceImage();
-    const farS = H / t('bg_far').height;
-    this.far = scene.add.tileSprite(0, 0, W, H, 'bg_far').setOrigin(0, 0).setTileScale(farS).setDepth(0);
-    const midS = 1.05, nearS = 0.95, gS = 1.0;
-    this.mid = scene.add.tileSprite(0, groundY + 40 - MID_BOTTOM * midS, W, t('bg_mid').height * midS, 'bg_mid').setOrigin(0, 0).setTileScale(midS).setDepth(1).setTint(0x74827c);   // background darkened a touch so creatures and hazards stand out
-    this.near = scene.add.tileSprite(0, groundY + 70 - NEAR_BOTTOM * nearS, W, t('bg_near').height * nearS, 'bg_near').setOrigin(0, 0).setTileScale(nearS).setDepth(2).setTint(0x6c766e);
-    this.ground = scene.add.tileSprite(0, groundY - GROUND_SURFACE * gS, W, t('swamp_ground').height * gS, 'swamp_ground').setOrigin(0, 0).setTileScale(gS).setDepth(4);
+    const farS = H / t(cfg.far).height;
+    this.far = scene.add.tileSprite(0, 0, W, H, cfg.far).setOrigin(0, 0).setTileScale(farS).setDepth(0);
+    const midS = cfg.midS, nearS = cfg.nearS, gS = cfg.gS;
+    this.mid = scene.add.tileSprite(0, groundY + (cfg.midDrop ?? 40) - cfg.midBottom * midS, W, t(cfg.mid).height * midS, cfg.mid).setOrigin(0, 0).setTileScale(midS).setDepth(1).setTint(cfg.midTint);
+    this.near = scene.add.tileSprite(0, groundY + (cfg.nearDrop ?? 70) - cfg.nearBottom * nearS, W, t(cfg.near).height * nearS, cfg.near).setOrigin(0, 0).setTileScale(nearS).setDepth(2).setTint(cfg.nearTint);
+    this.ground = scene.add.tileSprite(0, groundY - cfg.groundSurface * gS, W, t(cfg.ground).height * gS, cfg.ground).setOrigin(0, 0).setTileScale(gS).setDepth(4);
     // decorations: a fixed, repeating sequence so every run looks the same (fair-comparison rule)
     this.props = [];
     if (props) {
-      let x = 700;
+      let x = 700; const [gap, vary] = cfg.propGap;
       for (let i = 0; i < 24; i++) {
-        const key = PROPS[i % PROPS.length];
-        // decorations stand at the back edge of the path and are dimmed, so only real hazards look bright and "in the way"
-        const im = scene.add.image(0, groundY + 4, key).setOrigin(0.5, 1).setScale(key === 'prop_sign' ? 0.8 : 0.56).setDepth(3).setTint(key === 'prop_sign' ? 0xb0bab0 : 0x6f7a72);
-        this.props.push({ im, base: x }); x += 1150 + ((i * 397) % 650);
+        const key = cfg.props[i % cfg.props.length];
+        const im = scene.add.image(0, groundY + 4, key).setOrigin(0.5, 1).setScale(cfg.propScale(key)).setDepth(3).setTint(cfg.propTint(key));
+        this.props.push({ im, base: x }); x += gap + ((i * 397) % vary);
       }
       this.propSpan = x;
     }
   }
   /** dist = how far the world has scrolled, in screen px. */
   scroll(dist) {
-    const farS = this.far.tileScaleX;
-    this.far.tilePositionX = dist * 0.08 / farS;
+    this.far.tilePositionX = dist * 0.08 / this.far.tileScaleX;
     this.mid.tilePositionX = dist * 0.25 / this.mid.tileScaleX;
     this.near.tilePositionX = dist * 0.55 / this.near.tileScaleX;
     this.ground.tilePositionX = dist / this.ground.tileScaleX;
     const pd = dist * 0.85;   // decorations sit just behind the path
     for (const p of this.props) { let x = p.base - (pd % this.propSpan); if (x < -500) x += this.propSpan; p.im.x = x; }
   }
+}
+
+/** World 1: The Festering Swamp. */
+export class Swamp extends Backdrop {
+  constructor(scene, groundY, opts) { super(scene, groundY, SWAMP, opts); }
+}
+/** World 2: Meadows of Malicious Happiness. */
+export class Meadow extends Backdrop {
+  constructor(scene, groundY, opts) { super(scene, groundY, MEADOW, opts); }
 }

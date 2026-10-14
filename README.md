@@ -34,3 +34,10 @@ The gremlin is a **cut-out rig**: the approved right-side artwork is cut into 15
 - `src/scenes/Boss.js` – Eddie's arena, attacks, phases and AI; numbers to tune are in `BOSS_TUNING`
 
 Obstacles, enemies and background are deliberately plain placeholders. Jump height, slide length and other numbers in `TUNING` (in `Gremlin.js`) are placeholders until playtesting.
+
+
+## World 2: Meadows of Malicious Happiness (Catalytik, The Evil Overlord)
+- Two running parts (`src/course.js` W2_STAGE1 / W2_STAGE2) with killer bunnies, psychotic kittens, carnivorous flowers,
+  butterfly swarms (`src/creatures/Meadow.js`) and crystal turrets firing rainbow beams (low = jump, high = slide).
+- Boss: `src/scenes/Overlord.js` (scene key `Boss2`) with the cut-out rig in `src/overlord/Catalytik.js`.
+- World 2 art loads only when World 2 starts. Shortcuts: `#world2`, `#boss2`.

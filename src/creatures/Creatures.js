@@ -8,7 +8,7 @@ const rnd = (a, b) => a + Math.random() * (b - a);
 const TEX = 2;   // creature images are stored at half the art's size (they're shown at about a third of it)
 
 /** A set of image parts hung on pivots, all relative to the creature's body pivot. */
-class Puppet {
+export class Puppet {
   constructor(scene, kind, scale, order, depth = 6) {
     this.scene = scene; this.kind = kind;
     this.R = scene.cache.json.get('creatures')[kind];
@@ -27,7 +27,7 @@ class Puppet {
   destroy() { this.root.destroy(); }
 }
 
-class Creature {
+export class Creature {
   constructor(scene, x, kind) { this.scene = scene; this.x = x; this.kind = kind; this.dead = false; this.gone = false; this.hp = 1; this.t = 0; this.flashT = 0; this.deadT = 0; }
   get alive() { return !this.dead; }
   hurt(n = 1) {
@@ -253,3 +253,5 @@ export const CREATURE_PARTS = {
   frog: ['body', 'jaw', 'hind', 'front'], gator: ['body', 'jaw', 'legA', 'legB', 'legC', 'tail'],
   bat: ['body', 'farWing', 'nearWing'], spider: ['body', 'legsL', 'legsR'],
 };
+// World 2 creatures (loaded when World 2 starts)
+export const MEADOW_CREATURE_PARTS = { bunny: ['body', 'ears'], kitten: ['body', 'tail'], flower: ['body', 'head'], swarm: ['body'] };

@@ -27,7 +27,10 @@ export class Boot extends Phaser.Scene {
   create() {
     Music.init();
     this.makeTextures();
-    const first = location.hash === '#boss' ? 'Boss' : 'Run';   // add #boss to the address to go straight to the boss fight
+    // shortcuts: #boss (Eddie), #world2 (World 2 part 1), #boss2 (the Evil Overlord)
+    const h = location.hash;
+    const first = h === '#boss' ? 'Boss' : h === '#boss2' ? 'Boss2' : 'Run';
+    this.registry.set('world', h === '#world2' || h === '#boss2' ? 2 : 1);
     this.registry.set('gameScene', first);
     const start = () => { this.scene.start(first); this.scene.launch('UI'); };
     // wait for the display font so text doesn't jump when it arrives
@@ -139,6 +142,23 @@ export class Boot extends Phaser.Scene {
       c.fillStyle = '#ffc93a'; c.strokeStyle = '#4a3000'; c.lineWidth = 6;
       c.beginPath(); c.moveTo(w / 2, h - 8); c.bezierCurveTo(-10, h * 0.45, 12, 2, w / 2, 24); c.bezierCurveTo(w - 12, 2, w + 10, h * 0.45, w / 2, h - 8); c.fill(); c.stroke();
       c.fillStyle = 'rgba(255,255,255,.45)'; c.beginPath(); c.ellipse(28, 30, 10, 7, -0.6, 0, Math.PI * 2); c.fill();
+    });
+    // the Evil Overlord's spoon (bowl on the right)
+    this.canvasTex('spoon', 200, 64, (c, w, h) => {
+      c.lineJoin = 'round'; c.strokeStyle = '#2a2230'; c.lineWidth = 5;
+      const g = c.createLinearGradient(0, 14, 0, 50); g.addColorStop(0, '#f4f2f8'); g.addColorStop(0.45, '#a9a4b4'); g.addColorStop(1, '#5d5868');
+      c.fillStyle = g;
+      c.beginPath(); c.moveTo(8, 27); c.quadraticCurveTo(4, 32, 8, 37); c.lineTo(112, 36); c.lineTo(112, 28); c.closePath(); c.fill(); c.stroke();   // handle
+      c.beginPath(); c.ellipse(28, 32, 12, 8, 0, 0, Math.PI * 2); c.fill(); c.stroke();                                                       // handle end
+      c.beginPath(); c.ellipse(150, 32, 44, 24, 0, 0, Math.PI * 2); c.fill(); c.stroke();                                                    // bowl
+      c.fillStyle = 'rgba(255,255,255,.85)'; c.beginPath(); c.ellipse(140, 22, 16, 6, -0.2, 0, Math.PI * 2); c.fill();
+      c.fillStyle = 'rgba(255,120,220,.35)'; c.beginPath(); c.ellipse(160, 40, 18, 7, 0.2, 0, Math.PI * 2); c.fill();
+    });
+    // the LOSER. flag the tiny bunny plants on the defeated Overlord
+    this.canvasTex('loserFlag', 220, 260, (c, w, h) => {
+      c.fillStyle = '#6b4a2a'; c.fillRect(14, 0, 12, h); c.strokeStyle = '#2a1a0e'; c.lineWidth = 3; c.strokeRect(14, 0, 12, h);
+      c.fillStyle = '#f6efe0'; c.beginPath(); c.moveTo(26, 12); c.lineTo(w - 6, 20); c.lineTo(w - 22, 62); c.lineTo(w - 4, 104); c.lineTo(26, 98); c.closePath(); c.fill(); c.stroke();
+      c.fillStyle = '#c4122e'; c.font = 'bold 46px "Lilita One", Impact, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('LOSER.', 112, 60);
     });
     this.canvasTex('flag', 120, 420, (c, w, h) => {
       c.fillStyle = '#d9c9b0'; c.fillRect(10, 0, 12, h);

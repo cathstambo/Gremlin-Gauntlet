@@ -77,3 +77,70 @@ export const STAGE2 = [
   ...row('taco', 31000, 4, 70),
   { t: 'finish', d: 32200 },
 ];
+
+// =====================================================================================================
+// World 2, Meadows of Malicious Happiness (Catalytik, The Evil Overlord). Same layout every attempt.
+//   Creatures: bunny (hops at you: jump / blast), kitten (wiggles, then pounces at head height: slide / blast),
+//              flower (rooted; rears back then snaps: jump / blast ×3), swarm (butterflies at head height 'high'
+//              or knee height 'low': no damage, but they blind you for a moment: avoid or blast).
+//   Hazards:   beam (crystal turret fires a rainbow beam across the path after a glowing warning:
+//              lane 'low' = jump it, lane 'high' = slide under it).
+//   Platforms: plat 'long' | 'fence' | 'arch'.
+// ---- Stage 1: easy to medium; each danger introduced on its own first. ----
+export const W2_STAGE1 = [
+  ...row('taco', 1100, 3, 70),
+  { t: 'bunny', d: 2100 },
+  ...row('crystal', 2700, 2, 70, 200),
+  { t: 'flower', d: 3700 },
+  ...row('taco', 4300, 3, 70),
+  { t: 'beam', d: 5600, lane: 'low' },
+  { t: 'plat', size: 'long', d: 6700, h: 220 }, ...row('taco', 6560, 3, 300),
+  { t: 'kitten', d: 7900 },
+  ...row('crystal', 8500, 2, 70, 200),
+  { t: 'potion', d: 9300, h: 70 },
+  { t: 'swarm', d: 10100, lane: 'high' },
+  ...row('taco', 10700, 4, 70),
+  { t: 'beam', d: 11900, lane: 'high' },
+  { t: 'plat', size: 'fence', d: 13000, h: 230 }, { t: 'margarita', d: 13000, h: 320 },
+  { t: 'bunny', d: 14000 },
+  ...row('crystal', 14600, 2, 70, 200),
+  { t: 'flower', d: 15600 },
+  { t: 'kitten', d: 16900 },
+  ...row('taco', 17600, 3, 70),
+  { t: 'beam', d: 18700, lane: 'low' },
+  { t: 'finish', d: 20000 },
+];
+// ---- Stage 2: busier and a touch harder; dangers start to pair up. ----
+export const W2_STAGE2 = [
+  { t: 'bunny', d: 1700 },
+  ...row('taco', 2200, 3, 70),
+  { t: 'beam', d: 3200, lane: 'high' },
+  { t: 'flower', d: 4300 },
+  { t: 'swarm', d: 5300, lane: 'low' },
+  ...row('crystal', 5800, 2, 70, 200),
+  { t: 'kitten', d: 6700 },
+  { t: 'plat', size: 'arch', d: 7800, h: 230 }, ...row('taco', 7680, 3, 310), { t: 'margarita', d: 8000, h: 310 },
+  { t: 'bunny', d: 8900 }, { t: 'bunny', d: 9500 },
+  { t: 'potion', d: 10400, h: 70 },
+  { t: 'beam', d: 11300, lane: 'low' },
+  { t: 'flower', d: 12400 },
+  ...row('crystal', 13000, 2, 70, 200),
+  { t: 'swarm', d: 13900, lane: 'high' },
+  { t: 'kitten', d: 14900 },
+  { t: 'plat', size: 'long', d: 16000, h: 230 }, { t: 'margarita', d: 16000, h: 320 },
+  { t: 'beam', d: 17200, lane: 'high' },
+  ...row('taco', 17900, 3, 70),
+  { t: 'flower', d: 19000 },
+  ...row('crystal', 19700, 3, 70, 180),
+  // the closing stretch: busiest, with about a second between threats (a good place for Gremlin Meltdown)
+  { t: 'bunny', d: 21000 },
+  { t: 'kitten', d: 22000 },
+  { t: 'swarm', d: 23000, lane: 'high' },
+  { t: 'beam', d: 24100, lane: 'low' },
+  { t: 'flower', d: 25300 },
+  { t: 'bunny', d: 26400 },
+  { t: 'beam', d: 27500, lane: 'high' },
+  { t: 'kitten', d: 28700 },
+  ...row('taco', 29500, 4, 70),
+  { t: 'finish', d: 30800 },
+];

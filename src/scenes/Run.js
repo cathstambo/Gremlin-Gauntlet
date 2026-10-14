@@ -1,12 +1,14 @@
-// World 1 running stages (1 = easy to medium, 2 = busier and harder), then on to Eddie.
-// Hearts, Chaos Meter and score carry from stage 1 to stage 2 to the boss; dying in a running stage restarts the level (GDD).
+// Running stages for every world (1 = easy to medium, 2 = busier and harder), then on to that world's boss.
+// Hearts, Chaos Meter and score carry from stage 1 to stage 2 to the boss; part 2 is a checkpoint.
 import { Gremlin } from '../gremlin/Gremlin.js';
-import { STAGE1, STAGE2 } from '../course.js';
-import { Swamp } from '../world/Swamp.js';
+import { WORLDS, worldNo, loadMeadow } from '../worlds.js';
 import { Music } from '../audio/Music.js';
 import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js';
+import { Bunny, Kitten, Flower, Swarm } from '../creatures/Meadow.js';
 
-const CREATURES = { frog: Frog, gator: Gator, bat: Bat, spider: Spider };
+const CREATURES = { frog: Frog, gator: Gator, bat: Bat, spider: Spider, bunny: Bunny, kitten: Kitten, flower: Flower, swarm: Swarm };
+// rainbow beam (World 2): turret size, how far it sinks into the path, and the beam's band (px above the ground)
+const BEAM = { low: { s: 0.5, sink: 95, y0: 112, y1: 38 }, high: { s: 0.72, sink: 4, y0: 262, y1: 172 }, warn: 0.95, fire: 0.5, startGap: 1320 };
 export const GROUND_Y = 870, GREMLIN_X = 520, GREMLIN_H = 330;
 
 export const POINTS = { taco: 100, margarita: 250, levelComplete: 500, perHeart: 200, noDamage: 1000 };
@@ -27,6 +29,7 @@ const BOX = {
   roots: { w: 170, h: 80 }, mould: { w: 220, h: 60 }, sludge: { w: 220, h: 40 }, sludgeWide: { w: 600, h: 40 },
   taco: { w: 90, h: 80 }, margarita: { w: 80, h: 90 }, crystal: { w: 70, h: 90 }, potion: { w: 80, h: 90 },
 };
+const rnd = (a, b) => a + Math.random() * (b - a);
 const PICKUPS = new Set(['taco', 'margarita', 'crystal', 'potion']);
 const HAZARDS = new Set(['roots', 'vines', 'mould', 'sludge', 'sludgeWide']);
 const SHADOW_W = { roots: 300, mould: 300, sludge: 300, sludgeWide: 680 };
@@ -35,17 +38,27 @@ export const MAX_HEARTS = 6;   // 3 normal + up to 3 gold bonus hearts from poti
 export class Run extends Phaser.Scene {
   constructor() { super('Run'); }
 
+  preload() {
+    if (worldNo(this.registry) === 2) {
+      const t = this.add.text(this.scale.width / 2, this.scale.height / 2, 'Picking flowers…', { fontFamily: 'Lilita One, Trebuchet MS, sans-serif', fontSize: 44, color: '#ece6f5' }).setOrigin(0.5);
+      this.load.once('complete', () => t.destroy());
+      loadMeadow(this);
+    }
+  }
   create() {
+    this.world = worldNo(this.registry); this.W = WORLDS[this.world];
     this.stage = this.registry.get('stage') || 1;
     const carry = this.registry.get('carry') || { hearts: 3, chaos: 0, score: 0, damaged: false };
     this.mode = 'ready';            // ready → running → finished | dying → gameover
     this.startCarry = carry;        // checkpoint: what you had when this part began
     this.hearts = carry.hearts; this.chaos = carry.chaos; this.score = carry.score; this.damaged = carry.damaged;
     this.dist = 0; this.timeScale = 1; this.showBoxes = false;
-    this.sizes = this.cache.json.get('swampSizes');
-    this.swamp = new Swamp(this, GROUND_Y);
+    this.sizes = this.W.sizes(this);
+    this.swamp = new this.W.backdrop(this, GROUND_Y);
     Music.play(this, 'run');
-    this.items = (this.stage === 1 ? STAGE1 : STAGE2).map(c => ({ ...c, obj: null, done: false }));
+    this.items = this.W.stages[this.stage - 1].map(c => ({ ...c, obj: null, done: false }));
+    this.beamG = this.add.graphics().setDepth(10).setBlendMode(Phaser.BlendModes.ADD);
+    this.blind = [];   // butterflies covering the screen after the gremlin blunders into a swarm
     this.orbs = []; this.creatures = [];
     this.orbG = this.add.graphics().setDepth(13).setBlendMode(Phaser.BlendModes.ADD);
     this.hazG = this.add.graphics().setDepth(6);
@@ -75,7 +88,7 @@ export class Run extends Phaser.Scene {
   next() {
     this.registry.set('carry', this.carry());
     if (this.stage === 1) { this.registry.set('stage', 2); this.restart(); }
-    else this.scene.get('UI').goTo('Boss');
+    else this.scene.get('UI').goTo(this.W.boss);
   }
   act(name) {
     if (this.mode !== 'running') return;
@@ -114,6 +127,8 @@ export class Run extends Phaser.Scene {
     this.creatures = this.creatures.filter(c => !c.gone);
     this.updateOrbs(dt);
     this.drawHazardFx();
+    this.updateBeams(dt);
+    this.updateBlind(dt);
     if (this.mode === 'running') this.collide(dt);
     this.drawBoxes();
   }
@@ -138,9 +153,15 @@ export class Run extends Phaser.Scene {
     let o;
     const L = LOOK[it.t];
     if (it.t === 'plat') {
-      const key = it.size === 'small' ? 'plat_small' : 'plat_medium', s = it.size === 'small' ? 1.2 : 0.9, S = this.sizes[key];
-      o = this.add.image(x, GROUND_Y - it.h - S.top * s, key).setOrigin(0.5, 0).setScale(s).setDepth(5);
+      const P = this.W.plats[it.size], S = this.sizes[P.size], s = P.s * (S.scale || 1);
+      o = this.add.image(x, GROUND_Y - it.h - S.top * s, P.key).setOrigin(0.5, 0).setScale(s).setDepth(5);
       it.w = S.w * s;
+    } else if (it.t === 'beam') {
+      // a crystal turret by the path; after a glowing warning it fires a rainbow beam across the path
+      const B = BEAM[it.lane], T = this.cache.json.get('meadowInfo').turret;
+      o = this.add.image(x, GROUND_Y + B.sink, 'm_turret').setOrigin(0.35, 1).setScale(B.s * 2).setDepth(3.5);
+      it.state = 'idle'; it.st = 0;
+      if (o.preFX) it.glow = o.preFX.addGlow(0xff4fd8, 2, 0, false, 0.1, 10);
     } else if (it.t === 'vines') {
       // a slimy branch hanging overhead: vine tips stop ~150 px above the ground, so you have to slide
       o = this.add.image(x, GROUND_Y - 140, L.key).setOrigin(0.5, 1).setScale(L.s).setDepth(9);
@@ -164,6 +185,7 @@ export class Run extends Phaser.Scene {
   itemRect(it) {
     const o = it.obj;
     if (it.t === 'vines') return new Phaser.Geom.Rectangle(o.x - 150, 0, 300, GROUND_Y - 150);
+    if (it.t === 'beam') { if (it.state !== 'fire') return null; const B = BEAM[it.lane]; return new Phaser.Geom.Rectangle(-100, GROUND_Y - B.y0, it.obj.x - 60 + 100, B.y0 - B.y1); }
     const b = BOX[it.t]; if (!b) return null;
     if (PICKUPS.has(it.t)) return new Phaser.Geom.Rectangle(o.x - b.w / 2, o.y - b.h / 2, b.w, b.h);
     return new Phaser.Geom.Rectangle(o.x - b.w / 2, GROUND_Y - b.h, b.w, b.h);
@@ -173,6 +195,7 @@ export class Run extends Phaser.Scene {
     let inMould = false;
     for (const it of this.items) {
       if (!it.obj || it.done || it.t === 'finish' || it.t === 'plat') continue;
+      if (it.t === 'beam' && it.state !== 'fire') continue;
       const r = this.itemRect(it); if (!r || !Phaser.Geom.Intersects.RectangleToRectangle(hb, r)) continue;
       if (it.t === 'crystal') { this.collect(it); this.chaos = Math.min(100, this.chaos + 10); this.events.emit('chaos', this.chaos); }
       else if (it.t === 'taco' || it.t === 'margarita') { this.collect(it); this.addScore(POINTS[it.t]); }
@@ -186,7 +209,11 @@ export class Run extends Phaser.Scene {
       } else this.takeHit();
     }
     if (!inMould) this.mouldT = 0;
-    for (const c of this.creatures) { const r = c.hitbox(); if (r && Phaser.Geom.Intersects.RectangleToRectangle(hb, r)) this.takeHit(); }
+    for (const c of this.creatures) {
+      const r = c.hitbox(); if (!r || !Phaser.Geom.Intersects.RectangleToRectangle(hb, r)) continue;
+      if (c.harmless) { c.hurt(99); this.blinded(); }   // butterflies: no damage, but you can't see for a moment
+      else this.takeHit();
+    }
   }
   collect(it) {
     it.done = true; const o = it.obj;
@@ -225,6 +252,47 @@ export class Run extends Phaser.Scene {
         G.fillStyle(i % 2 ? 0xb06cff : 0xc4e534, 0.6 * (1 - ph)).fillCircle(it.obj.x - 80 + i * 50 + 10 * Math.sin(t * 2 + i), GROUND_Y - 60 - ph * 90, 4);
       }
     }
+  }
+
+  // ---------- World 2: rainbow beams and butterfly blindness ----------
+  updateBeams(dt) {
+    const G = this.beamG; G.clear(); const now = this.time.now / 1000;
+    for (const it of this.items) {
+      if (it.t !== 'beam' || !it.obj) continue;
+      const B = BEAM[it.lane], o = it.obj, gap = o.x - this.g.x;
+      const lensX = o.x - 0.35 * o.displayWidth + 0.27 * o.displayWidth, yc = GROUND_Y - (B.y0 + B.y1) / 2, th = B.y0 - B.y1;
+      it.st += dt;
+      if (it.state === 'idle' && gap < BEAM.startGap && this.mode === 'running') { it.state = 'warn'; it.st = 0; }
+      else if (it.state === 'warn' && it.st >= BEAM.warn) { it.state = 'fire'; it.st = 0; this.cameras.main.shake(120, 0.004); }
+      else if (it.state === 'fire' && it.st >= BEAM.fire) { it.state = 'done'; it.st = 0; }
+      if (it.state === 'warn') {   // the lens glows brighter and a sparkling guide line shows exactly where the beam will go
+        const k = it.st / BEAM.warn, blink = 0.5 + 0.5 * Math.sin(now * (14 + 20 * k));
+        if (it.glow) it.glow.outerStrength = 2 + 8 * k;
+        G.fillStyle(0xff7ae0, 0.25 + 0.4 * k * blink).fillCircle(lensX, yc, 30 + 30 * k);
+        for (let x = lensX - 40; x > -40; x -= 46) G.fillStyle(0xffffff, (0.25 + 0.55 * k) * (0.5 + 0.5 * Math.sin(now * 20 + x * 0.05))).fillCircle(x, yc, 4 + 3 * k);
+        G.lineStyle(2, 0xff9ce8, 0.35 + 0.4 * k).lineBetween(-40, yc - th / 2, lensX, yc - th / 2).lineBetween(-40, yc + th / 2, lensX, yc + th / 2);
+      } else if (it.state === 'fire') {   // the beam: rainbow bands, wobbling
+        if (!it.beam) { it.beam = this.add.tileSprite(0, yc, 10, th * 1.6, 'm_beam').setOrigin(0, 0.5).setDepth(10); }
+        const w = Math.max(0, lensX + 20); it.beam.setPosition(0, yc + 3 * Math.sin(now * 40)).setSize(w, th * 1.6).setTileScale(1, th * 1.6 / 200);
+        it.beam.tilePositionX -= dt * 2400; it.beam.setAlpha(Math.min(1, it.st * 12, (BEAM.fire - it.st) * 10));
+        G.fillStyle(0xffffff, 0.8).fillCircle(lensX, yc, th * 0.7);
+      } else if (it.beam) { it.beam.destroy(); it.beam = null; if (it.glow) it.glow.outerStrength = 2; }
+    }
+  }
+  blinded() {
+    // a flurry of butterflies sweeps across the screen for a moment (the GDD's "obscure visibility briefly")
+    const W = this.scale.width;
+    for (let i = 0; i < 9; i++) {
+      const im = this.add.image(W + 200 + i * 140, 140 + (i * 197) % 760, 'c_swarm_body').setScale(rnd(1.2, 1.8)).setDepth(25).setAlpha(0.96).setFlipX(i % 2 === 0);
+      this.blind.push({ im, vx: -rnd(900, 1300), vy: rnd(-40, 40), t: 0, ph: i });
+    }
+    this.blindFog = this.blindFog || this.add.rectangle(W / 2, this.scale.height / 2, W, this.scale.height, 0xff7ae0, 0).setDepth(24);
+    this.blindT = 1.8;
+  }
+  updateBlind(dt) {
+    if (this.blindFog) { this.blindT = Math.max(0, (this.blindT || 0) - dt); this.blindFog.setAlpha(0.35 * Math.min(1, this.blindT * 2)); }
+    for (const b of this.blind) { b.t += dt; b.im.x += b.vx * dt; b.im.y += b.vy * dt + 40 * Math.sin(b.t * 9 + b.ph) * dt; b.im.scaleY = b.im.scaleX * (0.85 + 0.15 * Math.sin(b.t * 25)); if (b.im.x < -500) { b.im.destroy(); b.dead = true; } }
+    this.blind = this.blind.filter(b => !b.dead);
   }
 
   updateOrbs(dt) {

@@ -48,7 +48,7 @@ const TAUNTS = {
 };
 
 export class Boss extends Phaser.Scene {
-  constructor() { super('Boss'); }
+  constructor(key = 'Boss') { super(key); }
 
   create() {
     this.mode = 'ready';   // ready → intro → running → (won | dying → gameover)
@@ -70,7 +70,7 @@ export class Boss extends Phaser.Scene {
     this.g.idle();
     this.g.on('shoot', p => this.spawnOrb(p));
     this.g.on('meltBlast', p => this.meltBlast(p));
-    this.g.on('died', () => this.after(1.3, () => { this.mode = 'gameover'; this.events.emit('gameover', pick(TAUNTS.death)); }));
+    this.g.on('died', () => this.after(1.3, () => { this.mode = 'gameover'; this.events.emit('gameover', pick((this.TAUNTS || TAUNTS).death)); }));
 
     this.e = new Eddie(this, SPOTS.groundR.x, GROUND_Y, EDDIE_H);
     this.e.spot = 'groundR';
@@ -112,7 +112,7 @@ export class Boss extends Phaser.Scene {
       .fillTriangle(-14, -20, 14, -20, 0, 6).lineBetween(-14, -20, 0, 6).lineBetween(14, -20, 0, 6);
     b.txt.setY(-31); b.setVisible(true);
   }
-  taunt(kind) { if (Math.random() < 0.45) this.say(pick(TAUNTS[kind]), 1.5); }
+  taunt(kind) { if (Math.random() < 0.45) this.say(pick((this.TAUNTS || TAUNTS)[kind]), 1.5); }
 
   // ---------- flow ----------
   startRun() {
@@ -396,8 +396,8 @@ export class Boss extends Phaser.Scene {
   dustBurst(x, y, n, col = 0x6a5a3a) { for (let i = 0; i < n; i++) (this.chips ||= []).push({ x: x + rnd(-120, 120), y, vx: rnd(-420, 420), vy: rnd(-520, -120), life: rnd(0.4, 0.9), sz: rnd(8, 18), col, dust: true }); }
   /** A fresh potion pops up on a low root platform (a single jump reaches it): one that's still empty, as far from Eddie as possible. */
   dropPotion() {
-    const y = GROUND_Y - 215 - 60, taken = x => this.pickups.some(q => q.type === 'potion' && !q.dead && Math.abs(q.x - x) < 50);
-    const spots = [585, 1375].sort((a, b) => Math.abs(b - this.e.x) - Math.abs(a - this.e.x));
+    const y = GROUND_Y - (this.potionH || 215) - 60, taken = x => this.pickups.some(q => q.type === 'potion' && !q.dead && Math.abs(q.x - x) < 50);
+    const spots = (this.potionSpots || [585, 1375]).slice().sort((a, b) => Math.abs(b - this.e.x) - Math.abs(a - this.e.x));
     const x = spots.find(x => !taken(x)) ?? spots[0];
     this.addPickup('potion', x, y);
     this.g.fx.burst([x, y], 0.6);
@@ -411,7 +411,7 @@ export class Boss extends Phaser.Scene {
     if (g.invulnerable || g.trapped || this.mode !== 'running') return;
     this.lastHitBy = src;
     this.hearts--; this.damaged = true; this.events.emit('hearts', this.hearts);
-    if (this.hearts <= 0) { this.mode = 'dying'; g.die(); this.say(pick(TAUNTS.death), 2.4); }
+    if (this.hearts <= 0) { this.mode = 'dying'; g.die(); this.say(pick((this.TAUNTS || TAUNTS).death), 2.4); }
     else g.hurt();
   }
 
@@ -551,7 +551,7 @@ export class Boss extends Phaser.Scene {
       this.crystalT -= dt;
       if (this.crystalT <= 0 && this.pickups.filter(p => p.type === 'crystal').length < 3) {
         this.crystalT = rnd(4, 6.5);
-        const where = pick([[rnd(160, 1760), GROUND_Y - 70], [585, GROUND_Y - 215 - 70], [1375, GROUND_Y - 215 - 70], [985, GROUND_Y - 340 - 70], [rnd(200, 1700), GROUND_Y - 360]]);
+        const where = pick(this.crystalSpots ? this.crystalSpots() : [[rnd(160, 1760), GROUND_Y - 70], [585, GROUND_Y - 215 - 70], [1375, GROUND_Y - 215 - 70], [985, GROUND_Y - 340 - 70], [rnd(200, 1700), GROUND_Y - 360]]);
         this.addPickup('crystal', where[0], where[1]);
       }
     }
@@ -600,6 +600,6 @@ export class Boss extends Phaser.Scene {
     const hb = this.g.hitbox(); if (hb) G.lineStyle(3, this.g.invulnerable ? 0xffffff : 0xc6f135, 1).strokeRectShape(hb);
     const eb = this.e.hurtbox(); if (eb) G.lineStyle(3, this.e.vulnerable ? 0xc6f135 : 0xee2a8a, 1).strokeRectShape(eb);
     for (const s of this.shots) if (s.r) G.lineStyle(3, 0xee2a8a, 1).strokeCircle(s.x, s.y, s.r);
-    for (const p of PLATFORMS) G.lineStyle(2, 0x9b4dff, 1).lineBetween(p.x0, GROUND_Y - p.h, p.x1, GROUND_Y - p.h);
+    for (const p of (this.platforms || PLATFORMS)) G.lineStyle(2, 0x9b4dff, 1).lineBetween(p.x0, GROUND_Y - p.h, p.x1, GROUND_Y - p.h);
   }
 }
