@@ -6,8 +6,8 @@
 //     - a magic bolt fired BACK at him (BLAST BACK / swipe left) knocks him well back and stuns him for a moment.
 //   At 100 he catches you: a giant paw swipe ends the attempt (retry this run, meter reset).
 //   The meter carries over to the next run; it only resets when you die.
-import { Grunt } from '../grunt/Grunt.js?v=20261015191024';
-import { Sfx } from '../audio/Music.js?v=20261015191024';
+import { Grunt } from '../grunt/Grunt.js?v=20261015192012';
+import { Sfx } from '../audio/Music.js?v=20261015192012';
 
 export const CHASE = {
   // Difficulty ramps up (Cath, 15 Oct): gentle at the start of Into the Wild, tighter towards its end, and tighter again
@@ -52,6 +52,8 @@ export class Chase {
     return clamp((run.stage - 1) * 0.25 + 0.45 * clamp(run.dist / end, 0, 1), 0, 1);
   }
   get(k) { return mix(CHASE[k], this.heat()); }
+  /** Final Sprint made 15% easier (Cath, 15 Oct): Grunt gains 15% less and you pull away 15% faster there. */
+  get softK() { return this.run.stage === 4 ? 0.85 : 1; }
   frontFor(p) {
     const G = this.run.GREMLIN_X - 30;
     if (this.run.W.view) {   // test version: always fully on screen; the gap opens and closes visibly (eased so small changes show)
@@ -103,19 +105,19 @@ export class Chase {
   pace(dt) {
     const run = this.run;
     this.cleanT = (this.cleanT || 0) + dt; this.stunT = Math.max(0, (this.stunT || 0) - dt);
-    const h = this.heat(), pull = mix(CHASE.pullAway, h);
+    const h = this.heat(), E = this.softK, pull = mix(CHASE.pullAway, h) / E;
     if (this.stunT > 0) { this.prox = Math.max(Math.min(this.prox, CHASE.floor), this.prox - pull * dt); return; }
     if (this.surgeT > 0) {
-      this.surgeT -= dt; this.prox = clamp(this.prox + mix(CHASE.surgeRate, h) * dt, 0, 100);
+      this.surgeT -= dt; this.prox = clamp(this.prox + mix(CHASE.surgeRate, h) * E * dt, 0, 100);
     } else {
-      this.nextSurge = (this.nextSurge ?? mix(CHASE.firstSurge, h)) - dt;
+      this.nextSurge = (this.nextSurge ?? mix(CHASE.firstSurge, h) / E) - dt;
       if (this.nextSurge <= 0) {   // telegraphed: a roar and a big stomp, then he charges
         const [a, b] = CHASE.surgeEvery.map(r => r[0] + (r[1] - r[0]) * h);
-        this.surgeT = CHASE.surgeTime; this.nextSurge = a + Math.random() * (b - a);
+        this.surgeT = CHASE.surgeTime; this.nextSurge = (a + Math.random() * (b - a)) / E;
         this.say('*RAAAWR!*', 1.0); Sfx.play(run, ['yowl', 'yowl2'], 1); run.cameras.main.shake(300, 0.008);
         run.events.emit('surge');
       } else if (this.cleanT > CHASE.cleanAfter) this.prox = Math.max(Math.min(this.prox, CHASE.floor), this.prox - pull * dt);
-      else this.prox = clamp(this.prox + mix(CHASE.creep, h) * dt, 0, 100);
+      else this.prox = clamp(this.prox + mix(CHASE.creep, h) * E * dt, 0, 100);
     }
   }
   /** When he's off screen, his huge shadow and the thump of his steps show he's still coming. */
@@ -138,7 +140,7 @@ export class Chase {
     run.time.delayedCall(900, () => { this.phase = 'chase'; });
   }
   /** Something (a hit, a stumble) let him close in. */
-  closer(n = this.get('hit'), stumble = true) { if (stumble) this.cleanT = 0; if (this.phase === 'chase') { this.prox = clamp(this.prox + n, 0, 100); if (this.prox > 60) this.say('*YOWL!*', 0.9); } }
+  closer(n = this.get('hit'), stumble = true) { if (stumble) this.cleanT = 0; if (this.phase === 'chase') { this.prox = clamp(this.prox + n * this.softK, 0, 100); if (this.prox > 60) this.say('*YOWL!*', 0.9); } }
   ease(n) { if (this.phase === 'chase') this.prox = Math.max(Math.min(this.prox, CHASE.floor), this.prox - n); }   // never further back than the floor
   /** River Run (GDD): a salmon leaps out of the river right in front of him and he can't resist it. He stops to swat at it
    *  for a couple of seconds (standing still, so you pull away), then gets back to the chase. */
