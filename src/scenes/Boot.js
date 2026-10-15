@@ -1,6 +1,6 @@
-import { SWAMP_FILES } from '../world/Swamp.js?v=20261015131435';
-import { Music } from '../audio/Music.js?v=20261015131435';
-import { CREATURE_PARTS } from '../creatures/Creatures.js?v=20261015131435';
+import { SWAMP_FILES } from '../world/Swamp.js?v=20261015142201';
+import { Music } from '../audio/Music.js?v=20261015142201';
+import { CREATURE_PARTS } from '../creatures/Creatures.js?v=20261015142201';
 // Loads the gremlin's parts and makes the simple placeholder textures used by the test run.
 export const PARTS = ['body', 'head', 'eye', 'ear', 'tail', 'pouch', 'upperArm', 'foreArm', 'upperArmFar', 'foreArmFar',
   'thighN', 'bootN', 'thighFfar', 'bootFfar'];

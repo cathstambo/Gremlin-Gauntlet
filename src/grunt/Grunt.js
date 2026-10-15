@@ -43,8 +43,9 @@ export class Grunt {
     // stomp walk: one heavy step every ~0.45 s
     if (walking) this.q += dt * 7 * this.speed;
     const s = Math.sin(this.q), liftF = Math.max(0, s), liftB = Math.max(0, -s);
-    P.legF.y = this.R.legF.py - 26 * liftF; P.legF.x = this.R.legF.px + 18 * liftF; P.legF.rotation = -8 * liftF * D;
-    P.legB.y = this.R.legB.py - 26 * liftB; P.legB.x = this.R.legB.px + 18 * liftB; P.legB.rotation = -8 * liftB * D;
+    // legs are cut at the knee with a soft edge (Cath, 15 Oct): each foot lifts from the knee and tips its toes up, without sliding
+    P.legF.y = this.R.legF.py - 16 * liftF; P.legF.x = this.R.legF.px; P.legF.rotation = -5 * liftF * D;
+    P.legB.y = this.R.legB.py - 10 * liftB; P.legB.x = this.R.legB.px; P.legB.rotation = 0;   // far leg: a straight lift
     P.body.y = this.R.body.py - 10 * Math.abs(Math.cos(this.q)); P.body.rotation = (2 * Math.sin(this.q) - 4 * this.flinch) * D;
     P.tail.rotation = (10 * Math.sin(this.t * 2.2) + 4 * s) * D;
     const step = Math.sign(s);
