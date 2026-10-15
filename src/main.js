@@ -1,10 +1,10 @@
 // Gremlin Gauntlet: game entry point.
 // Landscape 16:9 logical play area (1920×1080) scaled to fit any screen.
-import { Boot } from './scenes/Boot.js';
-import { Run } from './scenes/Run.js';
-import { UI } from './scenes/UI.js';
-import { Boss } from './scenes/Boss.js';
-import { Overlord } from './scenes/Overlord.js';
+import { Boot } from './scenes/Boot.js?v=20261015113300';
+import { Run } from './scenes/Run.js?v=20261015113300';
+import { UI } from './scenes/UI.js?v=20261015113300';
+import { Boss } from './scenes/Boss.js?v=20261015113300';
+import { Overlord } from './scenes/Overlord.js?v=20261015113300';
 
 window.game = new Phaser.Game({
   type: Phaser.AUTO,

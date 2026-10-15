@@ -4,7 +4,7 @@
 //     every hit you take brings him a lot closer; a magic bolt fired BACK at him (button or swipe left) knocks him back.
 //   At 100 he catches you: a giant paw swipe ends the attempt (retry this run, meter reset).
 //   The meter carries over to the next run; it only resets when you die.
-import { Grunt } from '../grunt/Grunt.js';
+import { Grunt } from '../grunt/Grunt.js?v=20261015113300';
 
 export const CHASE = {
   creep: 0.9,          // meter points per second while running
