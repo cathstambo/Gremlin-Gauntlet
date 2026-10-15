@@ -1,8 +1,8 @@
 // World 3 run 2, River Run (Cath-approved art + readme, 15 Oct 2026): charging moose, fishing grizzly, leaping salmon.
 // Same interface as the other creatures: update(dt, ctx), hitbox() (what hurts the gremlin), shot(), centre, points.
 // Extras used by the Run scene: shootbox() = where magic hits it (if different from hitbox); noShoot = magic passes by.
-import { Creature } from './Creatures.js?v=20261015153514';
-import { Sprite } from './Wild.js?v=20261015153514';
+import { Creature } from './Creatures.js?v=20261015155258';
+import { Sprite } from './Wild.js?v=20261015155258';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const ease = k => (k < 0 ? 0 : k > 1 ? 1 : k * k * (3 - 2 * k));
@@ -112,7 +112,7 @@ export class Bear extends Creature {
 // see them from the moment the bridge comes into view). Each salmon keeps leaping out of the river, high over the deck and
 // back in on the other side, then the other way. It's dangerous where it crosses head height: SLIDE as you pass under it.
 // Magic doesn't stop it. ----------------
-const LEAP = { flight: 1.5, rest: 0.45, span: 420, top: 640, low: -170, band: [330, 120] };   // band = px above the deck where it hurts
+const LEAP = { flight: 1.7, rest: 0.45, span: 440, top: 780, low: 170, band: [330, 120] };   // top = peak above the deck, low = start below it   // band = px above the deck where it hurts
 export class Salmon extends Creature {
   constructor(scene, x, groundY) {
     super(scene, x, 'salmon');
@@ -127,7 +127,7 @@ export class Salmon extends Creature {
     const G = this.groundY;
     if (ph < LEAP.flight) {
       const u = ph / LEAP.flight, x = this.x + dir * LEAP.span * (u - 0.5);
-      const y = G - LEAP.low - (LEAP.top + LEAP.low) * 4 * u * (1 - u);
+      const y = G + LEAP.low - (LEAP.top + LEAP.low) * 4 * u * (1 - u);
       const vx = dir * LEAP.span / LEAP.flight, vy = -(LEAP.top + LEAP.low) * 4 * (1 - 2 * u) / LEAP.flight;
       const ang = Math.atan2(vy, vx);
       this.p.img.setFlipX(dir < 0);
