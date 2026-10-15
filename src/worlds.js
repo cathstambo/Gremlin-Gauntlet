@@ -1,8 +1,8 @@
 // The worlds, in the locked GDD order. Each world = two running stages, then its boss.
-import { STAGE1, STAGE2, W2_STAGE1, W2_STAGE2, W3_RUN1 } from './course.js?v=20261015130430';
-import { Swamp, Meadow, Wild, MEADOW_FILES, WILD_FILES } from './world/Swamp.js?v=20261015130430';
-import { GRUNT_PARTS } from './grunt/Grunt.js?v=20261015130430';
-import { MEADOW_CREATURE_PARTS } from './creatures/Creatures.js?v=20261015130430';
+import { STAGE1, STAGE2, W2_STAGE1, W2_STAGE2, W3_RUN1 } from './course.js?v=20261015131435';
+import { Swamp, Meadow, Wild, MEADOW_FILES, WILD_FILES } from './world/Swamp.js?v=20261015131435';
+import { GRUNT_PARTS } from './grunt/Grunt.js?v=20261015131435';
+import { MEADOW_CREATURE_PARTS } from './creatures/Creatures.js?v=20261015131435';
 
 export const WORLDS = {
   1: {
@@ -22,13 +22,12 @@ export const WORLDS = {
     backdrop: Wild, stages: [W3_RUN1], runNames: ['INTO THE WILD', 'RIVER RUN', 'UZI RAMPAGE', 'FINAL SPRINT'],
     chase: { start: [30, 35, 40, 50] },   // Grunt's starting Proximity Meter for each run (used at the start, and after a death)
     maxHearts: 5, plats: {}, sizes: () => ({}),
-    view: null, noTrunks: false,   // set for the test version below
+    // Approved by Cath 15 Oct: gameplay zoomed out 30% (backgrounds keep their framing), gremlin a little left of centre,
+    // Grunt ~2x her height and always fully on screen, no fallen logs to slide under
+    view: { zoom: 0.7, gremlinAt: 0.42, gruntH: 660 }, noTrunks: true,
   },
 };
 export const LAST_WORLD = 3;
-// TEST VERSION (Cath's playtest link .../#world3test): World 3 zoomed out with Grunt fully on screen and the steep
-// cross-path log. The normal game is unchanged unless the address ends in #world3test.
-export const TEST3 = typeof location !== 'undefined' && location.hash === '#world3test';
 export const worldNo = registry => registry.get('world') || 1;
 
 /** Queue World 2's art on a scene's loader (only what isn't loaded yet). Call from preload(). */
@@ -45,8 +44,3 @@ export function loadWild(scene) {
   for (const n of GRUNT_PARTS) if (!scene.textures.exists('gr_' + n)) scene.load.image('gr_' + n, `assets/grunt/${n}.webp`);
   if (!scene.cache.json.exists('gruntRig')) scene.load.json('gruntRig', 'assets/grunt/rig.json');
 }
-
-if (TEST3) Object.assign(WORLDS[3], {
-  view: { zoom: 0.7, gremlinAt: 0.42, gruntH: 660 },   // zoom out 30%; gremlin a little left of centre; Grunt ~2x her height
-  noTrunks: true,                                      // Cath: no fallen logs to slide under
-});
