@@ -1,7 +1,7 @@
 // HUD and controls for whichever game scene is active ('Run' = test course, 'Boss' = Eddie's arena):
 // hearts, Chaos Meter, boss health, pause, touch buttons, swipe gestures, keyboard, overlays.
-import { Music } from '../audio/Music.js?v=20261015113603';
-import { WORLDS, worldNo, LAST_WORLD } from '../worlds.js?v=20261015113603';
+import { Music } from '../audio/Music.js?v=20261015114504';
+import { WORLDS, worldNo, LAST_WORLD } from '../worlds.js?v=20261015114504';
 const FONT = 'Lilita One, Arial Rounded MT Bold, Trebuchet MS, sans-serif';
 const BODY = 'Atkinson Hyperlegible, system-ui, sans-serif';
 const INK = '#ece6f5', VIOLET = 0x9b4dff, ACID = 0xc6f135, MOULD = 0x9fcc1e;
@@ -119,6 +119,7 @@ export class UI extends Phaser.Scene {
     ev.on('score', n => this.setScore(n));
     ev.on('bosshp', (f, ph) => this.setBoss(f, ph));
     ev.on('prox', p => this.setProx(p));
+    ev.on('blastReady', ok => this.blastBtn?.setAlpha(ok ? 1 : 0.4));
     ev.on('danger', k => this.setDanger(k));
     ev.on('bossvuln', d => { this.tweens.killTweensOf(this.vulTxt); this.vulTxt.setAlpha(1); this.tweens.add({ targets: this.vulTxt, alpha: 0, delay: d * 1000 - 300, duration: 300 }); });
     ev.on('gameover', msg => this.showMessage(msg || 'SPLAT.', this.isBoss ? 'Tap to retry the boss (3 hearts, Chaos Meter reset)' : this.world === 3 ? 'Tap to retry this run (3 hearts, Grunt back where he started)' : this.scene.get('Run').stage === 2 ? 'Tap to retry part 2 (3 hearts, score kept from part 1)' : 'Tap to restart part 1'));

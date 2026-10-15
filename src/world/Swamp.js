@@ -43,7 +43,7 @@ export const MEADOW = {
 export const WILD = {
   far: 'w_bg_far', mid: 'w_bg_mid', near: 'w_bg_near', ground: 'w_ground',
   groundSurface: 274,   // the dirt path's walking line in the path strip
-  midBottom: 707, nearBottom: 723, midS: 1.0, nearS: 1.0, gS: 1.2, midDrop: -110, nearDrop: -25,
+  midBottom: 707, nearBottom: 723, midS: 1.25, nearS: 1.2, gS: 1.2, midDrop: -30, nearDrop: 28,
   midTint: 0xffffff, nearTint: 0xffffff, props: [], propScale: () => 1, propTint: () => 0xffffff, propGap: [1000, 100],
 };
 
