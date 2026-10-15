@@ -5,8 +5,8 @@
 import {
   TAU, clamp, ease, seg, lerpPose, runPose, crouchPose, risePose, fallPose, tuckPose, slidePose, hurtPose,
   dieAirPose, deadPose, winPose, idlePose, meltPose, meltLift, MELT_T, MELT_BLAST_AT,
-} from './poses.js?v=20261015114504';
-import { Effects } from './Effects.js?v=20261015114504';
+} from './poses.js?v=20261015115532';
+import { Effects } from './Effects.js?v=20261015115532';
 
 // ---- tuning: placeholders until playtesting (art units; the gremlin is ~800 units tall) ----
 export const TUNING = {
@@ -159,7 +159,7 @@ export class Gremlin extends Phaser.Events.EventEmitter {
   floorUnder(x) { return this.floorAt ? this.floorAt(x) / this.k : 0; }
   get trapped() { return this.S.trapT > 0; }
   /** Stuck in mould: moves at half speed for a moment. */
-  slow(t) { this.S.slowT = Math.max(this.S.slowT, t); }
+  slow(t, tint = true) { this.S.slowT = Math.max(this.S.slowT, t); this.S.slowTint = tint; }   // tint: the green mould look (off for a stumble)
   get slowed() { return this.S.slowT > 0; }
   /** Caught in a mould net: frozen in place; every jump press shortens it. */
   trap(t) { const S = this.S; S.trapT = t; S.vx = 0; S.dashT = 0; }
@@ -374,7 +374,7 @@ export class Gremlin extends Phaser.Events.EventEmitter {
     // Meltdown fur spikes
     this.drawSpikes(P.glow);
     // hit flash (white silhouette) and invulnerability blink (separate from the short ouch reaction)
-    const tint = S.flash > 0 ? 'flash' : S.slowT > 0 ? 'slow' : 'none';
+    const tint = S.flash > 0 ? 'flash' : S.slowT > 0 && S.slowTint !== false ? 'slow' : 'none';
     if (tint !== this._tint) { this._tint = tint; for (const im of this.images) tint === 'flash' ? im.setTintFill(0xffffff) : tint === 'slow' ? im.setTint(0xb8f070) : im.clearTint(); }
     this.root.visible = !(S.inv > 0 && S.st !== 'hurt' && Math.floor(S.inv * 12.5) % 2 === 0);
   }

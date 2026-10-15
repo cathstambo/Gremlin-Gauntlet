@@ -6,8 +6,8 @@
 //     - a magic bolt fired BACK at him (BLAST BACK / swipe left) knocks him well back and stuns him for a moment.
 //   At 100 he catches you: a giant paw swipe ends the attempt (retry this run, meter reset).
 //   The meter carries over to the next run; it only resets when you die.
-import { Grunt } from '../grunt/Grunt.js?v=20261015114504';
-import { Sfx } from '../audio/Music.js?v=20261015114504';
+import { Grunt } from '../grunt/Grunt.js?v=20261015115532';
+import { Sfx } from '../audio/Music.js?v=20261015115532';
 
 export const CHASE = {
   pullAway: 2.2,       // meter points per second you gain on him while running clean...
@@ -21,6 +21,8 @@ export const CHASE = {
   blast: 15,           // knocked back by a bolt fired back at him (and it stops a surge)
   stun: 1.2,           // ...and he's stunned (stands still) for this long
   blastCooldown: 2.5,  // seconds before another bolt can knock him back again
+  fireStumble: 0.5,    // firing back makes the gremlin stumble (half speed) for this long...
+  fireCost: 4,         // ...and Grunt gains this much (a hit knocks him back 15, so a hit is still well worth it)
   defeat: 3,           // eased back when you blast a creature
   warnAt: 72,          // red screen edges from here
 };
@@ -114,7 +116,7 @@ export class Chase {
     run.time.delayedCall(900, () => { this.phase = 'chase'; });
   }
   /** Something (a hit, a stumble) let him close in. */
-  closer(n = CHASE.hit) { this.cleanT = 0; if (this.phase === 'chase') { this.prox = clamp(this.prox + n, 0, 100); if (this.prox > 60) this.say('*YOWL!*', 0.9); } }
+  closer(n = CHASE.hit, stumble = true) { if (stumble) this.cleanT = 0; if (this.phase === 'chase') { this.prox = clamp(this.prox + n, 0, 100); if (this.prox > 60) this.say('*YOWL!*', 0.9); } }
   ease(n) { if (this.phase === 'chase') this.prox = clamp(this.prox - n, 0, 100); }
   /** You got past one of his arrows: an irritated meow (GDD: irritated tail flick on misses). */
   missed() { this.say('*mrow!*', 0.7); Sfx.play(this.run, ['meow', 'meow2'], 2); }
