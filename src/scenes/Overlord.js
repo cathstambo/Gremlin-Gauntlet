@@ -4,11 +4,11 @@
 //   Phase 3 Royal Tantrum (<35%): horn glows purple; salmon + spoons combined; a telegraphed bunny stampede, then she's dizzy.
 // Arena rules are the same as Eddie's (whole-screen boss, joystick movement, high ground, everything aimed and telegraphed),
 // so this scene reuses the Eddie scene's machinery and swaps in her moves.
-import { Boss, GROUND_Y, BOSS_TUNING } from './Boss.js?v=20261015115532';
-import { Gremlin } from '../gremlin/Gremlin.js?v=20261015115532';
-import { Catalytik, ease } from '../overlord/Catalytik.js?v=20261015115532';
-import { Music } from '../audio/Music.js?v=20261015115532';
-import { loadMeadow } from '../worlds.js?v=20261015115532';
+import { Boss, GROUND_Y, BOSS_TUNING } from './Boss.js?v=20261015115916';
+import { Gremlin } from '../gremlin/Gremlin.js?v=20261015115916';
+import { Catalytik, ease } from '../overlord/Catalytik.js?v=20261015115916';
+import { Music } from '../audio/Music.js?v=20261015115916';
+import { loadMeadow } from '../worlds.js?v=20261015115916';
 
 const W = 1920;
 const GREM_H = 330, BOSS_H = 620;
@@ -91,7 +91,7 @@ export class Overlord extends Boss {
 
   drawArena() {
     const H = this.scale.height;
-    Music.play(this, 'boss');
+    Music.play(this, null);   // World 2 music to come
     // her floating rainbow castle (cover the screen)
     const bg = this.add.image(W / 2, H / 2, 'm_arena_bg').setDepth(0);
     bg.setScale(Math.max(W / bg.width, H / bg.height)); bg.setTint(0xd8d2e8);

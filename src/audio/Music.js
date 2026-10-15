@@ -20,6 +20,7 @@ export const Music = {
   /** Called by each game scene: which music belongs here. Keeps playing if it's already the right track. */
   play(scene, track) {
     this.want = track;
+    if (!track) { this.stop(); return; }   // a world with no music of its own yet: silence
     if (this.on) this.start(scene);
   },
 
@@ -67,15 +68,14 @@ export const Music = {
   },
 };
 
-// Sound effects (Grunt's cat noises). They follow the same speaker button as the music: on = music + sounds.
-// Downloaded the first time sound is on in World 3.
+// Sound effects (Grunt's cat noises). Always on (the speaker button is for music only); they follow the phone's volume.
 const SFX = ['yowl_long', 'yowl', 'yowl2', 'hiss_growl', 'growl', 'screech', 'meow', 'meow2', 'mrrrp', 'snarl'];
 const SFX_VOL = 0.55;
 export const Sfx = {
   loading: false, last: {},
   /** Play a sound if sound is on (pick one at random from a list). gap = don't repeat the same sound within this many seconds. */
   play(scene, names, gap = 0) {
-    if (!Music.on || !scene.sound.context) return;
+    if (!scene.sound.context) return;
     const name = Array.isArray(names) ? names[Math.floor(Math.random() * names.length)] : names;
     const now = scene.time.now / 1000;
     if (gap && this.last[name] && now - this.last[name] < gap) return;
