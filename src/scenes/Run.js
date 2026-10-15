@@ -1,12 +1,12 @@
 // Running stages for every world (1 = easy to medium, 2 = busier and harder), then on to that world's boss.
 // Hearts, Chaos Meter and score carry from stage 1 to stage 2 to the boss; part 2 is a checkpoint.
-import { Gremlin } from '../gremlin/Gremlin.js?v=20261015113300';
-import { WORLDS, worldNo, loadMeadow, loadWild } from '../worlds.js?v=20261015113300';
-import { Chase, CHASE } from './Chase.js?v=20261015113300';
-import { Wolf, Eagle, Fox } from '../creatures/Wild.js?v=20261015113300';
-import { Music } from '../audio/Music.js?v=20261015113300';
-import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js?v=20261015113300';
-import { Bunny, Kitten, Flower, Swarm } from '../creatures/Meadow.js?v=20261015113300';
+import { Gremlin } from '../gremlin/Gremlin.js?v=20261015113603';
+import { WORLDS, worldNo, loadMeadow, loadWild } from '../worlds.js?v=20261015113603';
+import { Chase, CHASE } from './Chase.js?v=20261015113603';
+import { Wolf, Eagle, Fox } from '../creatures/Wild.js?v=20261015113603';
+import { Music } from '../audio/Music.js?v=20261015113603';
+import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js?v=20261015113603';
+import { Bunny, Kitten, Flower, Swarm } from '../creatures/Meadow.js?v=20261015113603';
 
 const CREATURES = { frog: Frog, gator: Gator, bat: Bat, spider: Spider, bunny: Bunny, kitten: Kitten, flower: Flower, swarm: Swarm, wolf: Wolf, eagle: Eagle, fox: Fox };
 // rainbow beam (World 2): turret size, how far it sinks into the path, and the beam's band (px above the ground)
@@ -360,7 +360,7 @@ export class Run extends Phaser.Scene {
   /** Grunt eases back a little for every hazard or creature you get past cleanly. */
   checkCleared() {
     const gx = this.g.x, clean = d => this.lastHitD === undefined || d - this.lastHitD > 500;
-    for (const it of this.items) if (!it.cleared && it.obj && (it.t === 'root' || it.t === 'boulder' || it.t === 'trunk' || (it.t === 'arrow' && it.landed)) && it.obj.x < gx - 150) { it.cleared = true; if (clean(this.dist)) this.chase.ease(CHASE.clear); }
+    for (const it of this.items) if (!it.cleared && it.obj && (it.t === 'root' || it.t === 'boulder' || it.t === 'trunk' || (it.t === 'arrow' && it.landed)) && it.obj.x < gx - 150) { it.cleared = true; if (clean(this.dist)) { this.chase.ease(CHASE.clear); if (it.t === 'arrow') this.chase.missed(); } }
     for (const c of this.creatures) if (!c.cleared && c.alive && c.x < gx - 200) { c.cleared = true; if (clean(this.dist)) this.chase.ease(CHASE.clear); }
   }
 
