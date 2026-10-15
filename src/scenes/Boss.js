@@ -1,11 +1,12 @@
 // Level 1 boss: Eddie, The Mould King, in The Festering Swamp.
+import { DIFF } from '../difficulty.js?v=20261016105852';
 // Arena rules (approved 14 Oct 2026): Eddie moves around the whole arena; the gremlin can move left/right;
 // roots and logs give high ground; attacks are aimed at the gremlin and always telegraphed.
-import { Gremlin } from '../gremlin/Gremlin.js?v=20261015192012';
-import { Eddie } from '../eddie/Eddie.js?v=20261015192012';
-import { Swamp } from '../world/Swamp.js?v=20261015192012';
-import { Music } from '../audio/Music.js?v=20261015192012';
-import { MAX_HEARTS } from './Run.js?v=20261015192012';
+import { Gremlin } from '../gremlin/Gremlin.js?v=20261016105852';
+import { Eddie } from '../eddie/Eddie.js?v=20261016105852';
+import { Swamp } from '../world/Swamp.js?v=20261016105852';
+import { Music } from '../audio/Music.js?v=20261016105852';
+import { MAX_HEARTS } from './Run.js?v=20261016105852';
 
 export const GROUND_Y = 870;
 const W = 1920;
@@ -122,7 +123,7 @@ export class Boss extends Phaser.Scene {
   }
   restart() { this.scene.restart(); this.scene.get('UI').scene.restart(); }
   /** Assisted retry from the boss checkpoint (GDD): three hearts, Chaos Meter reset, running score kept, boss-fight score discarded. */
-  retry() { this.registry.set('carry', { ...this.startCarry, hearts: 3, chaos: 0, damaged: true }); this.restart(); }
+  retry() { this.registry.set('assisted', true); this.registry.set('carry', { ...this.startCarry, hearts: 3, chaos: 0, damaged: true }); this.restart(); }
   /** Which way Eddie is facing: -1 = left, 1 = right. */
   get edir() { return this.e.face > 0 ? -1 : 1; }
   /** Turn Eddie to face the gremlin (only between moves, never mid-throw). */
@@ -325,6 +326,7 @@ export class Boss extends Phaser.Scene {
   }
   damageEddie(n, heavy = false) {
     if (this.mode !== 'running') return;
+    n *= DIFF.k.boss;   // difficulty: magic hits harder on Normal / Easy
     this.hp = Math.max(0, this.hp - n); this.events.emit('bosshp', this.hp / BOSS_TUNING.hp, this.phase);
     this.e.flashT = 0.09;
     if (heavy && !['hop', 'takeoff', 'dive', 'rise'].includes(this.e.move) && !this.stepBusy) this.e.play('hitHeavy');
@@ -417,7 +419,7 @@ export class Boss extends Phaser.Scene {
 
   // ---------- main loop ----------
   update(time, deltaMs) {
-    const dt = Math.min(0.05, deltaMs / 1000) * this.timeScale;
+    const dt = Math.min(0.05, deltaMs / 1000) * this.timeScale * DIFF.k.speed;   // difficulty: slower = more time to react
     this.chips ||= [];
     if (this.mode === 'running') this.fightT += dt;
     // the gremlin can't get past Eddie (he always faces left)

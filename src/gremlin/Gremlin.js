@@ -1,3 +1,4 @@
+import { DIFF } from '../difficulty.js?v=20261016105852';
 // The playable gremlin: a cut-out rig built from the approved artwork.
 // Each body part is a Phaser Image hung on a chain of containers (one per joint); every frame the
 // joints are rotated from the current pose. Nothing is redrawn, so the character always matches
@@ -5,8 +6,8 @@
 import {
   TAU, clamp, ease, seg, lerpPose, runPose, crouchPose, risePose, fallPose, tuckPose, slidePose, hurtPose,
   dieAirPose, deadPose, winPose, idlePose, meltPose, meltLift, MELT_T, MELT_BLAST_AT,
-} from './poses.js?v=20261015192012';
-import { Effects } from './Effects.js?v=20261015192012';
+} from './poses.js?v=20261016105852';
+import { Effects } from './Effects.js?v=20261016105852';
 
 // ---- tuning: placeholders until playtesting (art units; the gremlin is ~800 units tall) ----
 export const TUNING = {
@@ -193,7 +194,7 @@ export class Gremlin extends Phaser.Events.EventEmitter {
   /** Take one heart of damage. Returns false while invulnerable. */
   hurt() {
     const S = this.S; if (this.invulnerable) return false;
-    this.leaveGround(); S.vy = TUNING.hurtV; S.spinT = -1; S.atkT = -1; S.inv = TUNING.invulnTime; S.flash = 0.1;
+    this.leaveGround(); S.vy = TUNING.hurtV; S.spinT = -1; S.atkT = -1; S.inv = TUNING.invulnTime * DIFF.k.inv; S.flash = 0.1;
     this.go('hurt', 0.05); this.fx.shock(this.headPoint()); return true;
   }
   die() {

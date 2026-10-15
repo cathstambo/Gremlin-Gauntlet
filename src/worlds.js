@@ -1,8 +1,8 @@
 // The worlds, in the locked GDD order. Each world = two running stages, then its boss.
-import { STAGE1, STAGE2, W2_STAGE1, W2_STAGE2, W3_RUN1, W3_RUN2, W3_RUN3, W3_RUN4 } from './course.js?v=20261015192012';
-import { Swamp, Meadow, Wild, River, Canyon, Sprint, MEADOW_FILES, WILD_FILES, RIVER_FILES, CANYON_FILES, SPRINT_FILES } from './world/Swamp.js?v=20261015192012';
-import { GRUNT_PARTS } from './grunt/Grunt.js?v=20261015192012';
-import { MEADOW_CREATURE_PARTS } from './creatures/Creatures.js?v=20261015192012';
+import { STAGE1, STAGE2, W2_STAGE1, W2_STAGE2, W3_RUN1, W3_RUN2, W3_RUN3, W3_RUN4 } from './course.js?v=20261016105852';
+import { Swamp, Meadow, Wild, River, Canyon, Sprint, MEADOW_FILES, WILD_FILES, RIVER_FILES, CANYON_FILES, SPRINT_FILES } from './world/Swamp.js?v=20261016105852';
+import { GRUNT_PARTS } from './grunt/Grunt.js?v=20261016105852';
+import { MEADOW_CREATURE_PARTS } from './creatures/Creatures.js?v=20261016105852';
 
 export const WORLDS = {
   1: {

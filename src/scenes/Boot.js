@@ -1,6 +1,6 @@
-import { SWAMP_FILES } from '../world/Swamp.js?v=20261015192012';
-import { Music } from '../audio/Music.js?v=20261015192012';
-import { CREATURE_PARTS } from '../creatures/Creatures.js?v=20261015192012';
+import { SWAMP_FILES } from '../world/Swamp.js?v=20261016105852';
+import { Music } from '../audio/Music.js?v=20261016105852';
+import { CREATURE_PARTS } from '../creatures/Creatures.js?v=20261016105852';
 // Loads the gremlin's parts and makes the simple placeholder textures used by the test run.
 export const PARTS = ['body', 'head', 'eye', 'ear', 'tail', 'pouch', 'upperArm', 'foreArm', 'upperArmFar', 'foreArmFar',
   'thighN', 'bootN', 'thighFfar', 'bootFfar'];
@@ -23,6 +23,7 @@ export class Boot extends Phaser.Scene {
     this.load.json('swampSizes', 'assets/swamp/sizes.json');
     for (const [kind, parts] of Object.entries(CREATURE_PARTS)) for (const n of parts) this.load.image(`c_${kind}_${n}`, `assets/creatures/${kind}_${n}.png`);
     for (const n of EDDIE_PARTS) this.load.image('e_' + n, `assets/eddie/${n}.png`);
+    for (const n of [1, 2, 3]) this.load.image('menu_thumb' + n, `assets/menu/thumb_world${n}.webp`);   // start menu thumbnails
   }
   create() {
     Music.init();
@@ -35,7 +36,8 @@ export class Boot extends Phaser.Scene {
     if (h === '#world3run2') this.registry.set('stage', 2);   // shortcut straight to River Run
     if (h === '#world3run3') this.registry.set('stage', 3);   // ...or Uzi Rampage
     if (h === '#world3run4') this.registry.set('stage', 4);   // ...or Final Sprint
-    const start = () => { this.scene.start(first); this.scene.launch('UI'); };
+    // no shortcut in the address: the game opens on the start menu
+    const start = h ? () => { this.scene.start(first); this.scene.launch('UI'); } : () => this.scene.start('Menu');
     // wait for the display font so text doesn't jump when it arrives
     if (document.fonts && document.fonts.load) Promise.race([document.fonts.load('40px "Lilita One"'), new Promise(r => setTimeout(r, 1500))]).then(start);
     else start();

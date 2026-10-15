@@ -1,7 +1,7 @@
 // Visual effects owned by the gremlin: dust, sparks, magic rings, double-jump swirl,
 // hit shock lines, Meltdown aura / lightning / rocks / eye glow / blast, dizzy stars.
 // All drawn with Phaser Graphics plus a soft 'glow' texture made in the Boot scene.
-import { TAU, clamp, seg } from './poses.js?v=20261015192012';
+import { TAU, clamp, seg } from './poses.js?v=20261016105852';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const VIOLET = 0x9b4dff, MAGENTA = 0xee2a8a, ACID = 0xc6f135;

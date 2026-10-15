@@ -1,7 +1,8 @@
 // HUD and controls for whichever game scene is active ('Run' = test course, 'Boss' = Eddie's arena):
 // hearts, Chaos Meter, boss health, pause, touch buttons, swipe gestures, keyboard, overlays.
-import { Music } from '../audio/Music.js?v=20261015192012';
-import { WORLDS, worldNo, LAST_WORLD } from '../worlds.js?v=20261015192012';
+import { Music } from '../audio/Music.js?v=20261016105852';
+import { DIFF, saveBest } from '../difficulty.js?v=20261016105852';
+import { WORLDS, worldNo, LAST_WORLD } from '../worlds.js?v=20261016105852';
 const FONT = 'Lilita One, Arial Rounded MT Bold, Trebuchet MS, sans-serif';
 const BODY = 'Atkinson Hyperlegible, system-ui, sans-serif';
 const INK = '#ece6f5', VIOLET = 0x9b4dff, ACID = 0xc6f135, MOULD = 0x9fcc1e;
@@ -20,6 +21,7 @@ export class UI extends Phaser.Scene {
 
     // hearts
     this.heartIcons = [0, 1, 2, 3, 4, 5].map(i => this.add.image(70 + i * 80, 70, i >= 3 ? 'heartGold' : 'heart').setScale(0.8));   // 4th–6th = gold bonus hearts
+    this.add.text(30, 172, DIFF.k.label, { fontFamily: FONT, fontSize: 26, color: '#b9a3d9' }).setOrigin(0, 0).setAlpha(0.8);
     this.scoreTxt = this.add.text(30, 120, '0', { fontFamily: FONT, fontSize: 40, color: '#ffd76a', stroke: '#2b1a05', strokeThickness: 8 }).setOrigin(0, 0);
     // Chaos Meter
     const cx = this.isBoss ? 760 : W / 2, mw = this.isBoss ? 420 : 520;
@@ -113,8 +115,8 @@ export class UI extends Phaser.Scene {
       : stage === 2 ? 'Over the river. He’s still coming.\nRocks: jump · Broken bridge: jump · Canyon: DOUBLE jump · Leaping salmon: slide\nBears swipe where the red line shows: low = jump, high = slide · Moose: double jump or blast twice'
       : 'Grunt is still right behind you. Keep running.');
     else if (stage === 2) this.showMessage(`${Wd.stageName} · PART 2`, 'Deeper in. Nastier. · tap to start', `${Wd.bossName === 'EDDIE' ? 'Eddie waits' : 'The Evil Overlord waits'} at the end of this one.`);
-    else if (this.world === 2) this.showMessage('WORLD 2', 'Meadows of Malicious Happiness · tap to start', 'Everything here is cute. Everything here wants you dead.\nBunnies: jump · Kittens: slide · Flowers: jump · Butterflies: they blind you\nCrystal turrets fire rainbow beams: low beam = jump, high beam = slide', 'boss');
-    else this.showMessage('GREMLIN GAUNTLET', 'World 1 · The Mould Swamp · tap to start', 'Tap / swipe up: jump (tap again in the air to double jump)\nSwipe down: slide   ·   Swipe right: magic\nCollect 10 crystals to fill the Chaos Meter, then hit MELTDOWN', 'title');
+    else if (this.world === 2) this.showMessage('WORLD 2', 'Meadows of Malicious Happiness · tap to start', 'Everything here is cute. Everything here wants you dead.\nBunnies: jump · Kittens: slide · Flowers: jump · Butterflies: they blind you\nCrystal turrets fire rainbow beams: low beam = jump, high beam = slide');
+    else this.showMessage('WORLD 1', 'The Festering Swamp · tap to start', 'Tap / swipe up: jump (tap again in the air to double jump)\nSwipe down: slide   ·   Swipe right: magic\nCollect 10 crystals to fill the Chaos Meter, then hit MELTDOWN');
 
     const ev = this.run.events;
     ev.on('hearts', n => this.setHearts(n));
@@ -127,10 +129,12 @@ export class UI extends Phaser.Scene {
     ev.on('bossvuln', d => { this.tweens.killTweensOf(this.vulTxt); this.vulTxt.setAlpha(1); this.tweens.add({ targets: this.vulTxt, alpha: 0, delay: d * 1000 - 300, duration: 300 }); });
     ev.on('gameover', msg => this.showMessage(msg || 'SPLAT.', this.isBoss ? 'Tap to retry the boss (3 hearts, Chaos Meter reset)' : this.world === 3 ? 'Tap to retry this run (3 hearts, Grunt back where he started)' : this.scene.get('Run').stage === 2 ? 'Tap to retry part 2 (3 hearts, score kept from part 1)' : 'Tap to restart part 1'));
     ev.on('finished', info => this.time.delayedCall(this.isBoss ? 300 : 1200, () => {
-      if (this.isBoss) this.showMessage('BOSS DEFEATED', `${this.world === 2 ? 'The Evil Overlord has been dethroned' : 'The Mould King has been mouldered'} · ${info.time.toFixed(1)} s · score ${info.score.toLocaleString()}`,
-        info.breakdown + (this.world < LAST_WORLD ? `\n\nTap for World ${this.world + 1}: ${WORLDS[this.world + 1].place}` : '\n\nThat’s every world so far! Tap to play World 1 again'));
-      else if (this.world === 3 && info.ending) this.showMessage('BOSS DEFEATED', `Grunt has been hairballed · Final Sprint ${info.time.toFixed(1)} s · score ${info.score.toLocaleString()}`,
-        info.breakdown + (this.world < LAST_WORLD ? `\n\nTap for World ${this.world + 1}: ${WORLDS[this.world + 1].place}` : '\n\nThat’s every world so far! Tap to play World 1 again'));
+      if (this.isBoss || (this.world === 3 && info.ending)) {
+        const best = saveBest(this.world, info.score, this.registry.get('assisted'));
+        const what = this.world === 3 ? `Grunt has been hairballed · Final Sprint ${info.time.toFixed(1)} s` : `${this.world === 2 ? 'The Evil Overlord has been dethroned' : 'The Mould King has been mouldered'} · ${info.time.toFixed(1)} s`;
+        this.showMessage(best ? 'NEW BEST!' : 'BOSS DEFEATED', `${what} · score ${info.score.toLocaleString()}`,
+          info.breakdown + (this.registry.get('assisted') ? '\n(Assisted retry: doesn’t count towards your best score)' : '') + '\n\nTap to return to the menu');
+      }
       else if (this.world === 3) { const Wd = WORLDS[3], more = info.stage < Wd.stages.length;
         this.showMessage(`RUN ${info.stage} CLEARED`, more ? `Tap for run ${info.stage + 1}: ${Wd.runNames[info.stage]}` : 'You escaped (for now) · tap to play Into the Wild again',
           `Score so far: ${info.score.toLocaleString()}` + (more ? '' : '\nRuns ' + (Wd.stages.length + 1) + ' to 4 (' + Wd.runNames.slice(Wd.stages.length).join(', ') + ') are on their way')); }
@@ -211,6 +215,13 @@ export class UI extends Phaser.Scene {
     return c;
   }
 
+  /** Back to the start menu (stops the game and its music). */
+  toMenu() {
+    this.paused = false;
+    const cur = this.registry.get('gameScene') || 'Run';
+    Music.play(this, null);
+    this.scene.stop(cur); this.scene.start('Menu');
+  }
   /** Start World 1 again from swamp part 1. */
   newLevel(world = 1) { this.registry.set('world', world); this.registry.set('stage', 1); this.registry.remove('carry'); this.goTo('Run'); }
   /** After a boss: on to the next world (every level starts with 3 hearts and an empty Chaos Meter, GDD). */
@@ -238,7 +249,7 @@ export class UI extends Phaser.Scene {
       if (r.mode === 'ready') { this.overlay.setVisible(false); r.startRun(); }
       else if (r.mode === 'gameover') this.isBoss ? r.retry() : r.restartLevel();
       else if (r.mode === 'finished') r.next();
-      else if (r.mode === 'won') this.nextWorld();
+      else if (r.mode === 'won') this.toMenu();
       return;
     }
     if (this.paused) return;
@@ -259,7 +270,7 @@ export class UI extends Phaser.Scene {
       ['Resume', () => this.togglePause()],
       [this.isBoss ? 'Restart boss fight' : 'Restart run', () => { this.paused = false; this.scene.resume(this.run.scene.key); this.run.restart(); }],
       ...(this.world === 3 ? [[(this.registry.get('stage') || 1) < WORLDS[3].stages.length ? 'Skip to the next run' : 'Back to run 1', () => { this.paused = false; this.skipAhead(); }]] : [[this.isBoss ? 'Back to part 1' : (this.registry.get('stage') === 2 ? 'Skip to the boss' : 'Skip to part 2'), () => { this.paused = false; this.skipAhead(); }]]),
-      [`Go to World ${this.world % LAST_WORLD + 1}`, () => { this.paused = false; this.newLevel(this.world % LAST_WORLD + 1); }],
+      ['Main menu', () => this.toMenu()],
       [() => `Hitboxes: ${this.run.showBoxes ? 'ON' : 'OFF'}`, () => { this.run.showBoxes = !this.run.showBoxes; }],
       [() => `Slow motion: ${this.run.timeScale < 1 ? 'ON' : 'OFF'}`, () => { this.run.timeScale = this.run.timeScale < 1 ? 1 : 0.25; }],
     ];

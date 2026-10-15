@@ -6,8 +6,9 @@
 //     - a magic bolt fired BACK at him (BLAST BACK / swipe left) knocks him well back and stuns him for a moment.
 //   At 100 he catches you: a giant paw swipe ends the attempt (retry this run, meter reset).
 //   The meter carries over to the next run; it only resets when you die.
-import { Grunt } from '../grunt/Grunt.js?v=20261015192012';
-import { Sfx } from '../audio/Music.js?v=20261015192012';
+import { DIFF } from '../difficulty.js?v=20261016105852';
+import { Grunt } from '../grunt/Grunt.js?v=20261016105852';
+import { Sfx } from '../audio/Music.js?v=20261016105852';
 
 export const CHASE = {
   // Difficulty ramps up (Cath, 15 Oct): gentle at the start of Into the Wild, tighter towards its end, and tighter again
@@ -53,7 +54,7 @@ export class Chase {
   }
   get(k) { return mix(CHASE[k], this.heat()); }
   /** Final Sprint made 15% easier (Cath, 15 Oct): Grunt gains 15% less and you pull away 15% faster there. */
-  get softK() { return this.run.stage === 4 ? 0.85 : 1; }
+  get softK() { return (this.run.stage === 4 ? 0.85 : 1) * DIFF.k.grunt; }   // Final Sprint eased 15%; difficulty dial
   frontFor(p) {
     const G = this.run.GREMLIN_X - 30;
     if (this.run.W.view) {   // test version: always fully on screen; the gap opens and closes visibly (eased so small changes show)

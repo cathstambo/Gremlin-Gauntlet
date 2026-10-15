@@ -1,14 +1,15 @@
 // Level 2 boss: Catalytik, THE EVIL OVERLORD, in the Meadows of Malicious Happiness (GDD, LOCKED).
+import { DIFF } from '../difficulty.js?v=20261016105852';
 //   Phase 1 Salmon Slapper (100–70%): rotten-salmon swings and thrown fish; vulnerable while yanking a salmon out of the ground.
 //   Phase 2 Spoonageddon (70–35%): horizontal, falling and bouncing spoons with sparkling warnings; vulnerable while admiring herself.
 //   Phase 3 Royal Tantrum (<35%): horn glows purple; salmon + spoons combined; a telegraphed bunny stampede, then she's dizzy.
 // Arena rules are the same as Eddie's (whole-screen boss, joystick movement, high ground, everything aimed and telegraphed),
 // so this scene reuses the Eddie scene's machinery and swaps in her moves.
-import { Boss, GROUND_Y, BOSS_TUNING } from './Boss.js?v=20261015192012';
-import { Gremlin } from '../gremlin/Gremlin.js?v=20261015192012';
-import { Catalytik, ease } from '../overlord/Catalytik.js?v=20261015192012';
-import { Music } from '../audio/Music.js?v=20261015192012';
-import { loadMeadow } from '../worlds.js?v=20261015192012';
+import { Boss, GROUND_Y, BOSS_TUNING } from './Boss.js?v=20261016105852';
+import { Gremlin } from '../gremlin/Gremlin.js?v=20261016105852';
+import { Catalytik, ease } from '../overlord/Catalytik.js?v=20261016105852';
+import { Music } from '../audio/Music.js?v=20261016105852';
+import { loadMeadow } from '../worlds.js?v=20261016105852';
 
 const W = 1920;
 const GREM_H = 330, BOSS_H = 620;
@@ -277,6 +278,7 @@ export class Overlord extends Boss {
   // ---------- damage and defeat ----------
   damageEddie(n, heavy = false) {
     if (this.mode !== 'running') return;
+    n *= DIFF.k.boss;   // difficulty: magic hits harder on Normal / Easy
     this.hp = Math.max(0, this.hp - n); this.events.emit('bosshp', this.hp / BOSS_TUNING.hp, this.phase);
     this.e.flashT = 0.09;
     if (this.hurtLineT <= 0 && Math.random() < 0.35) { this.say(pick(TAUNTS.hurt), 1.3); this.hurtLineT = 4; }
@@ -353,7 +355,7 @@ export class Overlord extends Boss {
 
   // ---------- main loop ----------
   update(time, deltaMs) {
-    const dt = Math.min(0.05, deltaMs / 1000) * this.timeScale;
+    const dt = Math.min(0.05, deltaMs / 1000) * this.timeScale * DIFF.k.speed;   // difficulty: slower = more time to react
     if (this.mode === 'running') this.fightT += dt;
     this.hurtLineT -= dt; this.dizzyT = Math.max(0, this.dizzyT - dt);
     this.g.faceTarget = this.e.x;

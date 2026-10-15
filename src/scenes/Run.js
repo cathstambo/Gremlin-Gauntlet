@@ -1,14 +1,15 @@
 // Running stages for every world (1 = easy to medium, 2 = busier and harder), then on to that world's boss.
+import { DIFF } from '../difficulty.js?v=20261016105852';
 // Hearts, Chaos Meter and score carry from stage 1 to stage 2 to the boss; part 2 is a checkpoint.
-import { Gremlin } from '../gremlin/Gremlin.js?v=20261015192012';
-import { WORLDS, worldNo, loadMeadow, loadWild } from '../worlds.js?v=20261015192012';
-import { Chase, CHASE } from './Chase.js?v=20261015192012';
-import { Goat } from '../world/Goat.js?v=20261015192012';
-import { Moose, Bear, Salmon, ChargeBear } from '../creatures/River.js?v=20261015192012';
-import { Wolf, Eagle, Fox } from '../creatures/Wild.js?v=20261015192012';
-import { Music, Sfx } from '../audio/Music.js?v=20261015192012';
-import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js?v=20261015192012';
-import { Bunny, Kitten, Flower, Swarm } from '../creatures/Meadow.js?v=20261015192012';
+import { Gremlin } from '../gremlin/Gremlin.js?v=20261016105852';
+import { WORLDS, worldNo, loadMeadow, loadWild } from '../worlds.js?v=20261016105852';
+import { Chase, CHASE } from './Chase.js?v=20261016105852';
+import { Goat } from '../world/Goat.js?v=20261016105852';
+import { Moose, Bear, Salmon, ChargeBear } from '../creatures/River.js?v=20261016105852';
+import { Wolf, Eagle, Fox } from '../creatures/Wild.js?v=20261016105852';
+import { Music, Sfx } from '../audio/Music.js?v=20261016105852';
+import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js?v=20261016105852';
+import { Bunny, Kitten, Flower, Swarm } from '../creatures/Meadow.js?v=20261016105852';
 
 const CREATURES = { frog: Frog, gator: Gator, bat: Bat, spider: Spider, bunny: Bunny, kitten: Kitten, flower: Flower, swarm: Swarm, wolf: Wolf, eagle: Eagle, fox: Fox, moose: Moose, bear: Bear, salmon: Salmon, cbear: ChargeBear, hawk: Eagle };
 // rainbow beam (World 2): turret size, how far it sinks into the path, and the beam's band (px above the ground)
@@ -136,7 +137,7 @@ export class Run extends Phaser.Scene {
    *  3 hearts and the score / Chaos Meter you had when you reached it (points picked up on the failed try are dropped). */
   restartLevel() {
     // World 3: every run is a checkpoint, and dying resets Grunt's meter to that run's starting value
-    if (this.W.chase) this.registry.set('carry', { ...this.startCarry, hearts: 3, damaged: true, prox: this.W.chase.start[this.stage - 1], retry: true });
+    if (this.W.chase) { if (this.stage === this.W.stages.length) this.registry.set('assisted', true); this.registry.set('carry', { ...this.startCarry, hearts: 3, damaged: true, prox: this.W.chase.start[this.stage - 1], retry: true }); }
     else if (this.stage === 2) this.registry.set('carry', { ...this.startCarry, hearts: 3, damaged: true });
     else { this.registry.set('stage', 1); this.registry.remove('carry'); }
     this.restart();
@@ -189,7 +190,7 @@ export class Run extends Phaser.Scene {
 
   // ---------- main loop ----------
   update(time, deltaMs) {
-    const dt = Math.min(0.05, deltaMs / 1000) * this.timeScale;
+    const dt = Math.min(0.05, deltaMs / 1000) * this.timeScale * DIFF.k.speed;   // difficulty: slower = more time to react
     this.g.update(dt);
     const v = this.mode === 'ending' ? 0 : this.g.worldSpeed;   // in the ending the world stops; the gremlin runs on a little way
     if (this.mode !== 'ready') this.dist += v * dt;
