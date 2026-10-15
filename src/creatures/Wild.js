@@ -1,14 +1,14 @@
 // World 3 wildlife (Into the Wild, Cath-approved): wolf, eagle, fox. Each is one drawing from the art sheet,
 // animated by bounding, squashing and tilting (they're fast and on screen only briefly).
 // Same interface as the other creatures: update(dt, ctx), hitbox(), shot(), centre, points, warning.
-import { Creature } from './Creatures.js?v=20261015142201';
+import { Creature } from './Creatures.js?v=20261015152130';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const ease = k => (k < 0 ? 0 : k > 1 ? 1 : k * k * (3 - 2 * k));
 const D = Math.PI / 180;
 
 /** A one-image "puppet" with the same flash/destroy interface as the cut-out puppets. */
-class Sprite {
+export class Sprite {
   constructor(scene, key, scale, depth = 6) {
     this.root = scene.add.container(0, 0).setDepth(depth);
     this.img = scene.add.image(0, 0, key).setOrigin(0.5, 1).setScale(scale).setFlipX(true);   // drawn facing right; they run at the gremlin (left)

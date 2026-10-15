@@ -6,8 +6,8 @@
 //     - a magic bolt fired BACK at him (BLAST BACK / swipe left) knocks him well back and stuns him for a moment.
 //   At 100 he catches you: a giant paw swipe ends the attempt (retry this run, meter reset).
 //   The meter carries over to the next run; it only resets when you die.
-import { Grunt } from '../grunt/Grunt.js?v=20261015142201';
-import { Sfx } from '../audio/Music.js?v=20261015142201';
+import { Grunt } from '../grunt/Grunt.js?v=20261015152130';
+import { Sfx } from '../audio/Music.js?v=20261015152130';
 
 export const CHASE = {
   // Difficulty ramps up (Cath, 15 Oct): gentle at the start of Into the Wild, tighter towards its end, and tighter again
@@ -27,6 +27,7 @@ export const CHASE = {
   fireStumble: 0.5,    // firing back makes the gremlin stumble (half speed) for this long...
   fireCost: 4,         // ...and Grunt gains this much (a hit knocks him back 15, so a hit is still well worth it)
   defeat: 3,           // eased back when you blast a creature
+  fall: 25,            // falling into a bridge gap (River Run) lets him close in a lot
   warnAt: 72,          // red screen edges from here
 };
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -91,6 +92,7 @@ export class Chase {
       if (this.prox < CHASE.warnAt - 8) this.warned = false;
     }
     const walking = (run.mode !== 'dying' && run.mode !== 'gameover' || this.phase === 'catch') && this.stunT <= 0;
+    this.updateFish(dt);
     this.grunt.speed = this.surgeT > 0 ? 1.7 : 1;
     this.grunt.update(dt, this.phase === 'eyes' ? -500 : this.frontFor(this.shown), walking);
     this.drawShadow();
@@ -137,6 +139,28 @@ export class Chase {
   /** Something (a hit, a stumble) let him close in. */
   closer(n = this.get('hit'), stumble = true) { if (stumble) this.cleanT = 0; if (this.phase === 'chase') { this.prox = clamp(this.prox + n, 0, 100); if (this.prox > 60) this.say('*YOWL!*', 0.9); } }
   ease(n) { if (this.phase === 'chase') this.prox = Math.max(Math.min(this.prox, CHASE.floor), this.prox - n); }   // never further back than the floor
+  /** River Run (GDD): a salmon leaps out of the river right in front of him and he can't resist it. He stops to swat at it
+   *  for a couple of seconds (standing still, so you pull away), then gets back to the chase. */
+  distract(dur) {
+    if (this.phase !== 'chase') return;
+    this.stunT = dur; this.surgeT = 0; this.nextSurge = Math.max(this.nextSurge ?? 0, dur + 4);
+    this.fishT = 0; this.fishDur = dur;
+    const run = this.run;
+    this.fish = this.fish || run.add.image(0, 0, 'r_salmon').setDepth(8.5).setScale(0.32).setFlipX(true);
+    this.fish.setVisible(true);
+    this.say('*!!*', 0.6); run.time.delayedCall(700, () => { if (this.phase === 'chase') { this.say('*mrrrp?*', 1.2); Sfx.play(run, 'mrrrp'); } });
+    run.events.emit('distracted');
+  }
+  updateFish(dt) {
+    if (!this.fish || !this.fish.visible) return;
+    this.fishT += dt; const u = this.fishT / this.fishDur, h = this.grunt.headPoint();
+    // leaps up in front of his face, flips about while he paws at it, then drops back into the river
+    const x = h[0] + 90 + 60 * Math.sin(this.fishT * 7), y = u < 0.15 ? this.run.GROUND_Y - (this.run.GROUND_Y - h[1] - 60) * (u / 0.15)
+      : u > 0.85 ? h[1] + 60 + (this.run.GROUND_Y + 200 - h[1]) * ((u - 0.85) / 0.15) : h[1] + 60 + 40 * Math.sin(this.fishT * 9);
+    this.fish.setPosition(x, y).setRotation(this.fishT * 9);
+    if (Math.floor(this.fishT * 3) !== Math.floor((this.fishT - dt) * 3) && u < 0.85) this.grunt.flinch = 0.5;
+    if (u >= 1) this.fish.setVisible(false);
+  }
   /** You got past one of his arrows: an irritated meow (GDD: irritated tail flick on misses). */
   missed() { this.say('*mrow!*', 0.7); Sfx.play(this.run, ['meow', 'meow2'], 2); }
   /** A magic bolt fired back reached him. */

@@ -182,3 +182,50 @@ export const W3_RUN1 = [
   ...row('taco', 25900, 3, 70),
   { t: 'finish', d: 27000 },
 ];
+
+// =====================================================================================================
+// World 3, run 2: RIVER RUN (Cath's approved River Run art + readmes, 15 Oct 2026).
+//   bridge: a crossing over the river / canyon (kind whole | river | canyon); d = where its drawing starts (3467 px long).
+//     whole = intact (leaping salmon cross it: slide), river = broken (one jump), canyon = wide gap (double jump).
+//     Fall in a gap: lose a heart, back up before the gap, Grunt gains a lot.
+//   rockS / rockM / rockL: slippery river rocks (jump). moose: stops, paws the ground, charges (jump / blast x2).
+//   bear: fishing grizzly beside the path swipes LOW (jump) or HIGH (slide); red line shows where. One blast.
+//   salmon: leaps over an intact bridge at head height (slide). fishbreak: Grunt stops to swat a fish (breather).
+//   Same ramp as run 1: one thing at a time early, closer together towards the end.
+const B = 2167 * 1.6;   // a bridge's length on screen
+export const W3_RUN2 = [
+  { t: 'deco', key: 'w_dec_sign', d: 900, s: 1.0 },
+  ...row('taco', 2400, 3, 70),
+  { t: 'rockS', d: 3500 },
+  ...row('crystal', 4200, 2, 70, 200),
+  // first bridge: intact, one salmon
+  { t: 'bridge', kind: 'whole', d: 5000 },
+  ...row('taco', 5800, 3, 70),
+  { t: 'salmon', d: 5000 + 1900 },
+  { t: 'rockM', d: 5000 + B + 900 },
+  { t: 'bear', lane: 'low', d: 5000 + B + 2300 },
+  { t: 'potion', d: 5000 + B + 3300, h: 70 },
+  // broken river bridge: one jump
+  { t: 'bridge', kind: 'river', d: 13200 },
+  { t: 'arrow', d: 13200 + B + 700 },
+  { t: 'moose', d: 13200 + B + 2700 },
+  { t: 'deco', key: 'w_dec_coffee', d: 13200 + B + 3300, s: 1.0 },
+  { t: 'rockL', d: 13200 + B + 3900 },
+  { t: 'margarita', d: 13200 + B + 3900, h: 330 },
+  { t: 'fishbreak', d: 13200 + B + 4700 },
+  // the canyon: double jump
+  ...row('crystal', 22000, 2, 70, 200),
+  { t: 'bridge', kind: 'canyon', d: 22600 },
+  // the closing stretch
+  { t: 'bear', lane: 'high', d: 22600 + B + 900 },
+  { t: 'rockM', d: 22600 + B + 1800 },
+  { t: 'arrow', d: 22600 + B + 2600 },
+  { t: 'bridge', kind: 'whole', d: 29800 },
+  { t: 'salmon', d: 29800 + 1200 },
+  { t: 'salmon', d: 29800 + 2500 },
+  { t: 'moose', d: 29800 + B + 900 },
+  { t: 'rockS', d: 29800 + B + 1800 },
+  { t: 'bear', lane: 'low', d: 29800 + B + 2700 },
+  ...row('taco', 29800 + B + 3400, 3, 70),
+  { t: 'finish', d: 29800 + B + 4400 },
+];

@@ -25,6 +25,10 @@ export const MEADOW_FILES = {
 export const WILD_FILES = Object.fromEntries(['bg_far.jpg', 'bg_mid.webp', 'bg_near.webp', 'ground.webp', 'haz_root.webp', 'haz_trunk.webp', 'haz_boulder.webp',
   'en_wolf.webp', 'en_eagle.webp', 'en_fox.webp', 'dec_cabin.webp', 'dec_sign.webp', 'dec_coffee.webp'].map(f => ['w_' + f.split('.')[0], 'assets/wild/' + f]));
 
+// World 3 run 2, River Run (loaded when that run starts). Bridges, rocks, salmon, moose and bear: see course.js / creatures/River.js.
+export const RIVER_FILES = Object.fromEntries(['bg_far', 'bg_mid', 'bg_near', 'ground', 'br_whole', 'br_river', 'br_canyon',
+  'rock_s', 'rock_m', 'rock_l', 'salmon', 'splash', 'moose', 'bear_fish', 'bear_swipe'].map(f => ['r_' + f, 'assets/river/' + f + '.webp']));
+
 export const SWAMP = {
   far: 'bg_far', mid: 'bg_mid', near: 'bg_near', ground: 'swamp_ground',
   groundSurface: 100,   // row in the ground strip the gremlin walks on: the middle of the lit path, so hazards sit IN the way
@@ -47,6 +51,15 @@ export const WILD = {
   // the flat-cut tree tops (row 62) stay above the screen
   midBottom: 707, nearBottom: 647, midS: 1.25, nearS: 1.55, gS: 1.2, midDrop: -30, nearDrop: -15,
   midTint: 0xffffff, nearTint: 0xffffff, props: [], propScale: () => 1, propTint: () => 0xffffff, propGap: [1000, 100],
+  groundBottom: 448,
+};
+// River Run: Cath's four approved images, checkerboard / sky removed and made seamless (rows below are in the art's own pixels)
+export const RIVER = {
+  far: 'r_bg_far', mid: 'r_bg_mid', near: 'r_bg_near', ground: 'r_ground',
+  groundSurface: 505,   // the middle of the dirt path
+  midBottom: 725, nearBottom: 725, midS: 1.05, nearS: 1.25, gS: 1.2, midDrop: -40, nearDrop: 60,
+  midTint: 0xffffff, nearTint: 0xffffff, props: [], propScale: () => 1, propTint: () => 0xffffff, propGap: [1000, 100],
+  groundBottom: 726,
 };
 
 export class Backdrop {
@@ -64,8 +77,11 @@ export class Backdrop {
     this.mid = scene.add.tileSprite(0, bgY(groundY + (cfg.midDrop ?? 40) - cfg.midBottom * midS), SW / Z, t(cfg.mid).height * midS / Z, cfg.mid).setOrigin(0, 0).setTileScale(midS / Z).setDepth(1).setTint(cfg.midTint);
     this.near = scene.add.tileSprite(0, bgY(groundY + (cfg.nearDrop ?? 70) - cfg.nearBottom * nearS), SW / Z, t(cfg.near).height * nearS / Z, cfg.near).setOrigin(0, 0).setTileScale(nearS / Z).setDepth(2).setTint(cfg.nearTint);
     this.ground = scene.add.tileSprite(0, groundY - cfg.groundSurface * gS, SW / Z, t(cfg.ground).height * gS, cfg.ground).setOrigin(0, 0).setTileScale(gS).setDepth(4);
+    // a second piece of path, used when a bridge crossing replaces the path in the middle of the screen (see setHole)
+    this.ground2 = scene.add.tileSprite(0, this.ground.y, 10, this.ground.height, cfg.ground).setOrigin(0, 0).setTileScale(gS).setDepth(4).setVisible(false);
+    this.viewW = SW / Z; this.hole = null;
     // zoomed out, the view reaches below the bottom of the path art: dark earth underneath
-    if (view) scene.add.rectangle(0, groundY - cfg.groundSurface * gS + 448 * gS, SW / Z, 400, 0x1a1208).setOrigin(0, 0).setDepth(3.95);
+    if (view) this.under = scene.add.rectangle(0, groundY - cfg.groundSurface * gS + (cfg.groundBottom ?? 448) * gS - 2, SW / Z, 400, 0x1a1208).setOrigin(0, 0).setDepth(3.95);
     // decorations: a fixed, repeating sequence so every run looks the same (fair-comparison rule)
     this.props = [];
     if (props) {
@@ -78,12 +94,23 @@ export class Backdrop {
       this.propSpan = x;
     }
   }
+  /** Hide the path between screen x a and b (a bridge crossing is there); setHole(null) = path everywhere. */
+  setHole(a, b) { this.hole = a == null ? null : [a, b]; }
   /** dist = how far the world has scrolled, in screen px. */
   scroll(dist) {
     this.far.tilePositionX = dist * 0.08 / this.far.tileScaleX;
     this.mid.tilePositionX = dist * 0.25 / this.mid.tileScaleX;
     this.near.tilePositionX = dist * 0.55 / this.near.tileScaleX;
-    this.ground.tilePositionX = dist / this.ground.tileScaleX;
+    const gs = this.ground.tileScaleX, W = this.viewW;
+    if (this.hole) {   // the path stops at a <-> b (a bridge's own banks take over there)
+      const a = Math.max(0, Math.min(W, this.hole[0])), b = Math.max(0, Math.min(W, this.hole[1]));
+      this.ground.setVisible(a > 0).setSize(Math.max(1, a), this.ground.height);
+      this.ground2.setVisible(b < W).setPosition(b, this.ground.y).setSize(Math.max(1, W - b), this.ground.height);
+      this.ground2.tilePositionX = (dist + b) / gs;
+    } else {
+      this.ground.setVisible(true).setSize(W, this.ground.height); this.ground2.setVisible(false);
+    }
+    this.ground.tilePositionX = dist / gs;
     const pd = dist * 0.85;   // decorations sit just behind the path
     for (const p of this.props) { let x = p.base - (pd % this.propSpan); if (x < -500) x += this.propSpan; p.im.x = x; }
   }
@@ -96,6 +123,10 @@ export class Swamp extends Backdrop {
 /** World 3: lush Alaskan wilderness (Into the Wild). */
 export class Wild extends Backdrop {
   constructor(scene, groundY, opts) { super(scene, groundY, WILD, { props: false, ...opts }); }
+}
+/** World 3 run 2: River Run. */
+export class River extends Backdrop {
+  constructor(scene, groundY, opts) { super(scene, groundY, RIVER, { props: false, ...opts }); }
 }
 /** World 2: Meadows of Malicious Happiness. */
 export class Meadow extends Backdrop {

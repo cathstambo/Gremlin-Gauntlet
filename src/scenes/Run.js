@@ -1,19 +1,31 @@
 // Running stages for every world (1 = easy to medium, 2 = busier and harder), then on to that world's boss.
 // Hearts, Chaos Meter and score carry from stage 1 to stage 2 to the boss; part 2 is a checkpoint.
-import { Gremlin } from '../gremlin/Gremlin.js?v=20261015142201';
-import { WORLDS, worldNo, loadMeadow, loadWild } from '../worlds.js?v=20261015142201';
-import { Chase, CHASE } from './Chase.js?v=20261015142201';
-import { Wolf, Eagle, Fox } from '../creatures/Wild.js?v=20261015142201';
-import { Music } from '../audio/Music.js?v=20261015142201';
-import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js?v=20261015142201';
-import { Bunny, Kitten, Flower, Swarm } from '../creatures/Meadow.js?v=20261015142201';
+import { Gremlin } from '../gremlin/Gremlin.js?v=20261015152130';
+import { WORLDS, worldNo, loadMeadow, loadWild } from '../worlds.js?v=20261015152130';
+import { Chase, CHASE } from './Chase.js?v=20261015152130';
+import { Moose, Bear, Salmon } from '../creatures/River.js?v=20261015152130';
+import { Wolf, Eagle, Fox } from '../creatures/Wild.js?v=20261015152130';
+import { Music } from '../audio/Music.js?v=20261015152130';
+import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js?v=20261015152130';
+import { Bunny, Kitten, Flower, Swarm } from '../creatures/Meadow.js?v=20261015152130';
 
-const CREATURES = { frog: Frog, gator: Gator, bat: Bat, spider: Spider, bunny: Bunny, kitten: Kitten, flower: Flower, swarm: Swarm, wolf: Wolf, eagle: Eagle, fox: Fox };
+const CREATURES = { frog: Frog, gator: Gator, bat: Bat, spider: Spider, bunny: Bunny, kitten: Kitten, flower: Flower, swarm: Swarm, wolf: Wolf, eagle: Eagle, fox: Fox, moose: Moose, bear: Bear, salmon: Salmon };
 // rainbow beam (World 2): turret size, how far it sinks into the path, and the beam's band (px above the ground)
 const BEAM = { low: { s: 0.5, sink: 95, y0: 112, y1: 38 }, high: { s: 0.72, sink: 4, y0: 262, y1: 172 }, warn: 0.95, fire: 0.5, startGap: 1320 };
 export const GROUND_Y = 870, GREMLIN_H = 330;
 export let GREMLIN_X = 520;   // the World 3 test version moves the gremlin (see create)
-const TRUNK = { s: 2.3, cut: 135 };   // World 3 fallen trunk: scale, and the row of the art where the log ends and the gap begins
+const TRUNK = { s: 2.3, cut: 135 };
+// River Run bridge crossings (Cath's three bridge drawings). Positions are in the drawing's own pixels; s = display scale.
+// deck = the walking line; path = where the drawing's own banks replace the path; gaps = no floor (you fall in).
+// Gap sizes vs the gremlin's jumps (~610 px single, 860-980 px double): broken river ~220 px (one jump), canyon ~580 px (double jump;
+// a single jump only makes it from the very edge).
+export const BRIDGE = {
+  s: 1.6, deck: 315, path: [170, 1997],
+  whole: { key: 'r_br_whole', gaps: [] },
+  river: { key: 'r_br_river', gaps: [[1045, 1185]] },
+  canyon: { key: 'r_br_canyon', gaps: [[900, 1262]] },
+};
+BRIDGE.w = 2167 * BRIDGE.s;   // World 3 fallen trunk: scale, and the row of the art where the log ends and the gap begins
 
 export const POINTS = { taco: 100, margarita: 250, levelComplete: 500, perHeart: 200, noDamage: 1000 };
 const MOULD_HURT_AFTER = 0.55;   // seconds standing in mould before it costs a heart (it always slows you)
@@ -26,19 +38,21 @@ const LOOK = {
   sludgeWide: { key: 'haz_sludge', s: 2.0, sink: 74 },
   vines: { key: 'haz_vines_hang', s: 1.3 },
   root: { key: 'w_haz_root', s: 0.85, sink: 14 }, boulder: { key: 'w_haz_boulder', s: 0.82, sink: 14 },
+  rockS: { key: 'r_rock_s', s: 0.55, sink: 16 }, rockM: { key: 'r_rock_m', s: 0.5, sink: 18 }, rockL: { key: 'r_rock_l', s: 0.46, sink: 20 },
   taco: { key: 'pick_taco', s: 0.47 }, margarita: { key: 'pick_margarita', s: 0.5 },
   crystal: { key: 'pick_crystal', s: 0.42 }, potion: { key: 'pick_potion', s: 0.47 },
 };
 // collision boxes (screen px): ground hazards are anchored bottom-centre on the ground; pickups are centred
 const BOX = {
   root: { w: 230, h: 85 }, boulder: { w: 170, h: 110 },
+  rockS: { w: 150, h: 70 }, rockM: { w: 220, h: 85 }, rockL: { w: 230, h: 105 },
   roots: { w: 170, h: 80 }, mould: { w: 220, h: 60 }, sludge: { w: 220, h: 40 }, sludgeWide: { w: 600, h: 40 },
   taco: { w: 90, h: 80 }, margarita: { w: 80, h: 90 }, crystal: { w: 70, h: 90 }, potion: { w: 80, h: 90 },
 };
 const rnd = (a, b) => a + Math.random() * (b - a);
 const PICKUPS = new Set(['taco', 'margarita', 'crystal', 'potion']);
 const HAZARDS = new Set(['roots', 'vines', 'mould', 'sludge', 'sludgeWide']);
-const SHADOW_W = { root: 330, boulder: 250, roots: 300, mould: 300, sludge: 300, sludgeWide: 680 };
+const SHADOW_W = { rockS: 210, rockM: 280, rockL: 290, root: 330, boulder: 250, roots: 300, mould: 300, sludge: 300, sludgeWide: 680 };
 export const MAX_HEARTS = 6;   // 3 normal + up to 3 gold bonus hearts from potions drunk at full health
 
 export class Run extends Phaser.Scene {
@@ -74,7 +88,8 @@ export class Run extends Phaser.Scene {
       cam.setOrigin(0, 0).setZoom(V.zoom).setScroll(0, view.y);
       GREMLIN_X = Math.round(V.gremlinAt * this.viewW);
     } else { cam.setOrigin(0.5, 0.5).setZoom(1).setScroll(0, 0); GREMLIN_X = 520; }
-    this.swamp = new this.W.backdrop(this, GROUND_Y, view ? { view } : undefined);
+    const Backdrop = (this.W.backdrops && this.W.backdrops[this.stage - 1]) || this.W.backdrop;
+    this.swamp = new Backdrop(this, GROUND_Y, view ? { view } : undefined);
     Music.play(this, { 1: 'run', 2: 'w2' }[this.world] || null);   // each world has its own music; World 3 has none yet
     this.items = this.W.stages[this.stage - 1].filter(c => !(this.W.noTrunks && c.t === 'trunk')).map(c => ({ ...c, obj: null, done: false }));
     this.beamG = this.add.graphics().setDepth(10).setBlendMode(Phaser.BlendModes.ADD);
@@ -146,7 +161,7 @@ export class Run extends Phaser.Scene {
     const glow = this.add.image(p.x, p.y, 'glow').setBlendMode(Phaser.BlendModes.ADD).setTint(0x9b4dff).setDepth(13).setDisplaySize(150, 150);
     // the bolt curves towards the nearest creature ahead (easy aiming on a phone); otherwise it flies straight
     let ty = p.y, best = 1300;
-    for (const c of this.creatures) { if (!c.alive) continue; const d = c.centre[0] - p.x; if (d > 0 && d < best) { best = d; ty = c.centre[1]; } }
+    for (const c of this.creatures) { if (!c.alive || c.noShoot) continue; const d = c.centre[0] - p.x; if (d > 0 && d < best) { best = d; ty = c.centre[1]; } }
     this.orbs.push({ x: p.x, y: p.y, ty, vx: 1100, r: 20, glow, trail: [] });
   }
   meltBlast() {
@@ -161,7 +176,9 @@ export class Run extends Phaser.Scene {
     this.g.update(dt);
     const v = this.g.worldSpeed;
     if (this.mode !== 'ready') this.dist += v * dt;
+    this.bridgeHole();
     this.swamp.scroll(this.dist);
+    this.checkFall();
     this.updateItems(dt);
     const ctx = { gx: this.g.x, groundY: GROUND_Y, scroll: v * dt * (this.mode === 'ready' ? 0 : 1) };
     for (const c of this.creatures) c.update(dt, ctx);
@@ -187,7 +204,8 @@ export class Run extends Phaser.Scene {
       if (it.t === 'sludge' || it.t === 'sludgeWide') it.obj.scaleY = it.baseScale * (1 + 0.025 * Math.sin(t * 5 + it.d));   // slow bubbling heave
       if (it.t === 'vines') it.obj.rotation = 0.012 * Math.sin(t * 1.6 + it.d);                                                  // gentle sway
       if (it.glow) it.glow.outerStrength = 2.6 + 1.6 * (0.5 + 0.5 * Math.sin(t * 5));                                            // warning pulse
-      if (x < -600) { it.obj.destroy(); it.obj = null; it.done = true; if (it.back) { it.back.destroy(); it.back = null; } }
+      if (x + (it.t === 'bridge' ? BRIDGE.w : 0) < -600) { it.obj.destroy(); it.obj = null; it.done = true; if (it.back) { it.back.destroy(); it.back = null; } }
+      if (it.t === 'fishbreak' && !it.fired && x <= GREMLIN_X + 150 && this.chase) { it.fired = true; this.chase.distract(2.6); }
       if (it.t === 'finish' && !it.reached && this.mode === 'running' && x <= GREMLIN_X) { it.reached = true; this.finish(); }
     }
   }
@@ -195,6 +213,10 @@ export class Run extends Phaser.Scene {
     if (it.t === 'deco') {   // scenery beside the path (World 3): behind the gremlin, never in the way
       it.obj = this.add.image(x, GROUND_Y - 28, it.key).setOrigin(0.5, 1).setScale(it.s * 0.8).setDepth(3.9); return;   // just behind the path's front edge
     }
+    if (it.t === 'bridge') {   // a bridge crossing: the drawing's own banks replace the path (see bridgeHole); its deck is the walking line
+      it.obj = this.add.image(x, GROUND_Y - BRIDGE.deck * BRIDGE.s, BRIDGE[it.kind].key).setOrigin(0, 0).setScale(BRIDGE.s).setDepth(4.5); return;
+    }
+    if (it.t === 'fishbreak') { it.obj = this.add.zone(x, 0, 1, 1); return; }
     if (it.t === 'trunk') {   // fallen trunk across the path: slide under it
       // big and in two layers: the log hangs IN FRONT of the gremlin (she slides under it), the stumps and ferns sit behind her
       const T = TRUNK, img = d => this.add.image(x, GROUND_Y + 18, 'w_haz_trunk').setOrigin(0.5, 1).setScale(T.s).setDepth(d);
@@ -234,6 +256,14 @@ export class Run extends Phaser.Scene {
   }
   /** Height (px) of the floating platform under screen x, or 0 for the ground. */
   platformAt(x) {
+    // a gap in a bridge: nothing to stand on
+    for (const it of this.items) {
+      if (it.t !== 'bridge') continue;
+      for (const [g0, g1] of BRIDGE[it.kind].gaps) {
+        const a = GREMLIN_X + (it.d + g0 * BRIDGE.s - this.dist), b = GREMLIN_X + (it.d + g1 * BRIDGE.s - this.dist);
+        if (x > a + 20 && x < b - 20) { this.gapAt = it.d + g0 * BRIDGE.s; return -5000; }
+      }
+    }
     for (const it of this.items) if (it.t === 'plat' && it.obj && Math.abs(x - it.obj.x) < it.w / 2 - 25) return it.h;
     return 0;
   }
@@ -242,7 +272,7 @@ export class Run extends Phaser.Scene {
     if (it.t === 'vines') return new Phaser.Geom.Rectangle(o.x - 150, 0, 300, GROUND_Y - 150);
     if (it.t === 'trunk') return new Phaser.Geom.Rectangle(o.x - 200, GROUND_Y - 440, 400, 315);   // the log itself; the gap under it (125 px) is clear for a slide
     if (it.t === 'arrow') return it.landed ? new Phaser.Geom.Rectangle(o.x - 30, GROUND_Y - 120, 60, 120) : null;
-    if (it.t === 'deco') return null;
+    if (it.t === 'deco' || it.t === 'bridge' || it.t === 'fishbreak') return null;
     if (it.t === 'beam') { if (it.state !== 'fire') return null; const B = BEAM[it.lane]; return new Phaser.Geom.Rectangle(-100, GROUND_Y - B.y0, it.obj.x - 60 + 100, B.y0 - B.y1); }
     const b = BOX[it.t]; if (!b) return null;
     if (PICKUPS.has(it.t)) return new Phaser.Geom.Rectangle(o.x - b.w / 2, o.y - b.h / 2, b.w, b.h);
@@ -252,7 +282,7 @@ export class Run extends Phaser.Scene {
     const g = this.g, hb = g.hitbox(); if (!hb) return;
     let inMould = false;
     for (const it of this.items) {
-      if (!it.obj || it.done || it.t === 'finish' || it.t === 'plat') continue;
+      if (!it.obj || it.done || it.t === 'finish' || it.t === 'plat' || it.t === 'bridge' || it.t === 'fishbreak') continue;
       if (it.t === 'beam' && it.state !== 'fire') continue;
       const r = this.itemRect(it); if (!r || !Phaser.Geom.Intersects.RectangleToRectangle(hb, r)) continue;
       if (it.t === 'crystal') { this.collect(it); this.chaos = Math.min(100, this.chaos + 10); this.events.emit('chaos', this.chaos); }
@@ -272,6 +302,32 @@ export class Run extends Phaser.Scene {
       if (c.harmless) { c.hurt(99); this.blinded(); }   // butterflies: no damage, but you can't see for a moment
       else this.takeHit();
     }
+  }
+  /** River Run: while a bridge is on screen, the path stops where the bridge drawing's own banks take over. */
+  bridgeHole() {
+    let hole = null;
+    for (const it of this.items) {
+      if (it.t !== 'bridge' || it.done) continue;
+      const x = GREMLIN_X + (it.d - this.dist);
+      if (x < this.viewW + 200 && x + BRIDGE.w > -200) hole = [x + BRIDGE.path[0] * BRIDGE.s, x + BRIDGE.path[1] * BRIDGE.s];
+    }
+    if (this.swamp.setHole) this.swamp.setHole(...(hole || [null]));
+  }
+  /** Fell into a bridge gap: lose a heart, pop back up just before the gap, and Grunt gains a lot of ground. */
+  checkFall() {
+    const g = this.g, h = g.S.h * g.k;
+    g.root.setDepth(h < -25 ? 4.4 : 10);   // below the deck: behind the bridge, into the water
+    if (this.mode !== 'running' || h > -170 || this.gapAt === undefined) return;
+    const target = this.gapAt - 330, delta = this.dist - target;
+    this.dist = target;
+    for (const c of this.creatures) c.x += delta;
+    for (const o of this.orbs) o.x += delta;
+    g.revive(); g.root.setDepth(10);
+    this.cameras.main.shake(250, 0.008);
+    this.g.fx.burst([GREMLIN_X, GROUND_Y - 150], 0.6);
+    if (this.chase) { this.chase.closer(CHASE.fall); this.lastHitD = this.dist; this.chase.say('*MROW!*', 0.9); }
+    this.hearts--; this.damaged = true; this.events.emit('hearts', this.hearts);
+    if (this.hearts <= 0) { this.mode = 'dying'; g.die(); } else g.hurt();
   }
   collect(it) {
     it.done = true; const o = it.obj;
@@ -375,7 +431,7 @@ export class Run extends Phaser.Scene {
   /** Grunt eases back a little for every hazard or creature you get past cleanly. */
   checkCleared() {
     const gx = this.g.x, clean = d => this.lastHitD === undefined || d - this.lastHitD > 500;
-    for (const it of this.items) if (!it.cleared && it.obj && (it.t === 'root' || it.t === 'boulder' || it.t === 'trunk' || (it.t === 'arrow' && it.landed)) && it.obj.x < gx - 150) { it.cleared = true; if (clean(this.dist)) { this.chase.ease(CHASE.clear); if (it.t === 'arrow') this.chase.missed(); } }
+    for (const it of this.items) if (!it.cleared && it.obj && (it.t === 'root' || it.t === 'boulder' || it.t === 'trunk' || it.t === 'rockS' || it.t === 'rockM' || it.t === 'rockL' || (it.t === 'arrow' && it.landed)) && it.obj.x < gx - 150) { it.cleared = true; if (clean(this.dist)) { this.chase.ease(CHASE.clear); if (it.t === 'arrow') this.chase.missed(); } }
     for (const c of this.creatures) if (!c.cleared && c.alive && c.x < gx - 200) { c.cleared = true; if (clean(this.dist)) this.chase.ease(CHASE.clear); }
   }
 
@@ -399,7 +455,8 @@ export class Run extends Phaser.Scene {
       for (let i = 0; i < 3; i++) { const a0 = t + i * 2.1; G.lineBetween(o.x + Math.cos(a0) * o.r * 1.3, o.y + Math.sin(a0) * o.r * 1.3, o.x + Math.cos(a0 + 0.6) * o.r * 1.9, o.y + Math.sin(a0 + 0.6) * o.r * 1.9); }
       o.glow.setPosition(o.x, o.y);
       for (const c of this.creatures) {
-        const r = c.hitbox(); if (!r) continue;
+        if (c.noShoot) continue;
+        const r = c.shootbox ? c.shootbox() : c.hitbox(); if (!r) continue;
         if (Phaser.Geom.Intersects.CircleToRectangle(new Phaser.Geom.Circle(o.x, o.y, o.r + 10), r)) { o.dead = true; c.shot(); this.g.fx.burst([o.x, o.y], 0.4); if (c.dead) this.defeated(c); break; }
       }
       if (o.x > this.viewW + 100) o.dead = true;
