@@ -1,6 +1,6 @@
-import { SWAMP_FILES } from '../world/Swamp.js?v=20261015174737';
-import { Music } from '../audio/Music.js?v=20261015174737';
-import { CREATURE_PARTS } from '../creatures/Creatures.js?v=20261015174737';
+import { SWAMP_FILES } from '../world/Swamp.js?v=20261015191024';
+import { Music } from '../audio/Music.js?v=20261015191024';
+import { CREATURE_PARTS } from '../creatures/Creatures.js?v=20261015191024';
 // Loads the gremlin's parts and makes the simple placeholder textures used by the test run.
 export const PARTS = ['body', 'head', 'eye', 'ear', 'tail', 'pouch', 'upperArm', 'foreArm', 'upperArmFar', 'foreArmFar',
   'thighN', 'bootN', 'thighFfar', 'bootFfar'];
@@ -34,6 +34,7 @@ export class Boot extends Phaser.Scene {
     this.registry.set('gameScene', first);
     if (h === '#world3run2') this.registry.set('stage', 2);   // shortcut straight to River Run
     if (h === '#world3run3') this.registry.set('stage', 3);   // ...or Uzi Rampage
+    if (h === '#world3run4') this.registry.set('stage', 4);   // ...or Final Sprint
     const start = () => { this.scene.start(first); this.scene.launch('UI'); };
     // wait for the display font so text doesn't jump when it arrives
     if (document.fonts && document.fonts.load) Promise.race([document.fonts.load('40px "Lilita One"'), new Promise(r => setTimeout(r, 1500))]).then(start);

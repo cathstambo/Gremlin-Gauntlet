@@ -6,8 +6,8 @@
 //     - a magic bolt fired BACK at him (BLAST BACK / swipe left) knocks him well back and stuns him for a moment.
 //   At 100 he catches you: a giant paw swipe ends the attempt (retry this run, meter reset).
 //   The meter carries over to the next run; it only resets when you die.
-import { Grunt } from '../grunt/Grunt.js?v=20261015174737';
-import { Sfx } from '../audio/Music.js?v=20261015174737';
+import { Grunt } from '../grunt/Grunt.js?v=20261015191024';
+import { Sfx } from '../audio/Music.js?v=20261015191024';
 
 export const CHASE = {
   // Difficulty ramps up (Cath, 15 Oct): gentle at the start of Into the Wild, tighter towards its end, and tighter again
@@ -82,17 +82,18 @@ export class Chase {
       }
       if (run.dist > 1500 && run.mode === 'running') this.burst();
     }
-    if (this.phase === 'burst' || this.phase === 'chase') {
+    if (this.phase === 'burst' || this.phase === 'chase' || this.phase === 'ending') {
       if (this.phase === 'chase' && run.mode === 'running') this.pace(dt);
+      if (this.phase === 'ending') { this.prox += (this.endProx - this.prox) * Math.min(1, dt * 1.5); }
       this.shown += (this.prox - this.shown) * Math.min(1, dt * 2.5);
-      run.events.emit('prox', this.prox);
-      if (this.prox >= 100 && run.mode === 'running') this.caught();
+      if (this.phase !== 'ending') run.events.emit('prox', this.prox);
+      if (this.prox >= 100 && run.mode === 'running' && this.phase === 'chase') this.caught();
       // near-capture warning (GDD): red edges plus his yowl as he closes in
       if (this.phase === 'chase' && this.prox >= CHASE.warnAt && !this.warned) { this.warned = true; Sfx.play(run, ['yowl', 'yowl2'], 4); }
       if (this.prox < CHASE.warnAt - 8) this.warned = false;
     }
-    const walking = (run.mode !== 'dying' && run.mode !== 'gameover' || this.phase === 'catch') && this.stunT <= 0;
-    this.updateFish(dt);
+    const walking = this.phase === 'ending' ? Math.abs(this.prox - this.endProx) > 1.5 && !this.grunt.fall : (run.mode !== 'dying' && run.mode !== 'gameover' || this.phase === 'catch') && this.stunT <= 0;
+    this.updateFish(dt); this.updateStomps(dt);
     this.grunt.speed = this.surgeT > 0 ? 1.7 : 1;
     this.grunt.update(dt, this.phase === 'eyes' ? -500 : this.frontFor(this.shown), walking);
     this.drawShadow();
@@ -160,6 +161,35 @@ export class Chase {
     this.fish.setPosition(x, y).setRotation(this.fishT * 9);
     if (Math.floor(this.fishT * 3) !== Math.floor((this.fishT - dt) * 3) && u < 0.85) this.grunt.flinch = 0.5;
     if (u >= 1) this.fish.setVisible(false);
+  }
+  /** Final Sprint (GDD "giant paw impacts behind the player"; Cath: behind you, pure pressure, never in the way).
+   *  His giant paw slams down on the trail between him and the gremlin; the closer he is, the more often and the nearer. */
+  updateStomps(dt) {
+    const run = this.run; if (run.stage !== 4) return;
+    const scroll = run.mode === 'running' ? run.g.worldSpeed * dt : 0;
+    this.paws = this.paws || [];
+    if (this.phase === 'chase' && run.mode === 'running') {
+      this.stompT = (this.stompT ?? 3) - dt;
+      if (this.stompT <= 0) {
+        const p = this.prox / 100; this.stompT = 4.2 - 2.4 * p + Math.random() * 1.2;
+        const G = run.GREMLIN_X, x = Math.min(G - 200, this.grunt.frontX + (G - this.grunt.frontX) * (0.35 + 0.35 * p));
+        const im = run.add.image(x, run.GROUND_Y - 900, 'f_paw_down').setOrigin(0.5, 1).setScale(0.78).setDepth(9);
+        this.paws.push({ im, t: 0, st: 'down' });
+      }
+    }
+    for (const w of this.paws) {
+      w.t += dt; w.im.x -= scroll;
+      if (w.st === 'down') {
+        const u = Math.min(1, w.t / 0.22); w.im.y = run.GROUND_Y - 900 + (900 + 30) * u * u;
+        if (u >= 1) {
+          w.st = 'hit'; w.t = 0; w.im.setTexture('f_paw_hit').setY(run.GROUND_Y + 40);
+          run.cameras.main.shake(220, 0.006 + 0.008 * this.prox / 100); run.g.fx.dust?.(12, 1.4, [w.im.x, run.GROUND_Y]);
+          Sfx.play(run, 'growl', 2);
+        }
+      } else if (w.st === 'hit') { if (w.t > 0.35) { w.st = 'up'; w.t = 0; w.im.setTexture('f_paw_planted'); } }
+      else if (w.st === 'up') { const u = Math.min(1, w.t / 0.35); w.im.y = run.GROUND_Y + 40 - 900 * u * u; w.im.alpha = 1 - u; if (u >= 1) { w.im.destroy(); w.dead = true; } }
+    }
+    this.paws = this.paws.filter(w => !w.dead);
   }
   /** Uzi Rampage: a burst from the dual Uzis (GDD: he hisses for the Uzis). */
   uzi() {

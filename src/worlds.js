@@ -1,8 +1,8 @@
 // The worlds, in the locked GDD order. Each world = two running stages, then its boss.
-import { STAGE1, STAGE2, W2_STAGE1, W2_STAGE2, W3_RUN1, W3_RUN2, W3_RUN3 } from './course.js?v=20261015174737';
-import { Swamp, Meadow, Wild, River, Canyon, MEADOW_FILES, WILD_FILES, RIVER_FILES, CANYON_FILES } from './world/Swamp.js?v=20261015174737';
-import { GRUNT_PARTS } from './grunt/Grunt.js?v=20261015174737';
-import { MEADOW_CREATURE_PARTS } from './creatures/Creatures.js?v=20261015174737';
+import { STAGE1, STAGE2, W2_STAGE1, W2_STAGE2, W3_RUN1, W3_RUN2, W3_RUN3, W3_RUN4 } from './course.js?v=20261015191024';
+import { Swamp, Meadow, Wild, River, Canyon, Sprint, MEADOW_FILES, WILD_FILES, RIVER_FILES, CANYON_FILES, SPRINT_FILES } from './world/Swamp.js?v=20261015191024';
+import { GRUNT_PARTS } from './grunt/Grunt.js?v=20261015191024';
+import { MEADOW_CREATURE_PARTS } from './creatures/Creatures.js?v=20261015191024';
 
 export const WORLDS = {
   1: {
@@ -19,7 +19,7 @@ export const WORLDS = {
   },
   3: {
     place: 'Lush Alaskan wilderness', stageName: 'INTO THE WILD', boss: null, bossTitle: 'WRATH OF THE HAIRBALL', bossName: 'GRUNT',
-    backdrop: Wild, backdrops: [Wild, River, Canyon], stages: [W3_RUN1, W3_RUN2, W3_RUN3], runNames: ['INTO THE WILD', 'RIVER RUN', 'UZI RAMPAGE', 'FINAL SPRINT'],
+    backdrop: Wild, backdrops: [Wild, River, Canyon, Sprint], stages: [W3_RUN1, W3_RUN2, W3_RUN3, W3_RUN4], runNames: ['INTO THE WILD', 'RIVER RUN', 'UZI RAMPAGE', 'FINAL SPRINT'],
     chase: { start: [30, 35, 40, 50] },   // Grunt's starting Proximity Meter for each run (used at the start, and after a death)
     maxHearts: 5, plats: {}, sizes: () => ({}),
     // Approved by Cath 15 Oct: gameplay zoomed out 30% (backgrounds keep their framing), gremlin a little left of centre,
@@ -46,4 +46,5 @@ export function loadWild(scene) {
   const st = scene.registry.get('stage') || 1;
   if (st >= 2) for (const [k, f] of Object.entries(RIVER_FILES)) if (!scene.textures.exists(k)) scene.load.image(k, f);   // run 3 reuses the bear and moose
   if (st >= 3) for (const [k, f] of Object.entries(CANYON_FILES)) if (!scene.textures.exists(k)) scene.load.image(k, f);
+  if (st >= 4) for (const [k, f] of Object.entries(SPRINT_FILES)) if (!scene.textures.exists(k)) scene.load.image(k, f);
 }

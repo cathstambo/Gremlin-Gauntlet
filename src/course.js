@@ -272,3 +272,44 @@ export const W3_RUN3 = [
   ...row('taco', 33700, 3, 70),
   { t: 'finish', d: 35000 },
 ];
+
+// =====================================================================================================
+// World 3, run 4: FINAL SPRINT (Cath's approved Final Sprint backgrounds; GDD: rocky mountain pass, giant paw impacts behind
+// the player, faster but fair combinations, higher starting pressure, finish at a riverside clearing, then Hairball Apocalypse).
+// Grunt keeps his Uzis. A mixture of the earlier threats, closer together; pairs always ask for different moves in turn
+// (never two at once). His giant paw slams down BEHIND the gremlin (pure pressure, see Chase.updateStomps).
+// Scenery (Cath): CoffeAngel shouting RUN GREMLIN RUN! and the judgemental goat.
+export const W3_RUN4 = [
+  ...row('taco', 2000, 3, 70),
+  { t: 'drop', k: 'rock', d: 3200 },
+  { t: 'rockM', d: 4600 },
+  { t: 'goat', d: 5200, s: 0.8 },
+  { t: 'wolf', d: 6200 },
+  ...row('crystal', 7000, 2, 70, 200),
+  { t: 'shelf', n: 1, d: 7800 },
+  { t: 'drop', k: 'branch', d: 9600 },
+  { t: 'drop', k: 'rockS', d: 10400, quiet: true },
+  { t: 'cbear', d: 11800 },
+  { t: 'potion', d: 12800, h: 70 },
+  { t: 'hawk', d: 13800 },
+  { t: 'rockL', d: 14800 },
+  { t: 'margarita', d: 14800, h: 330 },
+  // the canyon: double jump
+  { t: 'bridge', kind: 'canyon', d: 15800 },
+  { t: 'drop', k: 'rock', d: 15800 + B + 900 },
+  { t: 'drop', k: 'branch2', d: 15800 + B + 1700, quiet: true },
+  { t: 'moose', d: 15800 + B + 3000 },
+  { t: 'deco', key: 'u_dec_rungremlin', d: 15800 + B + 3900, s: 1.0 },
+  { t: 'shelf', n: 3, d: 15800 + B + 4600 },
+  ...row('crystal', 15800 + B + 5800, 2, 70, 200),
+  { t: 'fox', d: 15800 + B + 6400 },
+  { t: 'drop', k: 'rockS', d: 15800 + B + 7400 },
+  { t: 'drop', k: 'rock', d: 15800 + B + 8200, quiet: true },
+  { t: 'drop', k: 'branch', d: 15800 + B + 9000, quiet: true },
+  { t: 'cbear', d: 15800 + B + 10400 },
+  { t: 'shelf', n: 2, d: 15800 + B + 11500 },
+  { t: 'hawk', d: 15800 + B + 12500 },
+  { t: 'rockM', d: 15800 + B + 13400 },
+  ...row('taco', 15800 + B + 14000, 4, 70),
+  { t: 'finish', d: 15800 + B + 16000 },   // the riverside clearing: then the hairball
+];

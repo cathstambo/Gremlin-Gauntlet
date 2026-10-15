@@ -1,7 +1,7 @@
 // HUD and controls for whichever game scene is active ('Run' = test course, 'Boss' = Eddie's arena):
 // hearts, Chaos Meter, boss health, pause, touch buttons, swipe gestures, keyboard, overlays.
-import { Music } from '../audio/Music.js?v=20261015174737';
-import { WORLDS, worldNo, LAST_WORLD } from '../worlds.js?v=20261015174737';
+import { Music } from '../audio/Music.js?v=20261015191024';
+import { WORLDS, worldNo, LAST_WORLD } from '../worlds.js?v=20261015191024';
 const FONT = 'Lilita One, Arial Rounded MT Bold, Trebuchet MS, sans-serif';
 const BODY = 'Atkinson Hyperlegible, system-ui, sans-serif';
 const INK = '#ece6f5', VIOLET = 0x9b4dff, ACID = 0xc6f135, MOULD = 0x9fcc1e;
@@ -108,7 +108,8 @@ export class UI extends Phaser.Scene {
     else if (this.isBoss) this.showMessage('THE MOULD KING', 'Level 1 boss · The Festering Swamp · tap to start',
       stick + 'JUMP button: jump and double jump   ·   MAGIC: only hurts Eddie while he’s VULNERABLE\nWatch the markers: green = mould bomb, red = danger, gold = where Eddie lands');
     else if (this.world === 3) this.showMessage(`WORLD 3 · RUN ${stage}`, `${Wd.runNames[stage - 1]} · tap to start`,
-      stage === 1 ? 'Something huge is in the woods. Don’t let him catch you.\nRoots & boulders: jump · ' + (WORLDS[3].noTrunks ? '' : 'Fallen trunks: slide under · ') + 'Arrows: watch the red marker\nBLAST BACK (or swipe left) fires magic behind you to knock Grunt back' : stage === 3 ? 'He’s got the Uzis out.\nRed marker = debris landing there: it stays on the trail, so jump it\nRock shelves: slide · Bears and moose: double jump or blast · Hawks: slide or blast'
+      stage === 1 ? 'Something huge is in the woods. Don’t let him catch you.\nRoots & boulders: jump · ' + (WORLDS[3].noTrunks ? '' : 'Fallen trunks: slide under · ') + 'Arrows: watch the red marker\nBLAST BACK (or swipe left) fires magic behind you to knock Grunt back' : stage === 4 ? 'The last stretch. He’s right behind you and he’s FURIOUS.\nEverything at once: jump the debris, slide the shelves, double jump the canyon\nKeep going: his giant paw is slamming down behind you'
+      : stage === 3 ? 'He’s got the Uzis out.\nRed marker = debris landing there: it stays on the trail, so jump it\nRock shelves: slide · Bears and moose: double jump or blast · Hawks: slide or blast'
       : stage === 2 ? 'Over the river. He’s still coming.\nRocks: jump · Broken bridge: jump · Canyon: DOUBLE jump · Leaping salmon: slide\nBears swipe where the red line shows: low = jump, high = slide · Moose: double jump or blast twice'
       : 'Grunt is still right behind you. Keep running.');
     else if (stage === 2) this.showMessage(`${Wd.stageName} · PART 2`, 'Deeper in. Nastier. · tap to start', `${Wd.bossName === 'EDDIE' ? 'Eddie waits' : 'The Evil Overlord waits'} at the end of this one.`);
@@ -127,6 +128,8 @@ export class UI extends Phaser.Scene {
     ev.on('gameover', msg => this.showMessage(msg || 'SPLAT.', this.isBoss ? 'Tap to retry the boss (3 hearts, Chaos Meter reset)' : this.world === 3 ? 'Tap to retry this run (3 hearts, Grunt back where he started)' : this.scene.get('Run').stage === 2 ? 'Tap to retry part 2 (3 hearts, score kept from part 1)' : 'Tap to restart part 1'));
     ev.on('finished', info => this.time.delayedCall(this.isBoss ? 300 : 1200, () => {
       if (this.isBoss) this.showMessage('BOSS DEFEATED', `${this.world === 2 ? 'The Evil Overlord has been dethroned' : 'The Mould King has been mouldered'} · ${info.time.toFixed(1)} s · score ${info.score.toLocaleString()}`,
+        info.breakdown + (this.world < LAST_WORLD ? `\n\nTap for World ${this.world + 1}: ${WORLDS[this.world + 1].place}` : '\n\nThat’s every world so far! Tap to play World 1 again'));
+      else if (this.world === 3 && info.ending) this.showMessage('BOSS DEFEATED', `Grunt has been hairballed · Final Sprint ${info.time.toFixed(1)} s · score ${info.score.toLocaleString()}`,
         info.breakdown + (this.world < LAST_WORLD ? `\n\nTap for World ${this.world + 1}: ${WORLDS[this.world + 1].place}` : '\n\nThat’s every world so far! Tap to play World 1 again'));
       else if (this.world === 3) { const Wd = WORLDS[3], more = info.stage < Wd.stages.length;
         this.showMessage(`RUN ${info.stage} CLEARED`, more ? `Tap for run ${info.stage + 1}: ${Wd.runNames[info.stage]}` : 'You escaped (for now) · tap to play Into the Wild again',

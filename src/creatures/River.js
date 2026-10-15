@@ -1,8 +1,8 @@
 // World 3 run 2, River Run (Cath-approved art + readme, 15 Oct 2026): charging moose, fishing grizzly, leaping salmon.
 // Same interface as the other creatures: update(dt, ctx), hitbox() (what hurts the gremlin), shot(), centre, points.
 // Extras used by the Run scene: shootbox() = where magic hits it (if different from hitbox); noShoot = magic passes by.
-import { Creature } from './Creatures.js?v=20261015174737';
-import { Sprite } from './Wild.js?v=20261015174737';
+import { Creature } from './Creatures.js?v=20261015191024';
+import { Sprite } from './Wild.js?v=20261015191024';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const ease = k => (k < 0 ? 0 : k > 1 ? 1 : k * k * (3 - 2 * k));

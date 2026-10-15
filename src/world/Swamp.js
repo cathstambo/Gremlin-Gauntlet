@@ -34,6 +34,10 @@ export const CANYON_FILES = Object.fromEntries(['bg_far', 'bg_mid', 'bg_near', '
   'rock_rest', 'rock_rest_s', 'branch1', 'branch2', 'branch3', 'shelf1', 'shelf2', 'shelf3',
   'dec_almost', 'dec_youcan', 'dec_rungremlin', 'dec_camp', 'goat_body', 'goat_head'].map(f => ['u_' + f, 'assets/uzi/' + f + '.webp']));
 
+// World 3 run 4, Final Sprint (loaded when that run starts): backgrounds, plus Grunt's giant paw and the hairball (ending).
+export const SPRINT_FILES = Object.fromEntries(['bg_far', 'bg_mid', 'bg_near', 'ground', 'paw_down', 'paw_hit', 'paw_planted',
+  'hairball', 'hairball_roll', 'hairball_burst', 'fishbone', 'dust', 'hair1', 'hair2'].map(f => ['f_' + f, 'assets/sprint/' + f + '.webp']));
+
 export const SWAMP = {
   far: 'bg_far', mid: 'bg_mid', near: 'bg_near', ground: 'swamp_ground',
   groundSurface: 100,   // row in the ground strip the gremlin walks on: the middle of the lit path, so hazards sit IN the way
@@ -137,6 +141,18 @@ export const CANYON = {
   midTint: 0xffffff, nearTint: 0xffffff, props: [], propScale: () => 1, propTint: () => 0xffffff, propGap: [1000, 100],
   groundBottom: 251,
 };
+// Final Sprint: Cath's four approved images (baked black removed, a sky painted in behind the far mountains, the path levelled)
+export const SPRINT = {
+  far: 'f_bg_far', mid: 'f_bg_mid', near: 'f_bg_near', ground: 'f_ground',
+  groundSurface: 412,
+  midBottom: 714, nearBottom: 739, midS: 1.05, nearS: 1.2, gS: 1.2, midDrop: -70, nearDrop: 40,
+  midTint: 0xffffff, nearTint: 0xffffff, props: [], propScale: () => 1, propTint: () => 0xffffff, propGap: [1000, 100],
+  groundBottom: 520,
+};
+/** World 3 run 4: Final Sprint. */
+export class Sprint extends Backdrop {
+  constructor(scene, groundY, opts) { super(scene, groundY, SPRINT, { props: false, ...opts }); }
+}
 /** World 3 run 3: Uzi Rampage. */
 export class Canyon extends Backdrop {
   constructor(scene, groundY, opts) { super(scene, groundY, CANYON, { props: false, ...opts }); }

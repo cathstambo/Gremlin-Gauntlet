@@ -1,14 +1,14 @@
 // Running stages for every world (1 = easy to medium, 2 = busier and harder), then on to that world's boss.
 // Hearts, Chaos Meter and score carry from stage 1 to stage 2 to the boss; part 2 is a checkpoint.
-import { Gremlin } from '../gremlin/Gremlin.js?v=20261015174737';
-import { WORLDS, worldNo, loadMeadow, loadWild } from '../worlds.js?v=20261015174737';
-import { Chase, CHASE } from './Chase.js?v=20261015174737';
-import { Goat } from '../world/Goat.js?v=20261015174737';
-import { Moose, Bear, Salmon, ChargeBear } from '../creatures/River.js?v=20261015174737';
-import { Wolf, Eagle, Fox } from '../creatures/Wild.js?v=20261015174737';
-import { Music } from '../audio/Music.js?v=20261015174737';
-import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js?v=20261015174737';
-import { Bunny, Kitten, Flower, Swarm } from '../creatures/Meadow.js?v=20261015174737';
+import { Gremlin } from '../gremlin/Gremlin.js?v=20261015191024';
+import { WORLDS, worldNo, loadMeadow, loadWild } from '../worlds.js?v=20261015191024';
+import { Chase, CHASE } from './Chase.js?v=20261015191024';
+import { Goat } from '../world/Goat.js?v=20261015191024';
+import { Moose, Bear, Salmon, ChargeBear } from '../creatures/River.js?v=20261015191024';
+import { Wolf, Eagle, Fox } from '../creatures/Wild.js?v=20261015191024';
+import { Music, Sfx } from '../audio/Music.js?v=20261015191024';
+import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js?v=20261015191024';
+import { Bunny, Kitten, Flower, Swarm } from '../creatures/Meadow.js?v=20261015191024';
 
 const CREATURES = { frog: Frog, gator: Gator, bat: Bat, spider: Spider, bunny: Bunny, kitten: Kitten, flower: Flower, swarm: Swarm, wolf: Wolf, eagle: Eagle, fox: Fox, moose: Moose, bear: Bear, salmon: Salmon, cbear: ChargeBear, hawk: Eagle };
 // rainbow beam (World 2): turret size, how far it sinks into the path, and the beam's band (px above the ground)
@@ -43,7 +43,7 @@ export const SHELF = {
   1: { key: 'u_shelf1', cut: 150, under: 130, w: 529 }, 2: { key: 'u_shelf2', cut: 140, under: 120, w: 396 }, 3: { key: 'u_shelf3', cut: 175, under: 150, w: 629, s: 1.3 },
 };   // World 3 fallen trunk: scale, and the row of the art where the log ends and the gap begins
 
-export const POINTS = { taco: 100, margarita: 250, levelComplete: 500, perHeart: 200, noDamage: 1000 };
+export const POINTS = { taco: 100, margarita: 250, levelComplete: 500, perHeart: 200, noDamage: 1000, chase: 1000 };
 const MOULD_HURT_AFTER = 0.55;   // seconds standing in mould before it costs a heart (it always slows you)
 
 // how each hazard / pickup is drawn: texture, display scale, and how far the image bottom sits below the ground line
@@ -106,7 +106,7 @@ export class Run extends Phaser.Scene {
     } else { cam.setOrigin(0.5, 0.5).setZoom(1).setScroll(0, 0); GREMLIN_X = 520; }
     const Backdrop = (this.W.backdrops && this.W.backdrops[this.stage - 1]) || this.W.backdrop;
     this.swamp = new Backdrop(this, GROUND_Y, view ? { view } : undefined);
-    Music.play(this, { 1: 'run', 2: 'w2' }[this.world] || null);   // each world has its own music; World 3 has none yet
+    Music.play(this, { 1: 'run', 2: 'w2', 3: 'w3' }[this.world] || null);   // each world has its own music
     this.items = this.W.stages[this.stage - 1].filter(c => !(this.W.noTrunks && c.t === 'trunk')).map(c => ({ ...c, obj: null, done: false }));
     this.beamG = this.add.graphics().setDepth(10).setBlendMode(Phaser.BlendModes.ADD);
     this.blind = [];   // butterflies covering the screen after the gremlin blunders into a swarm
@@ -149,6 +149,7 @@ export class Run extends Phaser.Scene {
     else this.scene.get('UI').newLevel(this.world);   // (World 3 runs 2 to 4 are still to come)
   }
   act(name) {
+    if (this.mode === 'ending') { if (name === 'tap' && this.endSkip) this.endSkip(); return; }
     if (this.mode !== 'running') return;
     if (name === 'jump') this.g.jump();
     else if (name === 'slide') this.g.slide();
@@ -190,8 +191,9 @@ export class Run extends Phaser.Scene {
   update(time, deltaMs) {
     const dt = Math.min(0.05, deltaMs / 1000) * this.timeScale;
     this.g.update(dt);
-    const v = this.g.worldSpeed;
+    const v = this.mode === 'ending' ? 0 : this.g.worldSpeed;   // in the ending the world stops; the gremlin runs on a little way
     if (this.mode !== 'ready') this.dist += v * dt;
+    if (this.mode === 'running') this.runTime = (this.runTime || 0) + dt;
     this.bridgeHole();
     this.swamp.scroll(this.dist);
     this.checkFall();
@@ -205,6 +207,7 @@ export class Run extends Phaser.Scene {
     this.drawHazardFx();
     this.updateBeams(dt);
     this.updateBlind(dt);
+    if (this.endAnim) this.endAnim(dt);
     if (this.mode === 'running') this.collide(dt);
     this.drawBoxes();
   }
@@ -331,6 +334,80 @@ export class Run extends Phaser.Scene {
       else this.takeHit();
     }
   }
+  // ---------- World 3 ending (GDD, locked: Hairball Apocalypse; Cath 15 Oct: no floating in the river — the hairball knocks
+  // him over backwards and a fish lands on his head). Skippable (tap) after the first viewing. ----------
+  hairball() {
+    const C = this.chase, Gr = C.grunt, g = this.g, gy = GROUND_Y;
+    this.mode = 'ending'; this.finalTime = this.runTime || 0;
+    for (const it of this.items) if (it.t === 'finish' && it.obj) { it.obj.destroy(); it.obj = null; it.done = true; }
+    C.phase = 'ending'; C.endProx = 100; C.surgeT = 0; C.stunT = 0;   // he catches up to where she was...
+    for (const w of C.paws || []) w.im.destroy(); C.paws = [];
+    this.gRun = 0;   // ...she runs on a little way, then stops and turns round to face him
+    this.events.emit('prox', null); this.events.emit('danger', 0);
+    let seen = false; try { seen = localStorage.getItem('gremlinGauntlet.hairballSeen') === '1'; } catch (e) { /* private mode */ }
+    const steps = [], at = (t, fn) => steps.push(this.time.delayedCall(t * 1000, fn));
+    let hb = null, fish = null, done = false;
+    const finish = () => {
+      if (done) return; done = true; for (const s of steps) s.remove(false);
+      try { localStorage.setItem('gremlinGauntlet.hairballSeen', '1'); } catch (e) { /* ignore */ }
+      if (hb) hb.destroy();
+      Gr.setFace('grumpy'); Gr.fall = 1; Gr.pose = null; Gr.poseT = 0;
+      if (!fish) fish = this.add.image(0, 0, 'r_salmon').setScale(0.45).setDepth(8.6);
+      this.fishOnHead = fish;
+      g.face = 1; g.win();
+      const res = this.chaseScore();
+      this.mode = 'won';
+      this.events.emit('finished', { stage: this.stage, score: this.score, ending: true, breakdown: res.breakdown, time: this.finalTime });
+    };
+    this.endSkip = seen ? finish : null;
+    at(0.3, () => C.say('*HISSSSS!*', 1.0));
+    at(1.4, () => { Gr.act('uzi', 99); C.say('*HISSSSS!*', 0.9); Sfx.play(this, 'hiss_growl'); });   // both Uzis up for one last attack...
+    at(2.6, () => { Gr.flinch = 0.4; C.say('Hrk…', 0.7); this.cameras.main.shake(120, 0.003); Sfx.play(this, 'growl'); });   // ...then he freezes
+    at(3.4, () => { Gr.flinch = 0.5; C.say('hrk…', 0.7); this.cameras.main.shake(140, 0.004); });
+    at(4.2, () => { Gr.flinch = 0.9; Gr.setFace('hairball'); C.say('HRRRRK…', 1.0); this.cameras.main.shake(300, 0.008); Sfx.play(this, 'yowl_long'); });
+    at(5.2, () => {   // drops the Uzis and coughs up a hairball the size of a small house
+      Gr.pose = null; Gr.poseT = 0;
+      const h = Gr.headPoint(); hb = this.add.image(h[0] + 40, h[1] + 60, 'f_hairball').setScale(0.15).setDepth(9.5);
+      this.hbT = 0; this.hbFrom = [h[0] + 40, h[1] + 60];
+    });
+    at(7.6, () => {   // it rolled back into his paws: he goes over backwards
+      if (hb) { const b = this.add.image(hb.x, gy + 10, 'f_hairball_burst').setOrigin(0.5, 1).setScale(1.8).setDepth(9.6); this.tweens.add({ targets: b, alpha: 0, delay: 400, duration: 600, onComplete: () => b.destroy() }); hb.destroy(); hb = null; }
+      this.cameras.main.shake(500, 0.016); g.fx.dust?.(20, 2, [Gr.frontX - 150, gy]); C.say('*THUD!*', 0.9);
+      Gr.setFace('shock'); this.fallT = 0;
+    });
+    at(9.0, () => { fish = this.add.image(this.viewW + 100, gy - 700, 'r_salmon').setScale(0.45).setDepth(8.6); this.fishT = 0; });   // a tiny fish lands on his forehead
+    at(10.4, () => { Gr.setFace('grumpy'); C.say('Mrrrp.', 1.6); Sfx.play(this, 'mrrrp'); });
+    at(12.2, finish);
+    // per-frame animation of the hairball, the fall and the fish
+    this.endAnim = dt => {
+      if (this.gRun !== undefined && this.gRun < 1) {
+        this.gRun = Math.min(1, this.gRun + dt / 1.1); g.x = GREMLIN_X + 560 * (1 - (1 - this.gRun) ** 2);
+        if (this.gRun >= 1) { g.idle(); g.face = -1; }
+      }
+      if (hb && this.hbT !== undefined) {
+        this.hbT += dt; const t = this.hbT, [x0, y0] = this.hbFrom, xMid = (Gr.frontX + g.x) / 2 + 40;
+        if (t < 0.9) { const u = t / 0.9; hb.setScale(0.15 + 1.75 * u).setPosition(x0 + (xMid - x0) * u, y0 + (gy - 250 - y0) * u - 380 * 4 * u * (1 - u)).setRotation(u * 4); }
+        else if (t < 1.4) { const u = (t - 0.9) / 0.5; hb.setTexture('f_hairball').setPosition(xMid + 40 * u, gy - 250 - 180 * 4 * u * (1 - u)).setRotation(4 + u * 2); if (u > 0.05 && !this.bounced) { this.bounced = true; this.cameras.main.shake(200, 0.008); g.fx.dust?.(12, 1.6, [xMid, gy]); } }
+        else { const u = Math.min(1, (t - 1.4) / 1.0); hb.setTexture('f_hairball_roll').setFlipX(true).setPosition(xMid + 40 - (xMid + 40 - (Gr.frontX - 60)) * u, gy - 175).setRotation(0); }
+      }
+      if (this.fallT !== undefined && Gr.fall < 1) { this.fallT += dt; Gr.fall = Math.min(1, (this.fallT / 0.7) ** 2); }
+      if (fish && this.fishT !== undefined) {
+        this.fishT += dt; const u = Math.min(1, this.fishT / 1.1);
+        const head = Gr.root.getWorldTransformMatrix().transformPoint(432, 60), tx = head.x, ty = head.y - 20, x0 = this.viewW + 100, y0 = gy - 700;
+        fish.setPosition(x0 + (tx - x0) * u, y0 + (ty - y0) * u - 300 * 4 * u * (1 - u)).setRotation(u * 7 + (u >= 1 ? 0.15 * Math.sin(this.fishT * 9) * Math.max(0, 2.5 - this.fishT) : 0));
+      }
+      if (this.fishOnHead && done) { const head = Gr.root.getWorldTransformMatrix().transformPoint(432, 60); this.fishOnHead.setPosition(head.x, head.y - 20).setRotation(0.2); }
+    };
+  }
+  /** GDD chase scoring (locked): chase completion +1,000, level +500, 200 per heart, no-damage chase +1,000, Final Sprint time bonus. */
+  chaseScore() {
+    const t = this.finalTime, timeBonus = t < 45 ? 500 : t <= 75 ? 300 : 100;
+    const parts = [['Escaped Grunt', POINTS.chase], ['Level complete', POINTS.levelComplete], [`Final Sprint ${t.toFixed(0)} s`, timeBonus], [`${this.hearts} heart${this.hearts === 1 ? '' : 's'} left`, POINTS.perHeart * this.hearts]];
+    if (!this.damaged) parts.push(['No damage!', POINTS.noDamage]);
+    for (const [, n] of parts) this.score += n;
+    this.events.emit('score', this.score);
+    return { breakdown: parts.map(([l, n]) => `${l}: +${n.toLocaleString()}`).join('\n') };
+  }
   /** Uzi Rampage: Grunt fires a burst into the cliffs above the trail ahead; a red marker shows where the debris will land,
    *  then it crashes down onto the marker and stays there (jump it). Being right under it as it lands also hurts. */
   updateDrops(dt) {
@@ -415,6 +492,7 @@ export class Run extends Phaser.Scene {
     else this.g.hurt();
   }
   finish() {
+    if (this.world === 3 && this.stage === this.W.stages.length && this.chase) return this.hairball();
     this.mode = 'finished';
     this.time.delayedCall(250, () => { this.g.win(); this.events.emit('finished', { stage: this.stage, score: this.score }); });
   }
