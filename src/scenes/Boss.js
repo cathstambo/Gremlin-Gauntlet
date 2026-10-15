@@ -1,11 +1,11 @@
 // Level 1 boss: Eddie, The Mould King, in The Festering Swamp.
 // Arena rules (approved 14 Oct 2026): Eddie moves around the whole arena; the gremlin can move left/right;
 // roots and logs give high ground; attacks are aimed at the gremlin and always telegraphed.
-import { Gremlin } from '../gremlin/Gremlin.js?v=20261015125752';
-import { Eddie } from '../eddie/Eddie.js?v=20261015125752';
-import { Swamp } from '../world/Swamp.js?v=20261015125752';
-import { Music } from '../audio/Music.js?v=20261015125752';
-import { MAX_HEARTS } from './Run.js?v=20261015125752';
+import { Gremlin } from '../gremlin/Gremlin.js?v=20261015130430';
+import { Eddie } from '../eddie/Eddie.js?v=20261015130430';
+import { Swamp } from '../world/Swamp.js?v=20261015130430';
+import { Music } from '../audio/Music.js?v=20261015130430';
+import { MAX_HEARTS } from './Run.js?v=20261015130430';
 
 export const GROUND_Y = 870;
 const W = 1920;

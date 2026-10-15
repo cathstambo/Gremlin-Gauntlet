@@ -43,7 +43,9 @@ export const MEADOW = {
 export const WILD = {
   far: 'w_bg_far', mid: 'w_bg_mid', near: 'w_bg_near', ground: 'w_ground',
   groundSurface: 274,   // the dirt path's walking line in the path strip
-  midBottom: 707, nearBottom: 723, midS: 1.25, nearS: 1.45, gS: 1.2, midDrop: -30, nearDrop: 28,
+  // near trees: the art's last solid row is 647 (transparent below it); tucked ~30 px under the path's solid edge, big enough that
+  // the flat-cut tree tops (row 62) stay above the screen
+  midBottom: 707, nearBottom: 647, midS: 1.25, nearS: 1.55, gS: 1.2, midDrop: -30, nearDrop: -15,
   midTint: 0xffffff, nearTint: 0xffffff, props: [], propScale: () => 1, propTint: () => 0xffffff, propGap: [1000, 100],
 };
 
