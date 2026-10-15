@@ -6,8 +6,8 @@
 //     - a magic bolt fired BACK at him (BLAST BACK / swipe left) knocks him well back and stuns him for a moment.
 //   At 100 he catches you: a giant paw swipe ends the attempt (retry this run, meter reset).
 //   The meter carries over to the next run; it only resets when you die.
-import { Grunt } from '../grunt/Grunt.js?v=20261015122920';
-import { Sfx } from '../audio/Music.js?v=20261015122920';
+import { Grunt } from '../grunt/Grunt.js?v=20261015124852';
+import { Sfx } from '../audio/Music.js?v=20261015124852';
 
 export const CHASE = {
   // Difficulty ramps up (Cath, 15 Oct): gentle at the start of Into the Wild, tighter towards its end, and tighter again
@@ -35,7 +35,7 @@ const mix = (v, h) => Array.isArray(v) ? v[0] + (v[1] - v[0]) * h : v;
 export class Chase {
   constructor(run, startProx) {
     this.run = run; this.prox = startProx; this.shown = -40; this.phase = 'eyes'; this.blastT = 0; this.t = 0;
-    this.grunt = new Grunt(run, run.GROUND_Y, 800);
+    this.grunt = new Grunt(run, run.GROUND_Y, run.W.view ? run.W.view.gruntH : 800);
     this.grunt.onStep = () => { if (this.phase === 'chase') run.cameras.main.shake(70, 0.0012 + 0.0025 * this.prox / 100); };
     this.eyes = run.add.graphics().setDepth(2.6);
     this.caption = run.add.text(0, 0, '', { fontFamily: 'Lilita One, Trebuchet MS, sans-serif', fontSize: 46, color: '#ffe9a8', stroke: '#140a04', strokeThickness: 10 }).setOrigin(0.5).setDepth(20).setAlpha(0);
@@ -51,10 +51,14 @@ export class Chase {
     return clamp((run.stage - 1) * 0.25 + 0.45 * clamp(run.dist / end, 0, 1), 0, 1);
   }
   get(k) { return mix(CHASE[k], this.heat()); }
-  frontFor(p) { return -60 + (this.run.GREMLIN_X - 30 + 60) * clamp(p, -60, 100) / 100; }
+  frontFor(p) {
+    const G = this.run.GREMLIN_X - 30;
+    if (this.run.W.view) { const far = 531 * this.grunt.k + 20; return far + (G - far) * clamp(p, 0, 100) / 100; }   // test version: always fully on screen
+    return -60 + (G + 60) * clamp(p, -60, 100) / 100;
+  }
   say(text, dur = 1.2) {
     const h = this.grunt.headPoint();
-    this.caption.setText(text).setPosition(clamp(h[0] + 60, 330, 900), Math.max(300, h[1] + 80)).setAlpha(1).setScale(1);
+    this.caption.setText(text).setPosition(clamp(h[0] + 60, 330, this.run.GREMLIN_X + 380), Math.max(300, h[1] + 80)).setAlpha(1).setScale(1);
     this.run.tweens.killTweensOf(this.caption);
     this.run.tweens.add({ targets: this.caption, scale: { from: 1.3, to: 1 }, duration: 160 });
     this.run.tweens.add({ targets: this.caption, alpha: 0, delay: dur * 1000, duration: 300 });

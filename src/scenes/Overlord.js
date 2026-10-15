@@ -4,11 +4,11 @@
 //   Phase 3 Royal Tantrum (<35%): horn glows purple; salmon + spoons combined; a telegraphed bunny stampede, then she's dizzy.
 // Arena rules are the same as Eddie's (whole-screen boss, joystick movement, high ground, everything aimed and telegraphed),
 // so this scene reuses the Eddie scene's machinery and swaps in her moves.
-import { Boss, GROUND_Y, BOSS_TUNING } from './Boss.js?v=20261015122920';
-import { Gremlin } from '../gremlin/Gremlin.js?v=20261015122920';
-import { Catalytik, ease } from '../overlord/Catalytik.js?v=20261015122920';
-import { Music } from '../audio/Music.js?v=20261015122920';
-import { loadMeadow } from '../worlds.js?v=20261015122920';
+import { Boss, GROUND_Y, BOSS_TUNING } from './Boss.js?v=20261015124852';
+import { Gremlin } from '../gremlin/Gremlin.js?v=20261015124852';
+import { Catalytik, ease } from '../overlord/Catalytik.js?v=20261015124852';
+import { Music } from '../audio/Music.js?v=20261015124852';
+import { loadMeadow } from '../worlds.js?v=20261015124852';
 
 const W = 1920;
 const GREM_H = 330, BOSS_H = 620;

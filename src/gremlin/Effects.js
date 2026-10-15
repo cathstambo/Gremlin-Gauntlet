@@ -1,7 +1,7 @@
 // Visual effects owned by the gremlin: dust, sparks, magic rings, double-jump swirl,
 // hit shock lines, Meltdown aura / lightning / rocks / eye glow / blast, dizzy stars.
 // All drawn with Phaser Graphics plus a soft 'glow' texture made in the Boot scene.
-import { TAU, clamp, seg } from './poses.js?v=20261015122920';
+import { TAU, clamp, seg } from './poses.js?v=20261015124852';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const VIOLET = 0x9b4dff, MAGENTA = 0xee2a8a, ACID = 0xc6f135;
@@ -122,7 +122,7 @@ export class Effects {
     // Meltdown blast beam
     if (S.st === 'melt' && S.stT >= 1.3 && S.stT <= 1.9) {
       const t = S.stT, kk = seg(t, 1.3, 1.38), f = 1 - seg(t, 1.55, 1.9), w = (90 + 40 * Math.sin(t * 60)) * k * kk * f;
-      const h = g.handPoint(), x1 = g.face > 0 ? this.scene.scale.width + 50 : -50;
+      const h = g.handPoint(), x1 = g.face > 0 ? (this.scene.viewW || this.scene.scale.width) + 50 : -50;
       [[2.6, 0x7828e6, 0.35], [1.7, VIOLET, 0.6], [1.1, MAGENTA, 0.55], [0.55, 0xfff0ff, 0.95]].forEach(([mm, col, al]) => {
         A.fillStyle(col, al);
         A.fillPoints([{ x: h[0], y: h[1] - w * mm * 0.3 }, { x: x1, y: h[1] - w * mm }, { x: x1, y: h[1] + w * mm }, { x: h[0], y: h[1] + w * mm * 0.3 }], true);

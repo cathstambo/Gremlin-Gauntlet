@@ -1,18 +1,20 @@
 // Running stages for every world (1 = easy to medium, 2 = busier and harder), then on to that world's boss.
 // Hearts, Chaos Meter and score carry from stage 1 to stage 2 to the boss; part 2 is a checkpoint.
-import { Gremlin } from '../gremlin/Gremlin.js?v=20261015122920';
-import { WORLDS, worldNo, loadMeadow, loadWild } from '../worlds.js?v=20261015122920';
-import { Chase, CHASE } from './Chase.js?v=20261015122920';
-import { Wolf, Eagle, Fox } from '../creatures/Wild.js?v=20261015122920';
-import { Music } from '../audio/Music.js?v=20261015122920';
-import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js?v=20261015122920';
-import { Bunny, Kitten, Flower, Swarm } from '../creatures/Meadow.js?v=20261015122920';
+import { Gremlin } from '../gremlin/Gremlin.js?v=20261015124852';
+import { WORLDS, worldNo, loadMeadow, loadWild } from '../worlds.js?v=20261015124852';
+import { Chase, CHASE } from './Chase.js?v=20261015124852';
+import { Wolf, Eagle, Fox } from '../creatures/Wild.js?v=20261015124852';
+import { Music } from '../audio/Music.js?v=20261015124852';
+import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js?v=20261015124852';
+import { Bunny, Kitten, Flower, Swarm } from '../creatures/Meadow.js?v=20261015124852';
 
 const CREATURES = { frog: Frog, gator: Gator, bat: Bat, spider: Spider, bunny: Bunny, kitten: Kitten, flower: Flower, swarm: Swarm, wolf: Wolf, eagle: Eagle, fox: Fox };
 // rainbow beam (World 2): turret size, how far it sinks into the path, and the beam's band (px above the ground)
 const BEAM = { low: { s: 0.5, sink: 95, y0: 112, y1: 38 }, high: { s: 0.72, sink: 4, y0: 262, y1: 172 }, warn: 0.95, fire: 0.5, startGap: 1320 };
-export const GROUND_Y = 870, GREMLIN_X = 520, GREMLIN_H = 330;
-const TRUNK = { s: 2.3, cut: 135 };   // World 3 fallen trunk: scale, and the row of the art where the log ends and the gap begins
+export const GROUND_Y = 870, GREMLIN_H = 330;
+export let GREMLIN_X = 520;   // the World 3 test version moves the gremlin (see create)
+const TRUNK = { s: 2.3, cut: 135 };
+const LOG = { s: 2.2, base: 300 };   // World 3 test: the steep cross-path log (scale; how far below the path its base sits)   // World 3 fallen trunk: scale, and the row of the art where the log ends and the gap begins
 
 export const POINTS = { taco: 100, margarita: 250, levelComplete: 500, perHeart: 200, noDamage: 1000 };
 const MOULD_HURT_AFTER = 0.55;   // seconds standing in mould before it costs a heart (it always slows you)
@@ -64,7 +66,16 @@ export class Run extends Phaser.Scene {
     this.hearts = carry.hearts; this.chaos = carry.chaos; this.score = carry.score; this.damaged = carry.damaged;
     this.dist = 0; this.timeScale = 1; this.showBoxes = false;
     this.sizes = this.W.sizes(this);
-    this.swamp = new this.W.backdrop(this, GROUND_Y);
+    // World 3 test version: zoom the camera out (top-left anchored, ground stays where it is on screen) so Grunt fits fully behind her
+    const V = this.W.view, cam = this.cameras.main;
+    this.viewW = this.scale.width; this.viewH = this.scale.height; let view = null;
+    if (V) {
+      this.viewW = this.scale.width / V.zoom; this.viewH = this.scale.height / V.zoom;
+      view = { y: GROUND_Y - GROUND_Y / V.zoom, w: this.viewW, h: this.viewH, zoom: V.zoom };
+      cam.setOrigin(0, 0).setZoom(V.zoom).setScroll(0, view.y);
+      GREMLIN_X = Math.round(V.gremlinAt * this.viewW);
+    } else { cam.setOrigin(0.5, 0.5).setZoom(1).setScroll(0, 0); GREMLIN_X = 520; }
+    this.swamp = new this.W.backdrop(this, GROUND_Y, view ? { view } : undefined);
     Music.play(this, { 1: 'run', 2: 'w2' }[this.world] || null);   // each world has its own music; World 3 has none yet
     this.items = this.W.stages[this.stage - 1].map(c => ({ ...c, obj: null, done: false }));
     this.beamG = this.add.graphics().setDepth(10).setBlendMode(Phaser.BlendModes.ADD);
@@ -141,7 +152,7 @@ export class Run extends Phaser.Scene {
   }
   meltBlast() {
     // Provisional rule: the blast clears every enemy ahead of the gremlin on screen (to be confirmed in playtesting).
-    for (const c of this.creatures) if (c.alive && c.x > this.g.x - 100 && c.x < this.scale.width + 100) { c.hurt(99); this.defeated(c); }
+    for (const c of this.creatures) if (c.alive && c.x > this.g.x - 100 && c.x < this.viewW + 100) { c.hurt(99); this.defeated(c); }
   }
   defeated(c) { this.g.fx.burst(c.centre, 0.8); this.addScore(c.points); if (this.chase) { c.cleared = true; this.chase.ease(CHASE.defeat); } }
 
@@ -167,7 +178,7 @@ export class Run extends Phaser.Scene {
   }
 
   updateItems(dt) {
-    const W = this.scale.width, t = this.time.now / 1000;
+    const W = this.viewW, t = this.time.now / 1000;
     for (const it of this.items) {
       const x = GREMLIN_X + (it.d - this.dist);
       if (!it.obj && !it.done && x < W + 500) this.spawnItem(it, x);
@@ -184,6 +195,9 @@ export class Run extends Phaser.Scene {
   spawnItem(it, x) {
     if (it.t === 'deco') {   // scenery beside the path (World 3): behind the gremlin, never in the way
       it.obj = this.add.image(x, GROUND_Y - 28, it.key).setOrigin(0.5, 1).setScale(it.s * 0.8).setDepth(3.9); return;   // just behind the path's front edge
+    }
+    if (it.t === 'trunk' && this.W.crossLog) {   // test version: a steep log crossing the path, its base in the foreground, top up in the trees
+      it.obj = this.add.image(x, GROUND_Y + LOG.base, 'w_haz_log_cross').setOrigin(0.5, 1).setScale(LOG.s).setDepth(11); return;
     }
     if (it.t === 'trunk') {   // fallen trunk across the path: slide under it
       // big and in two layers: the log hangs IN FRONT of the gremlin (she slides under it), the stumps and ferns sit behind her
@@ -230,6 +244,7 @@ export class Run extends Phaser.Scene {
   itemRect(it) {
     const o = it.obj;
     if (it.t === 'vines') return new Phaser.Geom.Rectangle(o.x - 150, 0, 300, GROUND_Y - 150);
+    if (it.t === 'trunk' && this.W.crossLog) return new Phaser.Geom.Rectangle(o.x - 80, GROUND_Y - 480, 190, 355);   // where it crosses above the path
     if (it.t === 'trunk') return new Phaser.Geom.Rectangle(o.x - 200, GROUND_Y - 440, 400, 315);   // the log itself; the gap under it (125 px) is clear for a slide
     if (it.t === 'arrow') return it.landed ? new Phaser.Geom.Rectangle(o.x - 30, GROUND_Y - 120, 60, 120) : null;
     if (it.t === 'deco') return null;
@@ -287,7 +302,7 @@ export class Run extends Phaser.Scene {
     const S = this.shadowG; S.clear();
     for (const it of this.items) {
       if (!it.obj || it.done) continue;
-      const sw = SHADOW_W[it.t];
+      const sw = SHADOW_W[it.t] || (it.t === 'trunk' && this.W.crossLog ? 320 : 0);
       if (sw) { S.fillStyle(0x050805, 0.55).fillEllipse(it.obj.x, GROUND_Y + 8, sw, 38); S.fillStyle(0x050805, 0.35).fillEllipse(it.obj.x, GROUND_Y + 8, sw * 1.15, 54); }
       if (it.t === 'sludge' || it.t === 'sludgeWide') {
         const w = (it.t === 'sludgeWide' ? 520 : 200);
@@ -392,7 +407,7 @@ export class Run extends Phaser.Scene {
         const r = c.hitbox(); if (!r) continue;
         if (Phaser.Geom.Intersects.CircleToRectangle(new Phaser.Geom.Circle(o.x, o.y, o.r + 10), r)) { o.dead = true; c.shot(); this.g.fx.burst([o.x, o.y], 0.4); if (c.dead) this.defeated(c); break; }
       }
-      if (o.x > this.scale.width + 100) o.dead = true;
+      if (o.x > this.viewW + 100) o.dead = true;
       if (o.dead) o.glow.destroy();
     }
     this.orbs = this.orbs.filter(o => !o.dead);

@@ -1,7 +1,7 @@
 // World 3 wildlife (Into the Wild, Cath-approved): wolf, eagle, fox. Each is one drawing from the art sheet,
 // animated by bounding, squashing and tilting (they're fast and on screen only briefly).
 // Same interface as the other creatures: update(dt, ctx), hitbox(), shot(), centre, points, warning.
-import { Creature } from './Creatures.js?v=20261015122920';
+import { Creature } from './Creatures.js?v=20261015124852';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const ease = k => (k < 0 ? 0 : k > 1 ? 1 : k * k * (3 - 2 * k));

@@ -1,6 +1,6 @@
-import { SWAMP_FILES } from '../world/Swamp.js?v=20261015122920';
-import { Music } from '../audio/Music.js?v=20261015122920';
-import { CREATURE_PARTS } from '../creatures/Creatures.js?v=20261015122920';
+import { SWAMP_FILES } from '../world/Swamp.js?v=20261015124852';
+import { Music } from '../audio/Music.js?v=20261015124852';
+import { CREATURE_PARTS } from '../creatures/Creatures.js?v=20261015124852';
 // Loads the gremlin's parts and makes the simple placeholder textures used by the test run.
 export const PARTS = ['body', 'head', 'eye', 'ear', 'tail', 'pouch', 'upperArm', 'foreArm', 'upperArmFar', 'foreArmFar',
   'thighN', 'bootN', 'thighFfar', 'bootFfar'];
@@ -30,7 +30,7 @@ export class Boot extends Phaser.Scene {
     // shortcuts: #boss (Eddie), #world2 (World 2 part 1), #boss2 (the Evil Overlord)
     const h = location.hash;
     const first = h === '#boss' ? 'Boss' : h === '#boss2' ? 'Boss2' : 'Run';
-    this.registry.set('world', h === '#world3' ? 3 : h === '#world2' || h === '#boss2' ? 2 : 1);
+    this.registry.set('world', h.startsWith('#world3') ? 3 : h === '#world2' || h === '#boss2' ? 2 : 1);
     this.registry.set('gameScene', first);
     const start = () => { this.scene.start(first); this.scene.launch('UI'); };
     // wait for the display font so text doesn't jump when it arrives

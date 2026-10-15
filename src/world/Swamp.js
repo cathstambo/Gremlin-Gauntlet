@@ -22,7 +22,7 @@ export const MEADOW_FILES = {
 };
 
 // World 3 art (loaded when World 3 starts)
-export const WILD_FILES = Object.fromEntries(['bg_far.jpg', 'bg_mid.webp', 'bg_near.webp', 'ground.webp', 'haz_root.webp', 'haz_trunk.webp', 'haz_boulder.webp',
+export const WILD_FILES = Object.fromEntries(['bg_far.jpg', 'bg_mid.webp', 'bg_near.webp', 'ground.webp', 'haz_root.webp', 'haz_trunk.webp', 'haz_boulder.webp', 'haz_log_cross.webp',
   'en_wolf.webp', 'en_eagle.webp', 'en_fox.webp', 'dec_cabin.webp', 'dec_sign.webp', 'dec_coffee.webp'].map(f => ['w_' + f.split('.')[0], 'assets/wild/' + f]));
 
 export const SWAMP = {
@@ -49,16 +49,21 @@ export const WILD = {
 
 export class Backdrop {
   /** groundY = screen y of the walking surface. props = scatter decorations along the run. */
-  constructor(scene, groundY, cfg, { props = true } = {}) {
-    const W = scene.scale.width, H = scene.scale.height;
+  constructor(scene, groundY, cfg, { props = true, view = null } = {}) {
+    // view = the zoomed-out camera (World 3 test). The far/mid/near layers are then scaled back up so they fill the screen
+    // exactly as they do normally (their art has no edges to spare); only the path zooms out with the gameplay.
+    const SW = scene.scale.width, SH = scene.scale.height, Z = view ? view.zoom : 1, oy = view ? view.y : 0;
+    const bgY = y => y / Z + oy;
     this.scene = scene; this.groundY = groundY; this.cfg = cfg;
     const t = k => scene.textures.get(k).getSourceImage();
-    const farS = H / t(cfg.far).height;
-    this.far = scene.add.tileSprite(0, 0, W, H, cfg.far).setOrigin(0, 0).setTileScale(farS).setDepth(0);
+    const farS = SH / t(cfg.far).height;
+    this.far = scene.add.tileSprite(0, oy, SW / Z, SH / Z, cfg.far).setOrigin(0, 0).setTileScale(farS / Z).setDepth(0);
     const midS = cfg.midS, nearS = cfg.nearS, gS = cfg.gS;
-    this.mid = scene.add.tileSprite(0, groundY + (cfg.midDrop ?? 40) - cfg.midBottom * midS, W, t(cfg.mid).height * midS, cfg.mid).setOrigin(0, 0).setTileScale(midS).setDepth(1).setTint(cfg.midTint);
-    this.near = scene.add.tileSprite(0, groundY + (cfg.nearDrop ?? 70) - cfg.nearBottom * nearS, W, t(cfg.near).height * nearS, cfg.near).setOrigin(0, 0).setTileScale(nearS).setDepth(2).setTint(cfg.nearTint);
-    this.ground = scene.add.tileSprite(0, groundY - cfg.groundSurface * gS, W, t(cfg.ground).height * gS, cfg.ground).setOrigin(0, 0).setTileScale(gS).setDepth(4);
+    this.mid = scene.add.tileSprite(0, bgY(groundY + (cfg.midDrop ?? 40) - cfg.midBottom * midS), SW / Z, t(cfg.mid).height * midS / Z, cfg.mid).setOrigin(0, 0).setTileScale(midS / Z).setDepth(1).setTint(cfg.midTint);
+    this.near = scene.add.tileSprite(0, bgY(groundY + (cfg.nearDrop ?? 70) - cfg.nearBottom * nearS), SW / Z, t(cfg.near).height * nearS / Z, cfg.near).setOrigin(0, 0).setTileScale(nearS / Z).setDepth(2).setTint(cfg.nearTint);
+    this.ground = scene.add.tileSprite(0, groundY - cfg.groundSurface * gS, SW / Z, t(cfg.ground).height * gS, cfg.ground).setOrigin(0, 0).setTileScale(gS).setDepth(4);
+    // zoomed out, the view reaches below the bottom of the path art: dark earth underneath
+    if (view) scene.add.rectangle(0, groundY - cfg.groundSurface * gS + 448 * gS, SW / Z, 400, 0x1a1208).setOrigin(0, 0).setDepth(3.95);
     // decorations: a fixed, repeating sequence so every run looks the same (fair-comparison rule)
     this.props = [];
     if (props) {
@@ -88,7 +93,7 @@ export class Swamp extends Backdrop {
 }
 /** World 3: lush Alaskan wilderness (Into the Wild). */
 export class Wild extends Backdrop {
-  constructor(scene, groundY) { super(scene, groundY, WILD, { props: false }); }
+  constructor(scene, groundY, opts) { super(scene, groundY, WILD, { props: false, ...opts }); }
 }
 /** World 2: Meadows of Malicious Happiness. */
 export class Meadow extends Backdrop {
