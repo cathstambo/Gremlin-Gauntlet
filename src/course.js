@@ -144,3 +144,40 @@ export const W2_STAGE2 = [
   ...row('taco', 29500, 4, 70),
   { t: 'finish', d: 30800 },
 ];
+
+// =====================================================================================================
+// World 3, WRATH OF THE HAIRBALL: four chase runs with Grunt behind you. Run 1: Into the Wild.
+//   Hazards: root (jump), trunk (fallen trunk: slide under), boulder (jump).
+//   Wildlife: wolf (lopes, crouches, leaps: jump / blast ×2), eagle (swoops to head height: slide / blast), fox (darts: jump / blast).
+//   arrow: Grunt fires from the bow; a marker shows where it lands, then it sticks in the path (jump it).
+//   deco: scenery beside the path (cabin, sign, CoffeAngel). Never in the way.
+export const W3_RUN1 = [
+  { t: 'deco', key: 'w_dec_sign', d: 900, s: 1.0 },
+  ...row('taco', 2600, 3, 70),
+  { t: 'root', d: 3600 },
+  ...row('crystal', 4300, 2, 70, 200),
+  { t: 'fox', d: 5600 },
+  ...row('taco', 6300, 3, 70),
+  { t: 'trunk', d: 7400 },
+  { t: 'deco', key: 'w_dec_cabin', d: 8600, s: 1.15 },
+  ...row('crystal', 8900, 2, 70, 200),
+  { t: 'boulder', d: 9800 },
+  { t: 'potion', d: 10600, h: 70 },
+  { t: 'wolf', d: 11700 },
+  ...row('taco', 12400, 4, 70),
+  { t: 'arrow', d: 13700 },
+  { t: 'eagle', d: 14700 },
+  { t: 'deco', key: 'w_dec_coffee', d: 15500, s: 1.0 },
+  ...row('crystal', 15800, 2, 70, 200),
+  { t: 'root', d: 16700 },
+  { t: 'margarita', d: 16700, h: 330 },
+  { t: 'fox', d: 17700 },
+  { t: 'trunk', d: 18700 },
+  ...row('taco', 19400, 3, 70),
+  { t: 'arrow', d: 20400 },
+  { t: 'wolf', d: 21400 },
+  { t: 'boulder', d: 22500 },
+  { t: 'eagle', d: 23500 },
+  ...row('taco', 24200, 3, 70),
+  { t: 'finish', d: 25400 },
+];

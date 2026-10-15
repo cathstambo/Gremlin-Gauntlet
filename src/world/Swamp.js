@@ -21,6 +21,10 @@ export const MEADOW_FILES = {
   m_turret: 'assets/meadow/haz_turret.webp', m_beam: 'assets/meadow/haz_beam.webp',
 };
 
+// World 3 art (loaded when World 3 starts)
+export const WILD_FILES = Object.fromEntries(['bg_far.jpg', 'bg_mid.webp', 'bg_near.webp', 'ground.webp', 'haz_root.webp', 'haz_trunk.webp', 'haz_boulder.webp',
+  'en_wolf.webp', 'en_eagle.webp', 'en_fox.webp', 'dec_cabin.webp', 'dec_sign.webp', 'dec_coffee.webp'].map(f => ['w_' + f.split('.')[0], 'assets/wild/' + f]));
+
 export const SWAMP = {
   far: 'bg_far', mid: 'bg_mid', near: 'bg_near', ground: 'swamp_ground',
   groundSurface: 100,   // row in the ground strip the gremlin walks on: the middle of the lit path, so hazards sit IN the way
@@ -34,6 +38,13 @@ export const MEADOW = {
   midBottom: 693, nearBottom: 698, midS: 1.0, nearS: 0.9, gS: 1.0, midDrop: 70, nearDrop: 95,
   midTint: 0xc9d2dc, nearTint: 0xb4bec4,   // the meadow is bright: soften the scenery so enemies and beams pop
   props: MEADOW_PROPS, propScale: () => 0.62, propTint: () => 0xa9b4b0, propGap: [1500, 700],
+};
+
+export const WILD = {
+  far: 'w_bg_far', mid: 'w_bg_mid', near: 'w_bg_near', ground: 'w_ground',
+  groundSurface: 274,   // the dirt path's walking line in the path strip
+  midBottom: 707, nearBottom: 723, midS: 1.0, nearS: 1.0, gS: 1.2, midDrop: -110, nearDrop: -25,
+  midTint: 0xffffff, nearTint: 0xffffff, props: [], propScale: () => 1, propTint: () => 0xffffff, propGap: [1000, 100],
 };
 
 export class Backdrop {
@@ -74,6 +85,10 @@ export class Backdrop {
 /** World 1: The Festering Swamp. */
 export class Swamp extends Backdrop {
   constructor(scene, groundY, opts) { super(scene, groundY, SWAMP, opts); }
+}
+/** World 3: lush Alaskan wilderness (Into the Wild). */
+export class Wild extends Backdrop {
+  constructor(scene, groundY) { super(scene, groundY, WILD, { props: false }); }
 }
 /** World 2: Meadows of Malicious Happiness. */
 export class Meadow extends Backdrop {

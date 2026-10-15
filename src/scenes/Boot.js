@@ -30,7 +30,7 @@ export class Boot extends Phaser.Scene {
     // shortcuts: #boss (Eddie), #world2 (World 2 part 1), #boss2 (the Evil Overlord)
     const h = location.hash;
     const first = h === '#boss' ? 'Boss' : h === '#boss2' ? 'Boss2' : 'Run';
-    this.registry.set('world', h === '#world2' || h === '#boss2' ? 2 : 1);
+    this.registry.set('world', h === '#world3' ? 3 : h === '#world2' || h === '#boss2' ? 2 : 1);
     this.registry.set('gameScene', first);
     const start = () => { this.scene.start(first); this.scene.launch('UI'); };
     // wait for the display font so text doesn't jump when it arrives

@@ -1,12 +1,14 @@
 // Running stages for every world (1 = easy to medium, 2 = busier and harder), then on to that world's boss.
 // Hearts, Chaos Meter and score carry from stage 1 to stage 2 to the boss; part 2 is a checkpoint.
 import { Gremlin } from '../gremlin/Gremlin.js';
-import { WORLDS, worldNo, loadMeadow } from '../worlds.js';
+import { WORLDS, worldNo, loadMeadow, loadWild } from '../worlds.js';
+import { Chase, CHASE } from './Chase.js';
+import { Wolf, Eagle, Fox } from '../creatures/Wild.js';
 import { Music } from '../audio/Music.js';
 import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js';
 import { Bunny, Kitten, Flower, Swarm } from '../creatures/Meadow.js';
 
-const CREATURES = { frog: Frog, gator: Gator, bat: Bat, spider: Spider, bunny: Bunny, kitten: Kitten, flower: Flower, swarm: Swarm };
+const CREATURES = { frog: Frog, gator: Gator, bat: Bat, spider: Spider, bunny: Bunny, kitten: Kitten, flower: Flower, swarm: Swarm, wolf: Wolf, eagle: Eagle, fox: Fox };
 // rainbow beam (World 2): turret size, how far it sinks into the path, and the beam's band (px above the ground)
 const BEAM = { low: { s: 0.5, sink: 95, y0: 112, y1: 38 }, high: { s: 0.72, sink: 4, y0: 262, y1: 172 }, warn: 0.95, fire: 0.5, startGap: 1320 };
 export const GROUND_Y = 870, GREMLIN_X = 520, GREMLIN_H = 330;
@@ -21,24 +23,31 @@ const LOOK = {
   sludge: { key: 'haz_sludge', s: 0.92, sink: 34 },
   sludgeWide: { key: 'haz_sludge', s: 2.0, sink: 74 },
   vines: { key: 'haz_vines_hang', s: 1.3 },
+  root: { key: 'w_haz_root', s: 0.85, sink: 14 }, boulder: { key: 'w_haz_boulder', s: 0.82, sink: 14 },
   taco: { key: 'pick_taco', s: 0.47 }, margarita: { key: 'pick_margarita', s: 0.5 },
   crystal: { key: 'pick_crystal', s: 0.42 }, potion: { key: 'pick_potion', s: 0.47 },
 };
 // collision boxes (screen px): ground hazards are anchored bottom-centre on the ground; pickups are centred
 const BOX = {
+  root: { w: 230, h: 85 }, boulder: { w: 170, h: 110 },
   roots: { w: 170, h: 80 }, mould: { w: 220, h: 60 }, sludge: { w: 220, h: 40 }, sludgeWide: { w: 600, h: 40 },
   taco: { w: 90, h: 80 }, margarita: { w: 80, h: 90 }, crystal: { w: 70, h: 90 }, potion: { w: 80, h: 90 },
 };
 const rnd = (a, b) => a + Math.random() * (b - a);
 const PICKUPS = new Set(['taco', 'margarita', 'crystal', 'potion']);
 const HAZARDS = new Set(['roots', 'vines', 'mould', 'sludge', 'sludgeWide']);
-const SHADOW_W = { roots: 300, mould: 300, sludge: 300, sludgeWide: 680 };
+const SHADOW_W = { root: 330, boulder: 250, roots: 300, mould: 300, sludge: 300, sludgeWide: 680 };
 export const MAX_HEARTS = 6;   // 3 normal + up to 3 gold bonus hearts from potions drunk at full health
 
 export class Run extends Phaser.Scene {
   constructor() { super('Run'); }
 
   preload() {
+    if (worldNo(this.registry) === 3) {
+      const t = this.add.text(this.scale.width / 2, this.scale.height / 2, 'Something big is in the woods…', { fontFamily: 'Lilita One, Trebuchet MS, sans-serif', fontSize: 44, color: '#ece6f5' }).setOrigin(0.5);
+      this.load.once('complete', () => t.destroy());
+      loadWild(this);
+    }
     if (worldNo(this.registry) === 2) {
       const t = this.add.text(this.scale.width / 2, this.scale.height / 2, 'Picking flowers…', { fontFamily: 'Lilita One, Trebuchet MS, sans-serif', fontSize: 44, color: '#ece6f5' }).setOrigin(0.5);
       this.load.once('complete', () => t.destroy());
@@ -70,37 +79,57 @@ export class Run extends Phaser.Scene {
     this.g.idle();
     this.g.on('shoot', p => this.spawnOrb(p));
     this.g.on('meltBlast', () => this.meltBlast());
-    this.g.on('died', () => this.time.delayedCall(1100, () => { this.mode = 'gameover'; this.events.emit('gameover'); }));
+    this.g.on('died', () => this.time.delayedCall(1100, () => { this.mode = 'gameover'; this.events.emit('gameover', this.chase && this.chase.phase === 'catch' ? 'CAUGHT!' : undefined); }));
+    this.maxHearts = this.W.maxHearts || MAX_HEARTS;
+    this.GROUND_Y = GROUND_Y; this.GREMLIN_X = GREMLIN_X;
+    this.retry = !!carry.retry;
+    if (this.W.chase) this.chase = new Chase(this, carry.prox ?? this.W.chase.start[this.stage - 1]);
   }
 
   // ---------- flow (called by the UI scene) ----------
   startRun() { if (this.mode === 'ready') { this.mode = 'running'; this.g.run(); } }
   restart() { this.scene.restart(); this.scene.get('UI').scene.restart(); }
-  carry() { return { hearts: this.hearts, chaos: this.chaos, score: this.score, damaged: this.damaged }; }
+  carry() { return { hearts: this.hearts, chaos: this.chaos, score: this.score, damaged: this.damaged, ...(this.chase ? { prox: this.chase.prox } : {}) }; }
   /** After a death in a running stage. Part 1: start again from scratch. Part 2 is a checkpoint: restart part 2 with
    *  3 hearts and the score / Chaos Meter you had when you reached it (points picked up on the failed try are dropped). */
   restartLevel() {
-    if (this.stage === 2) this.registry.set('carry', { ...this.startCarry, hearts: 3, damaged: true });
+    // World 3: every run is a checkpoint, and dying resets Grunt's meter to that run's starting value
+    if (this.W.chase) this.registry.set('carry', { ...this.startCarry, hearts: 3, damaged: true, prox: this.W.chase.start[this.stage - 1], retry: true });
+    else if (this.stage === 2) this.registry.set('carry', { ...this.startCarry, hearts: 3, damaged: true });
     else { this.registry.set('stage', 1); this.registry.remove('carry'); }
     this.restart();
   }
   /** Stage cleared: on to stage 2, or to the boss. */
   next() {
     this.registry.set('carry', this.carry());
-    if (this.stage === 1) { this.registry.set('stage', 2); this.restart(); }
-    else this.scene.get('UI').goTo(this.W.boss);
+    if (this.stage < this.W.stages.length) { this.registry.set('stage', this.stage + 1); this.restart(); }
+    else if (this.W.boss) this.scene.get('UI').goTo(this.W.boss);
+    else this.scene.get('UI').newLevel(this.world);   // (World 3 runs 2 to 4 are still to come)
   }
   act(name) {
     if (this.mode !== 'running') return;
     if (name === 'jump') this.g.jump();
     else if (name === 'slide') this.g.slide();
     else if (name === 'magic') this.g.attack();
+    else if (name === 'blastBack' && this.chase) this.blastBack();
     else if (name === 'meltdown' && this.chaos >= 100 && this.g.meltdown()) { this.chaos = 0; this.events.emit('chaos', this.chaos); }
   }
   addScore(n) { this.score += n; this.events.emit('score', this.score); }
 
   // ---------- magic ----------
+  /** World 3: turn and fire a bolt back at Grunt. */
+  blastBack() {
+    if (!this.g.attack()) return;
+    this.backShot = true; this.g.face = -1;
+    this.time.delayedCall(380, () => { this.g.face = 1; });
+  }
   spawnOrb(p) {
+    if (this.backShot) {
+      this.backShot = false;
+      const glow = this.add.image(p.x, p.y, 'glow').setBlendMode(Phaser.BlendModes.ADD).setTint(0x9b4dff).setDepth(13).setDisplaySize(150, 150);
+      this.orbs.push({ x: p.x, y: p.y, ty: GROUND_Y - 420, vx: -1300, r: 22, glow, trail: [], back: true });
+      return;
+    }
     const glow = this.add.image(p.x, p.y, 'glow').setBlendMode(Phaser.BlendModes.ADD).setTint(0x9b4dff).setDepth(13).setDisplaySize(150, 150);
     // the bolt curves towards the nearest creature ahead (easy aiming on a phone); otherwise it flies straight
     let ty = p.y, best = 1300;
@@ -111,7 +140,7 @@ export class Run extends Phaser.Scene {
     // Provisional rule: the blast clears every enemy ahead of the gremlin on screen (to be confirmed in playtesting).
     for (const c of this.creatures) if (c.alive && c.x > this.g.x - 100 && c.x < this.scale.width + 100) { c.hurt(99); this.defeated(c); }
   }
-  defeated(c) { this.g.fx.burst(c.centre, 0.8); this.addScore(c.points); }
+  defeated(c) { this.g.fx.burst(c.centre, 0.8); this.addScore(c.points); if (this.chase) { c.cleared = true; this.chase.ease(CHASE.defeat); } }
 
   // ---------- main loop ----------
   update(time, deltaMs) {
@@ -126,6 +155,7 @@ export class Run extends Phaser.Scene {
     for (const c of this.creatures) if (c.gone) c.destroy();
     this.creatures = this.creatures.filter(c => !c.gone);
     this.updateOrbs(dt);
+    if (this.chase) { this.chase.update(dt); this.updateArrows(dt); this.checkCleared(); }
     this.drawHazardFx();
     this.updateBeams(dt);
     this.updateBlind(dt);
@@ -149,6 +179,16 @@ export class Run extends Phaser.Scene {
     }
   }
   spawnItem(it, x) {
+    if (it.t === 'deco') {   // scenery beside the path (World 3): behind the gremlin, never in the way
+      it.obj = this.add.image(x, GROUND_Y - 28, it.key).setOrigin(0.5, 1).setScale(it.s * 0.8).setDepth(3.9); return;   // just behind the path's front edge
+    }
+    if (it.t === 'trunk') {   // fallen trunk across the path: slide under it
+      it.obj = this.add.image(x, GROUND_Y + 18, 'w_haz_trunk').setOrigin(0.5, 1).setScale(1.12).setDepth(9); return;
+    }
+    if (it.t === 'arrow') {   // fired by Grunt when it comes into view
+      it.obj = this.add.image(x, -200, 'gr_arrow').setScale(1.5).setDepth(11).setVisible(false);
+      this.chase.fireArrow(it); if (it.skip) { it.obj.destroy(); it.obj = null; it.done = true; } return;
+    }
     if (CREATURES[it.t]) { const C = CREATURES[it.t]; this.creatures.push(new C(this, x, GROUND_Y, it.lane)); it.done = true; return; }
     let o;
     const L = LOOK[it.t];
@@ -185,6 +225,9 @@ export class Run extends Phaser.Scene {
   itemRect(it) {
     const o = it.obj;
     if (it.t === 'vines') return new Phaser.Geom.Rectangle(o.x - 150, 0, 300, GROUND_Y - 150);
+    if (it.t === 'trunk') return new Phaser.Geom.Rectangle(o.x - 160, GROUND_Y - 300, 320, 175);   // the log itself; the gap under it is clear for a slide
+    if (it.t === 'arrow') return it.landed ? new Phaser.Geom.Rectangle(o.x - 30, GROUND_Y - 120, 60, 120) : null;
+    if (it.t === 'deco') return null;
     if (it.t === 'beam') { if (it.state !== 'fire') return null; const B = BEAM[it.lane]; return new Phaser.Geom.Rectangle(-100, GROUND_Y - B.y0, it.obj.x - 60 + 100, B.y0 - B.y1); }
     const b = BOX[it.t]; if (!b) return null;
     if (PICKUPS.has(it.t)) return new Phaser.Geom.Rectangle(o.x - b.w / 2, o.y - b.h / 2, b.w, b.h);
@@ -201,7 +244,7 @@ export class Run extends Phaser.Scene {
       else if (it.t === 'taco' || it.t === 'margarita') { this.collect(it); this.addScore(POINTS[it.t]); }
       else if (it.t === 'potion') {
         // +1 heart; at full health it gives a gold bonus heart (max 6). Already on 6: it stays put for later.
-        if (this.hearts < MAX_HEARTS) { this.collect(it); this.hearts++; this.events.emit('hearts', this.hearts); }
+        if (this.hearts < this.maxHearts) { this.collect(it); this.hearts++; this.events.emit('hearts', this.hearts); }
       } else if (it.t === 'mould') {
         inMould = true; g.slow(0.5);
         this.mouldT = (this.mouldT || 0) + dt;
@@ -223,6 +266,7 @@ export class Run extends Phaser.Scene {
   }
   takeHit() {
     if (this.g.invulnerable) return;
+    if (this.chase) { this.chase.closer(); this.lastHitD = this.dist; }
     this.hearts--; this.damaged = true; this.events.emit('hearts', this.hearts);
     if (this.hearts <= 0) { this.mode = 'dying'; this.g.die(); }
     else this.g.hurt();
@@ -295,9 +339,44 @@ export class Run extends Phaser.Scene {
     this.blind = this.blind.filter(b => !b.dead);
   }
 
+  /** Arrows: marker on the path, flight from Grunt's bow, then stuck in the path. */
+  updateArrows(dt) {
+    const G = this.hazG;
+    for (const it of this.items) {
+      if (it.t !== 'arrow' || !it.obj || it.done || it.flightT === undefined) continue;
+      const o = it.obj, tx = o.x, now = this.time.now / 1000;
+      if (!it.landed) {
+        it.flightT += dt; const u = Math.min(1, it.flightT / it.flight);
+        const p = 0.5 + 0.5 * Math.sin(now * 18);
+        G.lineStyle(6, 0xff5a3a, 0.5 + 0.5 * p).strokeEllipse(tx, GROUND_Y + 4, 150, 26).fillStyle(0xff5a3a, 0.2 + 0.2 * p).fillEllipse(tx, GROUND_Y + 4, 150, 26);
+        const sx = this.chase.grunt.frontX - 60, sy = GROUND_Y - 700;
+        const x = sx + (tx - sx) * u, y = sy + (GROUND_Y - 60 - sy) * u - 500 * 4 * u * (1 - u);
+        const vx = (tx - sx) / it.flight, vy = (GROUND_Y - 60 - sy) / it.flight - 500 * 4 * (1 - 2 * u) / it.flight;
+        o.setVisible(true).setPosition(x, y).setRotation(Math.atan2(vy, vx));
+        if (u >= 1) { it.landed = true; o.setRotation(1.15); this.cameras.main.shake(90, 0.004); this.g.fx.burst([tx, GROUND_Y - 10], 0.3); }
+      } else o.setPosition(tx, GROUND_Y - 55);
+    }
+  }
+  /** Grunt eases back a little for every hazard or creature you get past cleanly. */
+  checkCleared() {
+    const gx = this.g.x, clean = d => this.lastHitD === undefined || d - this.lastHitD > 500;
+    for (const it of this.items) if (!it.cleared && it.obj && (it.t === 'root' || it.t === 'boulder' || it.t === 'trunk' || (it.t === 'arrow' && it.landed)) && it.obj.x < gx - 150) { it.cleared = true; if (clean(this.dist)) this.chase.ease(CHASE.clear); }
+    for (const c of this.creatures) if (!c.cleared && c.alive && c.x < gx - 200) { c.cleared = true; if (clean(this.dist)) this.chase.ease(CHASE.clear); }
+  }
+
   updateOrbs(dt) {
     const G = this.orbG; G.clear();
     for (const o of this.orbs) {
+      if (o.back) {   // a bolt fired back at Grunt
+        o.x += o.vx * dt; o.y += (o.ty - o.y) * Math.min(1, dt * 4); o.trail.unshift([o.x, o.y]); if (o.trail.length > 10) o.trail.pop();
+        o.trail.forEach(([x, y], i) => { const a = 1 - i / o.trail.length; G.fillStyle(0x9b4dff, 0.35 * a).fillCircle(x + i * 6, y, o.r * (0.9 * a + 0.2)); });
+        G.fillStyle(0xe2beff, 1).fillCircle(o.x, o.y, o.r * 0.8); G.fillStyle(0xffffff, 1).fillCircle(o.x, o.y, o.r * 0.45);
+        o.glow.setPosition(o.x, o.y);
+        if (this.chase && o.x < this.chase.hitX) { o.dead = true; if (this.chase.blasted()) this.g.fx.burst([o.x, o.y], 0.7); }
+        if (o.x < -100) o.dead = true;
+        if (o.dead) o.glow.destroy();
+        continue;
+      }
       o.x += o.vx * dt; o.y += (o.ty - o.y) * Math.min(1, dt * 9); o.trail.unshift([o.x, o.y]); if (o.trail.length > 10) o.trail.pop();
       o.trail.forEach(([x, y], i) => { const a = 1 - i / o.trail.length; G.fillStyle(0x9b4dff, 0.35 * a).fillCircle(x - i * 6, y, o.r * (0.9 * a + 0.2)); });
       G.fillStyle(0xe2beff, 1).fillCircle(o.x, o.y, o.r * 0.8); G.fillStyle(0xffffff, 1).fillCircle(o.x, o.y, o.r * 0.45);

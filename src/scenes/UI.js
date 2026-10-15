@@ -40,6 +40,17 @@ export class UI extends Phaser.Scene {
       this.vulTxt = this.add.text(bx, 160, 'VULNERABLE! BLAST HIM!', { fontFamily: FONT, fontSize: 30, color: '#c6f135', stroke: '#14200a', strokeThickness: 8 }).setOrigin(0.5).setAlpha(0);
     }
 
+    // World 3: Grunt's Proximity Meter, red danger edges, and the BLAST BACK button
+    if (this.world === 3 && !this.isBoss) {
+      const px = 1370;
+      this.proxLabel = this.add.text(px, 34, 'GRUNT IS COMING', { fontFamily: FONT, fontSize: 30, color: '#ffb0a0' }).setOrigin(0.5).setAlpha(0);
+      this.proxBack = this.add.rectangle(px, 78, 560, 34, 0x0e1614, 0.75).setStrokeStyle(3, 0xffb0a0, 0.45).setAlpha(0);
+      this.proxBar = this.add.rectangle(px - 276, 78, 0, 26, 0xff5a3a).setOrigin(0, 0.5).setAlpha(0);
+      this.proxPaw = this.add.text(px + 300, 78, '🐾', { fontSize: 34 }).setOrigin(0.5).setAlpha(0);
+      this.dangerG = this.add.graphics().setDepth(40);
+      this.blastBtn = this.roundButton(380, H - 130, 84, 'BLAST\nBACK', () => this.act('blastBack'), 26, 0xff5a3a);
+    }
+
     // pause + fullscreen
     this.roundButton(W - 70, 70, 52, 'II', () => this.togglePause(), 30);
     this.speakerButton(W - 70, 190);
@@ -63,7 +74,7 @@ export class UI extends Phaser.Scene {
       if (this.stickMove(p)) return;
       const g = this.gesture; if (!g || g.done || g.id !== p.id) return;
       const dx = p.x - g.x, dy = p.y - g.y;
-      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 70) { g.done = true; this.act(this.isBoss ? (dx > 0 ? 'dashR' : 'dashL') : (dx > 0 ? 'magic' : 'none')); }
+      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 70) { g.done = true; this.act(this.isBoss ? (dx > 0 ? 'dashR' : 'dashL') : (dx > 0 ? 'magic' : this.world === 3 ? 'blastBack' : 'none')); }
       else if (dy > 60) { g.done = true; this.act('slide'); }
       else if (dy < -60) { g.done = true; this.act('jump'); }
     });
@@ -76,6 +87,7 @@ export class UI extends Phaser.Scene {
       else if (['ArrowDown', 'KeyS'].includes(k)) this.act('slide');
       else if (this.isBoss && ['ArrowLeft', 'KeyA'].includes(k)) this.act('left', true);
       else if (this.isBoss && ['ArrowRight', 'KeyD'].includes(k)) this.act('right', true);
+      else if (this.world === 3 && ['ArrowLeft', 'KeyA', 'KeyB'].includes(k)) this.act('blastBack');
       else if (['KeyF', 'KeyJ', 'Enter'].includes(k) || (!this.isBoss && ['ArrowRight', 'KeyD'].includes(k))) this.act('magic');
       else if (k === 'KeyM' || k === 'KeyE') this.act('meltdown');
       else if (k === 'KeyP' || k === 'Escape') this.togglePause();
@@ -95,6 +107,8 @@ export class UI extends Phaser.Scene {
       stick + 'JUMP button: jump and double jump   ·   MAGIC: only hurts her while she’s VULNERABLE\nWatch the sparkles: they show where fish and spoons are about to go');
     else if (this.isBoss) this.showMessage('THE MOULD KING', 'Level 1 boss · The Festering Swamp · tap to start',
       stick + 'JUMP button: jump and double jump   ·   MAGIC: only hurts Eddie while he’s VULNERABLE\nWatch the markers: green = mould bomb, red = danger, gold = where Eddie lands');
+    else if (this.world === 3) this.showMessage(`WORLD 3 · RUN ${stage}`, `${Wd.runNames[stage - 1]} · tap to start`,
+      stage === 1 ? 'Something huge is in the woods. Don’t let him catch you.\nRoots & boulders: jump · Fallen trunks: slide under · Arrows: watch the red marker\nBLAST BACK (or swipe left) fires magic behind you to knock Grunt back' : 'Grunt is still right behind you. Keep running.');
     else if (stage === 2) this.showMessage(`${Wd.stageName} · PART 2`, 'Deeper in. Nastier. · tap to start', `${Wd.bossName === 'EDDIE' ? 'Eddie waits' : 'The Evil Overlord waits'} at the end of this one.`);
     else if (this.world === 2) this.showMessage('WORLD 2', 'Meadows of Malicious Happiness · tap to start', 'Everything here is cute. Everything here wants you dead.\nBunnies: jump · Kittens: slide · Flowers: jump · Butterflies: they blind you\nCrystal turrets fire rainbow beams: low beam = jump, high beam = slide', 'boss');
     else this.showMessage('GREMLIN GAUNTLET', 'World 1 · The Mould Swamp · tap to start', 'Tap / swipe up: jump (tap again in the air to double jump)\nSwipe down: slide   ·   Swipe right: magic\nCollect 10 crystals to fill the Chaos Meter, then hit MELTDOWN', 'title');
@@ -104,11 +118,16 @@ export class UI extends Phaser.Scene {
     ev.on('chaos', c => this.setChaos(c));
     ev.on('score', n => this.setScore(n));
     ev.on('bosshp', (f, ph) => this.setBoss(f, ph));
+    ev.on('prox', p => this.setProx(p));
+    ev.on('danger', k => this.setDanger(k));
     ev.on('bossvuln', d => { this.tweens.killTweensOf(this.vulTxt); this.vulTxt.setAlpha(1); this.tweens.add({ targets: this.vulTxt, alpha: 0, delay: d * 1000 - 300, duration: 300 }); });
-    ev.on('gameover', msg => this.showMessage(msg || 'SPLAT.', this.isBoss ? 'Tap to retry the boss (3 hearts, Chaos Meter reset)' : this.scene.get('Run').stage === 2 ? 'Tap to retry part 2 (3 hearts, score kept from part 1)' : 'Tap to restart part 1'));
+    ev.on('gameover', msg => this.showMessage(msg || 'SPLAT.', this.isBoss ? 'Tap to retry the boss (3 hearts, Chaos Meter reset)' : this.world === 3 ? 'Tap to retry this run (3 hearts, Grunt back where he started)' : this.scene.get('Run').stage === 2 ? 'Tap to retry part 2 (3 hearts, score kept from part 1)' : 'Tap to restart part 1'));
     ev.on('finished', info => this.time.delayedCall(this.isBoss ? 300 : 1200, () => {
       if (this.isBoss) this.showMessage('BOSS DEFEATED', `${this.world === 2 ? 'The Evil Overlord has been dethroned' : 'The Mould King has been mouldered'} · ${info.time.toFixed(1)} s · score ${info.score.toLocaleString()}`,
         info.breakdown + (this.world < LAST_WORLD ? `\n\nTap for World ${this.world + 1}: ${WORLDS[this.world + 1].place}` : '\n\nThat’s every world so far! Tap to play World 1 again'));
+      else if (this.world === 3) { const Wd = WORLDS[3], more = info.stage < Wd.stages.length;
+        this.showMessage(`RUN ${info.stage} CLEARED`, more ? `Tap for run ${info.stage + 1}: ${Wd.runNames[info.stage]}` : 'You escaped (for now) · tap to play Into the Wild again',
+          `Score so far: ${info.score.toLocaleString()}` + (more ? '' : '\nRuns 2 to 4 (River Run, Uzi Rampage, Final Sprint) are on their way')); }
       else if (info.stage === 1) this.showMessage('SWAMP PART 1 CLEARED', 'Tap for part 2', `Score so far: ${info.score.toLocaleString()}`);
       else this.showMessage('SWAMP CLEARED', 'Tap to face THE MOULD KING', `Score so far: ${info.score.toLocaleString()}`);
     }));
@@ -232,8 +251,8 @@ export class UI extends Phaser.Scene {
     const opts = [
       ['Resume', () => this.togglePause()],
       [this.isBoss ? 'Restart boss fight' : 'Restart run', () => { this.paused = false; this.scene.resume(this.run.scene.key); this.run.restart(); }],
-      [this.isBoss ? 'Back to part 1' : (this.registry.get('stage') === 2 ? 'Skip to the boss' : 'Skip to part 2'), () => { this.paused = false; this.skipAhead(); }],
-      [this.world === 1 ? 'Go to World 2' : 'Go to World 1', () => { this.paused = false; this.newLevel(this.world === 1 ? 2 : 1); }],
+      ...(this.world === 3 ? [] : [[this.isBoss ? 'Back to part 1' : (this.registry.get('stage') === 2 ? 'Skip to the boss' : 'Skip to part 2'), () => { this.paused = false; this.skipAhead(); }]]),
+      [`Go to World ${this.world % LAST_WORLD + 1}`, () => { this.paused = false; this.newLevel(this.world % LAST_WORLD + 1); }],
       [() => `Hitboxes: ${this.run.showBoxes ? 'ON' : 'OFF'}`, () => { this.run.showBoxes = !this.run.showBoxes; }],
       [() => `Slow motion: ${this.run.timeScale < 1 ? 'ON' : 'OFF'}`, () => { this.run.timeScale = this.run.timeScale < 1 ? 1 : 0.25; }],
     ];
@@ -256,15 +275,16 @@ export class UI extends Phaser.Scene {
     if (help) o.add(this.add.text(W / 2, H * 0.27 + 190, help, { fontFamily: BODY, fontStyle: 'bold', fontSize: 42, color: INK, stroke: '#0b1210', strokeThickness: 6, align: 'center', lineSpacing: 12, wordWrap: { width: W - 160 } }).setOrigin(0.5, 0));
     if (bossLink) {
       const link = (x, label, fn, col = MOULD) => {
-        const b = this.add.rectangle(x, H - 150, 700, 96, 0x22341a, 1).setStrokeStyle(4, col, 0.9).setInteractive({ useHandCursor: true });
-        const t = this.add.text(x, H - 150, label, { fontFamily: FONT, fontSize: 36, color: '#d8ff8a' }).setOrigin(0.5);
+        const b = this.add.rectangle(x, H - 150, 580, 96, 0x22341a, 1).setStrokeStyle(4, col, 0.9).setInteractive({ useHandCursor: true });
+        const t = this.add.text(x, H - 150, label, { fontFamily: FONT, fontSize: 32, color: '#d8ff8a' }).setOrigin(0.5);
         b.on('pointerdown', (p, lx, ly, e) => { e.stopPropagation(); fn(); });
         o.add([b, t]);
       };
       const Wd = WORLDS[this.world];
       if (bossLink === 'title') {
-        link(W / 2 - 380, `Skip to the boss: ${Wd.bossTitle}`, () => { this.registry.remove('carry'); this.goTo(Wd.boss); });
-        link(W / 2 + 380, `World 2: ${WORLDS[2].bossTitle}`, () => this.newLevel(2), 0xff7ae0);
+        link(W / 2 - 600, `Skip to: ${Wd.bossTitle}`, () => { this.registry.remove('carry'); this.goTo(Wd.boss); });
+        link(W / 2, `World 2: ${WORLDS[2].bossTitle}`, () => this.newLevel(2), 0xff7ae0);
+        link(W / 2 + 600, `World 3: ${WORLDS[3].bossTitle}`, () => this.newLevel(3), 0x6fc3ff);
       } else link(W / 2, `Skip to the boss: ${Wd.bossTitle}`, () => { this.registry.remove('carry'); this.goTo(Wd.boss); }, 0xff7ae0);
     }
     o.setVisible(true);
@@ -276,6 +296,21 @@ export class UI extends Phaser.Scene {
     this.meltBtn.setVisible(full); this.ready.setAlpha(full ? 1 : 0);
     if (full && !this.pulse) this.pulse = this.tweens.add({ targets: [this.meterGlow, this.meltBtn], alpha: { from: 0.3, to: 1 }, scale: { from: 1, to: 1.06 }, yoyo: true, repeat: -1, duration: 420 });
     if (!full && this.pulse) { this.pulse.stop(); this.pulse = null; this.meterGlow.setAlpha(0); this.meltBtn.setScale(1).setAlpha(1); }
+  }
+  setProx(p) {
+    if (!this.proxBar) return;
+    const on = p !== null && p !== undefined;
+    for (const o of [this.proxLabel, this.proxBack, this.proxBar, this.proxPaw]) o.setAlpha(on ? 1 : 0);
+    if (!on) return;
+    this.proxBar.width = 552 * Math.min(1, p / 100);
+    this.proxBar.fillColor = p > 72 ? 0xff2a2a : p > 45 ? 0xff8a3a : 0xffc23a;
+  }
+  /** Pulsing red screen edges when Grunt is about to catch you (k = 0..1). */
+  setDanger(k) {
+    if (!this.dangerG) return;
+    const G = this.dangerG; G.clear(); if (k <= 0) return;
+    const W = this.scale.width, H = this.scale.height, a = (0.25 + 0.45 * k) * (0.6 + 0.4 * Math.sin(this.time.now / 90));
+    for (let i = 0; i < 6; i++) { const w = 18 + i * 16, al = a * (1 - i / 6); G.lineStyle(18, 0xff1a1a, al).strokeRect(w / 2, w / 2, W - w, H - w); }
   }
   setBoss(f, ph) {
     this.tweens.add({ targets: this.bossBar, width: 552 * f, duration: 150 });
