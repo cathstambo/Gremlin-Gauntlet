@@ -1,8 +1,8 @@
 // World 3 run 2, River Run (Cath-approved art + readme, 15 Oct 2026): charging moose, fishing grizzly, leaping salmon.
 // Same interface as the other creatures: update(dt, ctx), hitbox() (what hurts the gremlin), shot(), centre, points.
 // Extras used by the Run scene: shootbox() = where magic hits it (if different from hitbox); noShoot = magic passes by.
-import { Creature } from './Creatures.js?v=20261015152130';
-import { Sprite } from './Wild.js?v=20261015152130';
+import { Creature } from './Creatures.js?v=20261015153514';
+import { Sprite } from './Wild.js?v=20261015153514';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const ease = k => (k < 0 ? 0 : k > 1 ? 1 : k * k * (3 - 2 * k));
@@ -108,42 +108,46 @@ export class Bear extends Creature {
   destroy() { this.fish.destroy(); this.swipe.destroy(); this.marker.destroy(); }
 }
 
-// ---------------- Leaping salmon (hazard, intact bridges only): a splash in the river under the bridge is the warning,
-// then a salmon leaps up over the deck at head height and back down the other side. SLIDE under it. Magic doesn't stop it. ----------------
+// ---------------- Leaping salmon (hazard, intact bridges only; Cath 15 Oct: on a constant loop with a high arc, so you can
+// see them from the moment the bridge comes into view). Each salmon keeps leaping out of the river, high over the deck and
+// back in on the other side, then the other way. It's dangerous where it crosses head height: SLIDE as you pass under it.
+// Magic doesn't stop it. ----------------
+const LEAP = { flight: 1.5, rest: 0.45, span: 420, top: 640, low: -170, band: [330, 120] };   // band = px above the deck where it hurts
 export class Salmon extends Creature {
   constructor(scene, x, groundY) {
     super(scene, x, 'salmon');
     this.groundY = groundY; this.p = new Sprite(scene, 'r_salmon', 0.8, 4.4);   // behind the bridge deck until it clears it
-    this.p.img.setOrigin(0.45, 0.3); this.p.root.setVisible(false); this.noShoot = true; this.points = 0; this.st = 'wait'; this.stT = 0;
-    this.ring = scene.add.graphics().setDepth(9.5);
-    this.T = 1.15; this.vx = 330;   // flight time; the fish's own speed towards the gremlin
+    this.p.img.setOrigin(0.45, 0.3); this.noShoot = true; this.points = 0;
+    this.ring = scene.add.graphics().setDepth(4.6);
+    this.t = (x * 0.37) % (LEAP.flight + LEAP.rest);   // salmon on the same bridge are out of step with each other
   }
   update(dt, ctx) {
     this.t += dt; this.x -= ctx.scroll; this.ring.clear(); this.box = null;
-    const gap = this.x - ctx.gx, v = ctx.scroll / Math.max(dt, 1e-4);
-    // launch so that the top of its leap meets the gremlin; the splash warning comes 0.6 s before that
-    const meet = (v + this.vx) * this.T / 2;
-    if (this.st === 'wait') { if (gap < meet + (v + 0) * 0.6 && gap > 0) { this.st = 'warn'; this.stT = 0; } }
-    else if (this.st === 'warn') {
-      this.stT += dt; const a = 0.5 + 0.5 * Math.sin(this.stT * 20);
-      // bubbling water just below the deck where it will jump out, and a red ring at head height where it will cross
-      this.ring.fillStyle(0xffffff, 0.75 * a).fillEllipse(this.x, this.groundY + 175, 150 + 80 * this.stT, 34);
-      this.ring.lineStyle(6, 0xff5a3a, 0.7 * a).strokeEllipse(this.x - 120, this.groundY - 235, 150, 150);
-      if (gap <= meet) { this.st = 'leap'; this.stT = 0; this.x0 = this.x; this.p.root.setVisible(true); this.scene.g.fx.burst?.([this.x, this.groundY + 40], 0.25); }
-    } else if (this.st === 'leap') {
-      this.stT += dt; const u = this.stT / this.T;
-      this.x -= this.vx * dt;
-      const yTop = this.groundY - 235, yLow = this.groundY + 120;
-      const y = yLow + (yTop - yLow) * 4 * u * (1 - u);
-      const vy = (yTop - yLow) * 4 * (1 - 2 * u) / this.T;
-      this.p.root.setPosition(this.x, y).setRotation(Math.atan2(vy, -this.vx) + Math.PI);
-      this.p.root.setDepth(y < this.groundY - 40 ? 9.6 : 4.4);   // in front of the deck while it's above it
-      if (y < this.groundY - 120) this.box = new Phaser.Geom.Rectangle(this.x - 105, y - 50, 210, 100);
-      if (u >= 1) { this.st = 'gone'; this.gone = true; }
+    const P = LEAP.flight + LEAP.rest, n = Math.floor(this.t / P), ph = this.t - n * P, dir = n % 2 ? 1 : -1;
+    const G = this.groundY;
+    if (ph < LEAP.flight) {
+      const u = ph / LEAP.flight, x = this.x + dir * LEAP.span * (u - 0.5);
+      const y = G - LEAP.low - (LEAP.top + LEAP.low) * 4 * u * (1 - u);
+      const vx = dir * LEAP.span / LEAP.flight, vy = -(LEAP.top + LEAP.low) * 4 * (1 - 2 * u) / LEAP.flight;
+      const ang = Math.atan2(vy, vx);
+      this.p.img.setFlipX(dir < 0);
+      this.p.root.setVisible(true).setPosition(x, y).setRotation(dir < 0 ? ang - Math.PI : ang);
+      this.p.root.setDepth(y < G - 40 ? 9.6 : 4.4);   // in front of the deck while it's above it
+      const above = G - y;
+      if (above < LEAP.band[0] && above > LEAP.band[1]) {   // crossing head height: this is what hits you
+        const c = Math.abs(Math.cos(ang)), sn = Math.abs(Math.sin(ang)), w = 90 + 130 * c, h = 90 + 130 * sn;
+        const y0 = Math.max(y - h / 2, G - LEAP.band[0]), y1 = Math.min(y + h / 2, G - LEAP.band[1]);   // never low enough to touch a slide
+        if (y1 > y0) this.box = new Phaser.Geom.Rectangle(x - w / 2, y0, w, y1 - y0);
+      }
+      if (u < 0.08 || u > 0.92) this.splash(dir * LEAP.span * (u < 0.5 ? -0.5 : 0.5), 1);
+    } else {
+      this.p.root.setVisible(false);
+      this.splash(-dir * LEAP.span * 0.5, 0.6 * (1 - (ph - LEAP.flight) / LEAP.rest));   // ripples where it's about to come out
     }
-    if (this.x < -500) this.gone = true;
+    if (this.x < -700) this.gone = true;
   }
+  splash(dx, a) { this.ring.fillStyle(0xffffff, 0.7 * a).fillEllipse(this.x + dx, this.groundY + 175, 170, 36); }
   hitbox() { return this.box || null; }
-  get centre() { return [this.x, this.groundY - 200]; }
+  get centre() { return [this.x, this.groundY - 300]; }
   destroy() { this.p.destroy(); this.ring.destroy(); }
 }

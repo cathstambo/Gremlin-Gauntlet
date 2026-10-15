@@ -1,13 +1,13 @@
 // Running stages for every world (1 = easy to medium, 2 = busier and harder), then on to that world's boss.
 // Hearts, Chaos Meter and score carry from stage 1 to stage 2 to the boss; part 2 is a checkpoint.
-import { Gremlin } from '../gremlin/Gremlin.js?v=20261015152130';
-import { WORLDS, worldNo, loadMeadow, loadWild } from '../worlds.js?v=20261015152130';
-import { Chase, CHASE } from './Chase.js?v=20261015152130';
-import { Moose, Bear, Salmon } from '../creatures/River.js?v=20261015152130';
-import { Wolf, Eagle, Fox } from '../creatures/Wild.js?v=20261015152130';
-import { Music } from '../audio/Music.js?v=20261015152130';
-import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js?v=20261015152130';
-import { Bunny, Kitten, Flower, Swarm } from '../creatures/Meadow.js?v=20261015152130';
+import { Gremlin } from '../gremlin/Gremlin.js?v=20261015153514';
+import { WORLDS, worldNo, loadMeadow, loadWild } from '../worlds.js?v=20261015153514';
+import { Chase, CHASE } from './Chase.js?v=20261015153514';
+import { Moose, Bear, Salmon } from '../creatures/River.js?v=20261015153514';
+import { Wolf, Eagle, Fox } from '../creatures/Wild.js?v=20261015153514';
+import { Music } from '../audio/Music.js?v=20261015153514';
+import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js?v=20261015153514';
+import { Bunny, Kitten, Flower, Swarm } from '../creatures/Meadow.js?v=20261015153514';
 
 const CREATURES = { frog: Frog, gator: Gator, bat: Bat, spider: Spider, bunny: Bunny, kitten: Kitten, flower: Flower, swarm: Swarm, wolf: Wolf, eagle: Eagle, fox: Fox, moose: Moose, bear: Bear, salmon: Salmon };
 // rainbow beam (World 2): turret size, how far it sinks into the path, and the beam's band (px above the ground)
