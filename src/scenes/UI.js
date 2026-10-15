@@ -1,7 +1,7 @@
 // HUD and controls for whichever game scene is active ('Run' = test course, 'Boss' = Eddie's arena):
 // hearts, Chaos Meter, boss health, pause, touch buttons, swipe gestures, keyboard, overlays.
-import { Music } from '../audio/Music.js?v=20261015155258';
-import { WORLDS, worldNo, LAST_WORLD } from '../worlds.js?v=20261015155258';
+import { Music } from '../audio/Music.js?v=20261015174737';
+import { WORLDS, worldNo, LAST_WORLD } from '../worlds.js?v=20261015174737';
 const FONT = 'Lilita One, Arial Rounded MT Bold, Trebuchet MS, sans-serif';
 const BODY = 'Atkinson Hyperlegible, system-ui, sans-serif';
 const INK = '#ece6f5', VIOLET = 0x9b4dff, ACID = 0xc6f135, MOULD = 0x9fcc1e;
@@ -108,7 +108,8 @@ export class UI extends Phaser.Scene {
     else if (this.isBoss) this.showMessage('THE MOULD KING', 'Level 1 boss · The Festering Swamp · tap to start',
       stick + 'JUMP button: jump and double jump   ·   MAGIC: only hurts Eddie while he’s VULNERABLE\nWatch the markers: green = mould bomb, red = danger, gold = where Eddie lands');
     else if (this.world === 3) this.showMessage(`WORLD 3 · RUN ${stage}`, `${Wd.runNames[stage - 1]} · tap to start`,
-      stage === 1 ? 'Something huge is in the woods. Don’t let him catch you.\nRoots & boulders: jump · ' + (WORLDS[3].noTrunks ? '' : 'Fallen trunks: slide under · ') + 'Arrows: watch the red marker\nBLAST BACK (or swipe left) fires magic behind you to knock Grunt back' : stage === 2 ? 'Over the river. He’s still coming.\nRocks: jump · Broken bridge: jump · Canyon: DOUBLE jump · Leaping salmon: slide\nBears swipe where the red line shows: low = jump, high = slide · Moose: double jump or blast twice'
+      stage === 1 ? 'Something huge is in the woods. Don’t let him catch you.\nRoots & boulders: jump · ' + (WORLDS[3].noTrunks ? '' : 'Fallen trunks: slide under · ') + 'Arrows: watch the red marker\nBLAST BACK (or swipe left) fires magic behind you to knock Grunt back' : stage === 3 ? 'He’s got the Uzis out.\nRed marker = debris landing there: it stays on the trail, so jump it\nRock shelves: slide · Bears and moose: double jump or blast · Hawks: slide or blast'
+      : stage === 2 ? 'Over the river. He’s still coming.\nRocks: jump · Broken bridge: jump · Canyon: DOUBLE jump · Leaping salmon: slide\nBears swipe where the red line shows: low = jump, high = slide · Moose: double jump or blast twice'
       : 'Grunt is still right behind you. Keep running.');
     else if (stage === 2) this.showMessage(`${Wd.stageName} · PART 2`, 'Deeper in. Nastier. · tap to start', `${Wd.bossName === 'EDDIE' ? 'Eddie waits' : 'The Evil Overlord waits'} at the end of this one.`);
     else if (this.world === 2) this.showMessage('WORLD 2', 'Meadows of Malicious Happiness · tap to start', 'Everything here is cute. Everything here wants you dead.\nBunnies: jump · Kittens: slide · Flowers: jump · Butterflies: they blind you\nCrystal turrets fire rainbow beams: low beam = jump, high beam = slide', 'boss');

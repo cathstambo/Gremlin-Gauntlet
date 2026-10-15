@@ -29,6 +29,11 @@ export const WILD_FILES = Object.fromEntries(['bg_far.jpg', 'bg_mid.webp', 'bg_n
 export const RIVER_FILES = Object.fromEntries(['bg_far', 'bg_mid', 'bg_near', 'ground', 'br_whole', 'br_river', 'br_canyon',
   'rock_s', 'rock_m', 'rock_l', 'salmon', 'splash', 'moose', 'bear_fish', 'bear_swipe'].map(f => ['r_' + f, 'assets/river/' + f + '.webp']));
 
+// World 3 run 3, Uzi Rampage (loaded when that run starts).
+export const CANYON_FILES = Object.fromEntries(['bg_far', 'bg_mid', 'bg_near', 'ground', 'rock1', 'rock2', 'rock3', 'rock4', 'rock_land',
+  'rock_rest', 'rock_rest_s', 'branch1', 'branch2', 'branch3', 'shelf1', 'shelf2', 'shelf3',
+  'dec_almost', 'dec_youcan', 'dec_rungremlin', 'dec_camp', 'goat_body', 'goat_head'].map(f => ['u_' + f, 'assets/uzi/' + f + '.webp']));
+
 export const SWAMP = {
   far: 'bg_far', mid: 'bg_mid', near: 'bg_near', ground: 'swamp_ground',
   groundSurface: 100,   // row in the ground strip the gremlin walks on: the middle of the lit path, so hazards sit IN the way
@@ -123,6 +128,18 @@ export class Swamp extends Backdrop {
 /** World 3: lush Alaskan wilderness (Into the Wild). */
 export class Wild extends Backdrop {
   constructor(scene, groundY, opts) { super(scene, groundY, WILD, { props: false, ...opts }); }
+}
+// Uzi Rampage: Cath's four approved canyon images (made seamless; the curved path was levelled so the trail runs flat)
+export const CANYON = {
+  far: 'u_bg_far', mid: 'u_bg_mid', near: 'u_bg_near', ground: 'u_ground',
+  groundSurface: 131,   // the middle of the dirt trail (after levelling)
+  midBottom: 715, nearBottom: 722, midS: 1.05, nearS: 1.25, gS: 1.2, midDrop: -60, nearDrop: 50,
+  midTint: 0xffffff, nearTint: 0xffffff, props: [], propScale: () => 1, propTint: () => 0xffffff, propGap: [1000, 100],
+  groundBottom: 251,
+};
+/** World 3 run 3: Uzi Rampage. */
+export class Canyon extends Backdrop {
+  constructor(scene, groundY, opts) { super(scene, groundY, CANYON, { props: false, ...opts }); }
 }
 /** World 3 run 2: River Run. */
 export class River extends Backdrop {

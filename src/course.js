@@ -229,3 +229,46 @@ export const W3_RUN2 = [
   ...row('taco', 29800 + B + 3400, 3, 70),
   { t: 'finish', d: 29800 + B + 4400 },
 ];
+
+// =====================================================================================================
+// World 3, run 3: UZI RAMPAGE (Cath's approved Uzi Rampage art + readmes, 15 Oct 2026). Grunt has switched to his dual Uzis
+// (no more arrows). drop: a burst knocks debris off the cliffs onto a red marker (k = rock | rockS | branch | branch2); it stays
+// on the trail: jump it. quiet = part of the same burst as the drop before it. shelf: a jutting rock shelf (n = 1..3): slide.
+// cbear: charging grizzly (rears up and roars, then charges: double jump / one blast). moose: as in River Run. hawk: Into the
+// Wild's eagle (slide / blast). jam: his Uzi jams and he paw-smacks it (breather). Scenery (Cath's order): goat early,
+// camp + YOU CAN DO IT! in the middle, RUN GREMLIN RUN! in the last stretch, ALMOST THERE! just before the finish.
+export const W3_RUN3 = [
+  ...row('taco', 2200, 3, 70),
+  { t: 'goat', d: 2600, s: 0.8 },
+  { t: 'drop', k: 'rock', d: 4200 },
+  ...row('crystal', 5200, 2, 70, 200),
+  { t: 'shelf', n: 1, d: 6200 },
+  { t: 'drop', k: 'branch', d: 8200 },
+  { t: 'hawk', d: 9600 },
+  ...row('taco', 10400, 3, 70),
+  { t: 'cbear', d: 12000 },
+  { t: 'potion', d: 13200, h: 70 },
+  // the middle: bursts drop two things in a row, and the animals come
+  { t: 'deco', key: 'u_dec_camp', d: 14200, s: 1.05 },
+  { t: 'drop', k: 'rockS', d: 15400 },
+  { t: 'drop', k: 'branch2', d: 16300, quiet: true },
+  { t: 'shelf', n: 3, d: 17600 },
+  { t: 'deco', key: 'u_dec_youcan', d: 19000, s: 1.05 },
+  { t: 'moose', d: 20200 },
+  { t: 'margarita', d: 21000, h: 330 },
+  { t: 'jam', d: 22000 },
+  // the closing stretch: things come thick and fast
+  ...row('crystal', 23000, 2, 70, 200),
+  { t: 'drop', k: 'rock', d: 24200 },
+  { t: 'drop', k: 'branch', d: 25000, quiet: true },
+  { t: 'drop', k: 'rockS', d: 25800, quiet: true },
+  { t: 'deco', key: 'u_dec_rungremlin', d: 26900, s: 1.0 },
+  { t: 'cbear', d: 28000 },
+  { t: 'shelf', n: 2, d: 29200 },
+  { t: 'hawk', d: 30200 },
+  { t: 'drop', k: 'rock', d: 31400 },
+  { t: 'drop', k: 'branch2', d: 32200, quiet: true },
+  { t: 'deco', key: 'u_dec_almost', d: 33300, s: 1.0 },
+  ...row('taco', 33700, 3, 70),
+  { t: 'finish', d: 35000 },
+];

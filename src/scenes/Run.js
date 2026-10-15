@@ -1,15 +1,16 @@
 // Running stages for every world (1 = easy to medium, 2 = busier and harder), then on to that world's boss.
 // Hearts, Chaos Meter and score carry from stage 1 to stage 2 to the boss; part 2 is a checkpoint.
-import { Gremlin } from '../gremlin/Gremlin.js?v=20261015155258';
-import { WORLDS, worldNo, loadMeadow, loadWild } from '../worlds.js?v=20261015155258';
-import { Chase, CHASE } from './Chase.js?v=20261015155258';
-import { Moose, Bear, Salmon } from '../creatures/River.js?v=20261015155258';
-import { Wolf, Eagle, Fox } from '../creatures/Wild.js?v=20261015155258';
-import { Music } from '../audio/Music.js?v=20261015155258';
-import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js?v=20261015155258';
-import { Bunny, Kitten, Flower, Swarm } from '../creatures/Meadow.js?v=20261015155258';
+import { Gremlin } from '../gremlin/Gremlin.js?v=20261015174737';
+import { WORLDS, worldNo, loadMeadow, loadWild } from '../worlds.js?v=20261015174737';
+import { Chase, CHASE } from './Chase.js?v=20261015174737';
+import { Goat } from '../world/Goat.js?v=20261015174737';
+import { Moose, Bear, Salmon, ChargeBear } from '../creatures/River.js?v=20261015174737';
+import { Wolf, Eagle, Fox } from '../creatures/Wild.js?v=20261015174737';
+import { Music } from '../audio/Music.js?v=20261015174737';
+import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js?v=20261015174737';
+import { Bunny, Kitten, Flower, Swarm } from '../creatures/Meadow.js?v=20261015174737';
 
-const CREATURES = { frog: Frog, gator: Gator, bat: Bat, spider: Spider, bunny: Bunny, kitten: Kitten, flower: Flower, swarm: Swarm, wolf: Wolf, eagle: Eagle, fox: Fox, moose: Moose, bear: Bear, salmon: Salmon };
+const CREATURES = { frog: Frog, gator: Gator, bat: Bat, spider: Spider, bunny: Bunny, kitten: Kitten, flower: Flower, swarm: Swarm, wolf: Wolf, eagle: Eagle, fox: Fox, moose: Moose, bear: Bear, salmon: Salmon, cbear: ChargeBear, hawk: Eagle };
 // rainbow beam (World 2): turret size, how far it sinks into the path, and the beam's band (px above the ground)
 const BEAM = { low: { s: 0.5, sink: 95, y0: 112, y1: 38 }, high: { s: 0.72, sink: 4, y0: 262, y1: 172 }, warn: 0.95, fire: 0.5, startGap: 1320 };
 export const GROUND_Y = 870, GREMLIN_H = 330;
@@ -25,7 +26,22 @@ export const BRIDGE = {
   river: { key: 'r_br_river', gaps: [[1045, 1185]] },
   canyon: { key: 'r_br_canyon', gaps: [[900, 1262]] },
 };
-BRIDGE.w = 2167 * BRIDGE.s;   // World 3 fallen trunk: scale, and the row of the art where the log ends and the gap begins
+BRIDGE.w = 2167 * BRIDGE.s;
+// Uzi Rampage. Debris that Grunt's Uzi bursts knock down from the cliffs: it lands on the red marker and stays there (jump it).
+//   lead = how far ahead of the gremlin the burst picks its spot (~2 s of running); warn = marker time before it falls.
+export const DROP = {
+  lead: 1150, warn: 0.7, fall: 0.32,   // so it lands ~560 px ahead of the gremlin: plenty of room to jump it
+  rock: { fall: 'u_rock4', rest: 'u_rock_rest', s: 0.72, box: { w: 160, h: 120 }, restRot: -0.5 },
+  rockS: { fall: 'u_rock3', rest: 'u_rock_rest_s', s: 0.68, box: { w: 115, h: 75 }, restRot: -0.45 },
+  branch: { fall: 'u_branch1', rest: 'u_branch1', s: 0.9, box: { w: 290, h: 75 }, restRot: -0.05 },
+  branch2: { fall: 'u_branch3', rest: 'u_branch3', s: 0.75, box: { w: 300, h: 75 }, restRot: -0.12 },
+};
+// Rock shelves (slide under). cut = image row where the overhanging slab ends (above: drawn in front of the gremlin;
+// below: the support, drawn behind the trail); under = row of the slab's underside; U = its height above the trail.
+export const SHELF = {
+  s: 1.5, U: 145,   // the gremlin is ~257 px tall standing and ~87 px sliding; a slide covers ~900 px, longer than any shelf
+  1: { key: 'u_shelf1', cut: 150, under: 130, w: 529 }, 2: { key: 'u_shelf2', cut: 140, under: 120, w: 396 }, 3: { key: 'u_shelf3', cut: 175, under: 150, w: 629, s: 1.3 },
+};   // World 3 fallen trunk: scale, and the row of the art where the log ends and the gap begins
 
 export const POINTS = { taco: 100, margarita: 250, levelComplete: 500, perHeart: 200, noDamage: 1000 };
 const MOULD_HURT_AFTER = 0.55;   // seconds standing in mould before it costs a heart (it always slows you)
@@ -185,7 +201,7 @@ export class Run extends Phaser.Scene {
     for (const c of this.creatures) if (c.gone) c.destroy();
     this.creatures = this.creatures.filter(c => !c.gone);
     this.updateOrbs(dt);
-    if (this.chase) { this.chase.update(dt); this.updateArrows(dt); this.checkCleared(); }
+    if (this.chase) { this.chase.update(dt); this.updateArrows(dt); this.updateDrops(dt); this.checkCleared(); }
     this.drawHazardFx();
     this.updateBeams(dt);
     this.updateBlind(dt);
@@ -204,8 +220,10 @@ export class Run extends Phaser.Scene {
       if (it.t === 'sludge' || it.t === 'sludgeWide') it.obj.scaleY = it.baseScale * (1 + 0.025 * Math.sin(t * 5 + it.d));   // slow bubbling heave
       if (it.t === 'vines') it.obj.rotation = 0.012 * Math.sin(t * 1.6 + it.d);                                                  // gentle sway
       if (it.glow) it.glow.outerStrength = 2.6 + 1.6 * (0.5 + 0.5 * Math.sin(t * 5));                                            // warning pulse
-      if (x + (it.t === 'bridge' ? BRIDGE.w : 0) < -600) { it.obj.destroy(); it.obj = null; it.done = true; if (it.back) { it.back.destroy(); it.back = null; } }
+      if (x + (it.t === 'bridge' ? BRIDGE.w : 0) < -600) { if (it.goat) it.goat.destroy(); else it.obj.destroy(); if (it.rest) it.rest.destroy(); if (it.fallObj) it.fallObj.destroy(); it.obj = null; it.done = true; if (it.back) { it.back.destroy(); it.back = null; } }
       if (it.t === 'fishbreak' && !it.fired && x <= GREMLIN_X + 150 && this.chase) { it.fired = true; this.chase.distract(2.6); }
+      if (it.t === 'jam' && !it.fired && x <= GREMLIN_X + 150 && this.chase) { it.fired = true; this.chase.jam(2.6); }
+      if (it.goat) { it.goat.x = x; it.goat.update(dt, this.g.x); }
       if (it.t === 'finish' && !it.reached && this.mode === 'running' && x <= GREMLIN_X) { it.reached = true; this.finish(); }
     }
   }
@@ -216,7 +234,15 @@ export class Run extends Phaser.Scene {
     if (it.t === 'bridge') {   // a bridge crossing: the drawing's own banks replace the path (see bridgeHole); its deck is the walking line
       it.obj = this.add.image(x, GROUND_Y - BRIDGE.deck * BRIDGE.s, BRIDGE[it.kind].key).setOrigin(0, 0).setScale(BRIDGE.s).setDepth(4.5); return;
     }
-    if (it.t === 'fishbreak') { it.obj = this.add.zone(x, 0, 1, 1); return; }
+    if (it.t === 'fishbreak' || it.t === 'jam') { it.obj = this.add.zone(x, 0, 1, 1); return; }
+    if (it.t === 'drop') { it.obj = this.add.zone(x, 0, 1, 1); it.st = 'wait'; it.stT = 0; return; }
+    if (it.t === 'goat') { it.goat = new Goat(this, x, GROUND_Y - 20, it.s || 0.62); it.obj = it.goat.body; return; }
+    if (it.t === 'shelf') {   // the slab in front of the gremlin, its support behind the trail (so you slide under the lip)
+      const S = SHELF[it.n], sc = S.s || SHELF.s, top = GROUND_Y - SHELF.U - S.under * sc, h = this.textures.get(S.key).getSourceImage().height;
+      it.obj = this.add.image(x, top, S.key).setOrigin(0, 0).setScale(sc).setDepth(11).setCrop(0, 0, S.w, S.cut);
+      it.back = this.add.image(x, top, S.key).setOrigin(0, 0).setScale(sc).setDepth(3.9).setCrop(0, S.cut - 2, S.w, h - S.cut + 2);
+      return;
+    }
     if (it.t === 'trunk') {   // fallen trunk across the path: slide under it
       // big and in two layers: the log hangs IN FRONT of the gremlin (she slides under it), the stumps and ferns sit behind her
       const T = TRUNK, img = d => this.add.image(x, GROUND_Y + 18, 'w_haz_trunk').setOrigin(0.5, 1).setScale(T.s).setDepth(d);
@@ -272,7 +298,9 @@ export class Run extends Phaser.Scene {
     if (it.t === 'vines') return new Phaser.Geom.Rectangle(o.x - 150, 0, 300, GROUND_Y - 150);
     if (it.t === 'trunk') return new Phaser.Geom.Rectangle(o.x - 200, GROUND_Y - 440, 400, 315);   // the log itself; the gap under it (125 px) is clear for a slide
     if (it.t === 'arrow') return it.landed ? new Phaser.Geom.Rectangle(o.x - 30, GROUND_Y - 120, 60, 120) : null;
-    if (it.t === 'deco' || it.t === 'bridge' || it.t === 'fishbreak') return null;
+    if (it.t === 'deco' || it.t === 'bridge' || it.t === 'fishbreak' || it.t === 'jam' || it.t === 'goat') return null;
+    if (it.t === 'drop') { if (!it.landed) return null; const b = DROP[it.k].box; return new Phaser.Geom.Rectangle(o.x - b.w / 2, GROUND_Y - b.h, b.w, b.h); }
+    if (it.t === 'shelf') { const S = SHELF[it.n]; return new Phaser.Geom.Rectangle(o.x + 30, GROUND_Y - SHELF.U - 200, S.w * (S.s || SHELF.s) * 0.64, 200 + 20); }   // the slab, up to where the support drops behind the trail
     if (it.t === 'beam') { if (it.state !== 'fire') return null; const B = BEAM[it.lane]; return new Phaser.Geom.Rectangle(-100, GROUND_Y - B.y0, it.obj.x - 60 + 100, B.y0 - B.y1); }
     const b = BOX[it.t]; if (!b) return null;
     if (PICKUPS.has(it.t)) return new Phaser.Geom.Rectangle(o.x - b.w / 2, o.y - b.h / 2, b.w, b.h);
@@ -282,7 +310,7 @@ export class Run extends Phaser.Scene {
     const g = this.g, hb = g.hitbox(); if (!hb) return;
     let inMould = false;
     for (const it of this.items) {
-      if (!it.obj || it.done || it.t === 'finish' || it.t === 'plat' || it.t === 'bridge' || it.t === 'fishbreak') continue;
+      if (!it.obj || it.done || it.t === 'finish' || it.t === 'plat' || it.t === 'bridge' || it.t === 'fishbreak' || it.t === 'jam' || it.t === 'goat') continue;
       if (it.t === 'beam' && it.state !== 'fire') continue;
       const r = this.itemRect(it); if (!r || !Phaser.Geom.Intersects.RectangleToRectangle(hb, r)) continue;
       if (it.t === 'crystal') { this.collect(it); this.chaos = Math.min(100, this.chaos + 10); this.events.emit('chaos', this.chaos); }
@@ -301,6 +329,50 @@ export class Run extends Phaser.Scene {
       const r = c.hitbox(); if (!r || !Phaser.Geom.Intersects.RectangleToRectangle(hb, r)) continue;
       if (c.harmless) { c.hurt(99); this.blinded(); }   // butterflies: no damage, but you can't see for a moment
       else this.takeHit();
+    }
+  }
+  /** Uzi Rampage: Grunt fires a burst into the cliffs above the trail ahead; a red marker shows where the debris will land,
+   *  then it crashes down onto the marker and stays there (jump it). Being right under it as it lands also hurts. */
+  updateDrops(dt) {
+    const G = this.uziG || (this.uziG = this.add.graphics().setDepth(4.8)); G.clear();
+    const t = this.time.now / 1000;
+    for (const it of this.items) {
+      if (it.t !== 'drop' || !it.obj || it.done) continue;
+      const x = it.obj.x, D = DROP[it.k];
+      if (it.st === 'wait') { if (x - GREMLIN_X < DROP.lead && this.mode === 'running') { it.st = 'warn'; it.stT = 0; if (!it.quiet) this.chase.uzi(); } continue; }
+      it.stT += dt;
+      const cliffY = GROUND_Y - GROUND_Y / 0.7 + 60;   // the top of the view: the cliffs and trees above the trail
+      if (it.st === 'warn') {
+        const p = 0.5 + 0.5 * Math.sin(t * 18);
+        G.lineStyle(6, 0xff3a2a, 0.6 + 0.4 * p).strokeEllipse(x, GROUND_Y + 4, 190, 32).fillStyle(0xff3a2a, 0.2 + 0.25 * p).fillEllipse(x, GROUND_Y + 4, 190, 32);
+        G.lineStyle(4, 0xff3a2a, 0.35 + 0.3 * p).lineBetween(x - 22, GROUND_Y - 60, x, GROUND_Y - 20).lineBetween(x + 22, GROUND_Y - 60, x, GROUND_Y - 20);
+        if (it.stT < 0.45) {   // the burst: tracer streaks up into the cliff above the marker, sparks where they hit
+          const gx = this.chase.grunt.headPoint()[0] + 80, gy = this.chase.grunt.headPoint()[1] + 170;
+          for (let i = 0; i < 4; i++) {
+            const f = ((it.stT * 9 + i * 0.27) % 1), tx = x + (i - 1.5) * 40, ty = cliffY + 30 * Math.sin(i * 2.3);
+            const ax = gx + (tx - gx) * f, ay = gy + (ty - gy) * f, bx = gx + (tx - gx) * Math.min(1, f + 0.08), by = gy + (ty - gy) * Math.min(1, f + 0.08);
+            G.lineStyle(9, 0xffe27a, 0.95).lineBetween(ax, ay, bx, by); G.lineStyle(3, 0xffffff, 1).lineBetween(ax, ay, bx, by);
+            G.fillStyle(0xfff3b0, 0.9).fillCircle(tx + 10 * Math.sin(t * 40 + i), ty + 10 * Math.cos(t * 37 + i), 10 + 6 * Math.sin(t * 50 + i));
+          }
+        }
+        if (it.stT >= DROP.warn) { it.st = 'fall'; it.stT = 0; it.fallObj = this.add.image(x, cliffY, D.fall).setScale(D.s).setDepth(9.3); }
+      } else if (it.st === 'fall') {
+        const u = Math.min(1, it.stT / DROP.fall);
+        G.lineStyle(6, 0xff3a2a, 0.9).strokeEllipse(x, GROUND_Y + 4, 190, 32);
+        it.fallObj.setPosition(x, cliffY + (GROUND_Y - 60 - cliffY) * u * u).setRotation(u * 1.5);
+        if (u >= 1) {   // lands: a crash, a dust burst, and the debris stays on the trail
+          it.fallObj.destroy(); it.fallObj = null; it.st = 'landed'; it.landed = true;
+          this.cameras.main.shake(140, 0.006); this.g.fx.dust?.(14, 1.4, [x, GROUND_Y]);
+          if (it.k.startsWith('rock')) { const im = this.add.image(x, GROUND_Y + 10, 'u_rock_land').setOrigin(0.5, 1).setScale(0.55).setDepth(9.2); this.tweens.add({ targets: im, alpha: 0, delay: 120, duration: 300, onComplete: () => im.destroy() }); }
+          it.rest = this.add.image(x, GROUND_Y + 12, D.rest).setOrigin(0.5, it.k.startsWith('rock') ? 0.85 : 1).setScale(D.s * (it.k.startsWith('branch') ? 1 : 0.95)).setRotation(D.restRot || 0).setDepth(5);
+          // right underneath it as it lands: that hurts too
+          const hb = this.g.hitbox(); if (hb && Math.abs(hb.centerX - x) < 110 && this.mode === 'running') this.takeHit();
+        }
+      }
+      if (it.rest) {   // landed debris keeps a soft pulsing red ring so it never blends in with the trail's own rocks
+        it.rest.x = x; const p = 0.5 + 0.5 * Math.sin(t * 6);
+        G.lineStyle(5, 0xff3a2a, 0.35 + 0.25 * p).strokeEllipse(x, GROUND_Y + 6, DROP[it.k].box.w + 70, 34);
+      }
     }
   }
   /** River Run: while a bridge is on screen, the path stops where the bridge drawing's own banks take over. */
@@ -353,7 +425,7 @@ export class Run extends Phaser.Scene {
     const S = this.shadowG; S.clear();
     for (const it of this.items) {
       if (!it.obj || it.done) continue;
-      const sw = SHADOW_W[it.t];
+      const sw = SHADOW_W[it.t] || (it.t === 'drop' && it.landed ? 220 : 0);
       if (sw) { S.fillStyle(0x050805, 0.55).fillEllipse(it.obj.x, GROUND_Y + 8, sw, 38); S.fillStyle(0x050805, 0.35).fillEllipse(it.obj.x, GROUND_Y + 8, sw * 1.15, 54); }
       if (it.t === 'sludge' || it.t === 'sludgeWide') {
         const w = (it.t === 'sludgeWide' ? 520 : 200);
@@ -431,7 +503,7 @@ export class Run extends Phaser.Scene {
   /** Grunt eases back a little for every hazard or creature you get past cleanly. */
   checkCleared() {
     const gx = this.g.x, clean = d => this.lastHitD === undefined || d - this.lastHitD > 500;
-    for (const it of this.items) if (!it.cleared && it.obj && (it.t === 'root' || it.t === 'boulder' || it.t === 'trunk' || it.t === 'rockS' || it.t === 'rockM' || it.t === 'rockL' || (it.t === 'arrow' && it.landed)) && it.obj.x < gx - 150) { it.cleared = true; if (clean(this.dist)) { this.chase.ease(CHASE.clear); if (it.t === 'arrow') this.chase.missed(); } }
+    for (const it of this.items) if (!it.cleared && it.obj && (it.t === 'root' || it.t === 'boulder' || it.t === 'trunk' || it.t === 'rockS' || it.t === 'rockM' || it.t === 'rockL' || it.t === 'shelf' || (it.t === 'drop' && it.landed) || (it.t === 'arrow' && it.landed)) && it.obj.x < gx - 150) { it.cleared = true; if (clean(this.dist)) { this.chase.ease(CHASE.clear); if (it.t === 'arrow') this.chase.missed(); } }
     for (const c of this.creatures) if (!c.cleared && c.alive && c.x < gx - 200) { c.cleared = true; if (clean(this.dist)) this.chase.ease(CHASE.clear); }
   }
 

@@ -6,8 +6,8 @@
 //     - a magic bolt fired BACK at him (BLAST BACK / swipe left) knocks him well back and stuns him for a moment.
 //   At 100 he catches you: a giant paw swipe ends the attempt (retry this run, meter reset).
 //   The meter carries over to the next run; it only resets when you die.
-import { Grunt } from '../grunt/Grunt.js?v=20261015155258';
-import { Sfx } from '../audio/Music.js?v=20261015155258';
+import { Grunt } from '../grunt/Grunt.js?v=20261015174737';
+import { Sfx } from '../audio/Music.js?v=20261015174737';
 
 export const CHASE = {
   // Difficulty ramps up (Cath, 15 Oct): gentle at the start of Into the Wild, tighter towards its end, and tighter again
@@ -160,6 +160,20 @@ export class Chase {
     this.fish.setPosition(x, y).setRotation(this.fishT * 9);
     if (Math.floor(this.fishT * 3) !== Math.floor((this.fishT - dt) * 3) && u < 0.85) this.grunt.flinch = 0.5;
     if (u >= 1) this.fish.setVisible(false);
+  }
+  /** Uzi Rampage: a burst from the dual Uzis (GDD: he hisses for the Uzis). */
+  uzi() {
+    if (this.phase !== 'chase') return;
+    this.grunt.act('uzi', 0.9); this.say('*HISSSS!*', 0.7); Sfx.play(this.run, ['hiss_growl', 'snarl'], 1);
+  }
+  /** Uzi Rampage (GDD): an Uzi jams, he paw-smacks it, and stands still for a moment while you get away. */
+  jam(dur) {
+    if (this.phase !== 'chase') return;
+    const run = this.run;
+    this.stunT = dur; this.surgeT = 0; this.nextSurge = Math.max(this.nextSurge ?? 0, dur + 4);
+    this.grunt.act('uzi', dur * 0.6); this.say('*click… click*', 0.9);
+    run.time.delayedCall(950, () => { if (this.phase !== 'chase') return; this.say('*SMACK!*', 0.8); this.grunt.flinch = 0.8; run.cameras.main.shake(120, 0.004); Sfx.play(run, 'growl'); });
+    run.time.delayedCall(1800, () => { if (this.phase === 'chase') { this.grunt.flinch = 0.6; this.say('*SMACK!!*', 0.7); } });
   }
   /** You got past one of his arrows: an irritated meow (GDD: irritated tail flick on misses). */
   missed() { this.say('*mrow!*', 0.7); Sfx.play(this.run, ['meow', 'meow2'], 2); }

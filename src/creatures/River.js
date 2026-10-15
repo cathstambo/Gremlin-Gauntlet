@@ -1,8 +1,8 @@
 // World 3 run 2, River Run (Cath-approved art + readme, 15 Oct 2026): charging moose, fishing grizzly, leaping salmon.
 // Same interface as the other creatures: update(dt, ctx), hitbox() (what hurts the gremlin), shot(), centre, points.
 // Extras used by the Run scene: shootbox() = where magic hits it (if different from hitbox); noShoot = magic passes by.
-import { Creature } from './Creatures.js?v=20261015155258';
-import { Sprite } from './Wild.js?v=20261015155258';
+import { Creature } from './Creatures.js?v=20261015174737';
+import { Sprite } from './Wild.js?v=20261015174737';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const ease = k => (k < 0 ? 0 : k > 1 ? 1 : k * k * (3 - 2 * k));
@@ -150,4 +150,40 @@ export class Salmon extends Creature {
   hitbox() { return this.box || null; }
   get centre() { return [this.x, this.groundY - 300]; }
   destroy() { this.p.destroy(); this.ring.destroy(); }
+}
+
+// ---------------- Charging grizzly (Uzi Rampage, Cath 15 Oct: "bears running out to attack same as the moose").
+// Lumbers in, rears up and ROARS (the warning), then drops forward and charges. Lesser enemy (approved readme):
+// one blast defeats him, 50 points; or double jump him. ----------------
+export class ChargeBear extends Creature {
+  constructor(scene, x, groundY) {
+    super(scene, x, 'bear');
+    this.groundY = groundY; this.p = new Sprite(scene, 'r_bear_swipe', 0.72);
+    this.points = 50; this.st = 'walk'; this.stT = 0; this.y = 0;
+  }
+  update(dt, ctx) {
+    this.common(dt); this.x -= ctx.scroll;
+    let rot = 0, sq = 1;
+    if (this.dead) { const u = this.deadT; rot = -Math.min(100, u * 400); this.y += (this.vy = (this.vy ?? 400) - 2600 * dt) * dt; if (u > 1.4) this.gone = true; }
+    else {
+      this.stT += dt;
+      const gap = this.x - ctx.gx;
+      if (this.st === 'walk') {          // heavy lumber towards you, leaning forward
+        this.x -= 150 * dt; const u = (this.t * 2) % 1; this.y = 8 * Math.sin(u * Math.PI); rot = -14 + 5 * Math.sin(u * Math.PI * 2); sq = 0.92;
+        if (gap < 1450 && gap > 0) { this.st = 'rear'; this.stT = 0; }
+      } else if (this.st === 'rear') {   // the warning: rears up tall and roars, claws up
+        const u = ease(this.stT / 0.3); rot = -14 + 14 * u + 2 * Math.sin(this.stT * 30); sq = 0.92 + 0.1 * u;
+        if (this.stT > 0.8) { this.st = 'charge'; this.stT = 0; this.scene.cameras.main.shake(120, 0.004); }
+      } else if (this.st === 'charge') { // drops forward and gallops at the gremlin
+        this.x -= 600 * dt; const u = (this.t * 3.2) % 1; this.y = 20 * Math.sin(u * Math.PI); rot = -22 + 8 * u; sq = 0.86;
+      }
+    }
+    this.p.root.setPosition(this.x, this.groundY + 12 - this.y).setRotation(rot * D);
+    this.p.img.setScale(this.p.k / Math.sqrt(sq), this.p.k * sq);
+    if (this.x < -600) this.gone = true;
+  }
+  get warning() { return this.st === 'rear'; }
+  hitbox() { if (this.dead) return null; return new Phaser.Geom.Rectangle(this.x - 150, this.groundY - this.y - 250, 290, 240); }
+  get centre() { return [this.x, this.groundY - this.y - 200]; }
+  destroy() { this.p.destroy(); }
 }
