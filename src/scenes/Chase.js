@@ -6,8 +6,8 @@
 //     - a magic bolt fired BACK at him (BLAST BACK / swipe left) knocks him well back and stuns him for a moment.
 //   At 100 he catches you: a giant paw swipe ends the attempt (retry this run, meter reset).
 //   The meter carries over to the next run; it only resets when you die.
-import { Grunt } from '../grunt/Grunt.js?v=20261015124852';
-import { Sfx } from '../audio/Music.js?v=20261015124852';
+import { Grunt } from '../grunt/Grunt.js?v=20261015125752';
+import { Sfx } from '../audio/Music.js?v=20261015125752';
 
 export const CHASE = {
   // Difficulty ramps up (Cath, 15 Oct): gentle at the start of Into the Wild, tighter towards its end, and tighter again
@@ -18,7 +18,7 @@ export const CHASE = {
   creep: [0.5, 1.5],       // he gains this much per second while you're not running clean
   surgeEvery: [[16, 20], [8, 11]],   // seconds between his surges
   firstSurge: [12, 6],     // seconds before his first surge
-  surgeTime: 2.2, surgeRate: [7, 12],   // a surge lasts this long and closes the gap this fast (per second)
+  surgeTime: 2.2, surgeRate: [9, 12],   // a surge lasts this long and closes the gap this fast (per second)
   clear: 3,                // eased back for each hazard / creature cleared without being hit
   hit: [14, 22],           // brought closer when you take a hit (you stumble)
   blast: 15,           // knocked back by a bolt fired back at him (and it stops a surge)
@@ -53,7 +53,10 @@ export class Chase {
   get(k) { return mix(CHASE[k], this.heat()); }
   frontFor(p) {
     const G = this.run.GREMLIN_X - 30;
-    if (this.run.W.view) { const far = 531 * this.grunt.k + 20; return far + (G - far) * clamp(p, 0, 100) / 100; }   // test version: always fully on screen
+    if (this.run.W.view) {   // test version: always fully on screen; the gap opens and closes visibly (eased so small changes show)
+      const far = 531 * this.grunt.k + 20, u = clamp((p - CHASE.floor) / (100 - CHASE.floor), 0, 1);
+      return far + (G - far) * Math.pow(u, 0.6);
+    }
     return -60 + (G + 60) * clamp(p, -60, 100) / 100;
   }
   say(text, dur = 1.2) {

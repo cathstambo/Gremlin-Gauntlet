@@ -22,7 +22,7 @@ export const MEADOW_FILES = {
 };
 
 // World 3 art (loaded when World 3 starts)
-export const WILD_FILES = Object.fromEntries(['bg_far.jpg', 'bg_mid.webp', 'bg_near.webp', 'ground.webp', 'haz_root.webp', 'haz_trunk.webp', 'haz_boulder.webp', 'haz_log_cross.webp',
+export const WILD_FILES = Object.fromEntries(['bg_far.jpg', 'bg_mid.webp', 'bg_near.webp', 'ground.webp', 'haz_root.webp', 'haz_trunk.webp', 'haz_boulder.webp',
   'en_wolf.webp', 'en_eagle.webp', 'en_fox.webp', 'dec_cabin.webp', 'dec_sign.webp', 'dec_coffee.webp'].map(f => ['w_' + f.split('.')[0], 'assets/wild/' + f]));
 
 export const SWAMP = {
@@ -43,7 +43,7 @@ export const MEADOW = {
 export const WILD = {
   far: 'w_bg_far', mid: 'w_bg_mid', near: 'w_bg_near', ground: 'w_ground',
   groundSurface: 274,   // the dirt path's walking line in the path strip
-  midBottom: 707, nearBottom: 723, midS: 1.25, nearS: 1.2, gS: 1.2, midDrop: -30, nearDrop: 28,
+  midBottom: 707, nearBottom: 723, midS: 1.25, nearS: 1.45, gS: 1.2, midDrop: -30, nearDrop: 28,
   midTint: 0xffffff, nearTint: 0xffffff, props: [], propScale: () => 1, propTint: () => 0xffffff, propGap: [1000, 100],
 };
 

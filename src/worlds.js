@@ -1,8 +1,8 @@
 // The worlds, in the locked GDD order. Each world = two running stages, then its boss.
-import { STAGE1, STAGE2, W2_STAGE1, W2_STAGE2, W3_RUN1 } from './course.js?v=20261015124852';
-import { Swamp, Meadow, Wild, MEADOW_FILES, WILD_FILES } from './world/Swamp.js?v=20261015124852';
-import { GRUNT_PARTS } from './grunt/Grunt.js?v=20261015124852';
-import { MEADOW_CREATURE_PARTS } from './creatures/Creatures.js?v=20261015124852';
+import { STAGE1, STAGE2, W2_STAGE1, W2_STAGE2, W3_RUN1 } from './course.js?v=20261015125752';
+import { Swamp, Meadow, Wild, MEADOW_FILES, WILD_FILES } from './world/Swamp.js?v=20261015125752';
+import { GRUNT_PARTS } from './grunt/Grunt.js?v=20261015125752';
+import { MEADOW_CREATURE_PARTS } from './creatures/Creatures.js?v=20261015125752';
 
 export const WORLDS = {
   1: {
@@ -22,7 +22,7 @@ export const WORLDS = {
     backdrop: Wild, stages: [W3_RUN1], runNames: ['INTO THE WILD', 'RIVER RUN', 'UZI RAMPAGE', 'FINAL SPRINT'],
     chase: { start: [30, 35, 40, 50] },   // Grunt's starting Proximity Meter for each run (used at the start, and after a death)
     maxHearts: 5, plats: {}, sizes: () => ({}),
-    view: null, crossLog: false,   // set for the test version below
+    view: null, noTrunks: false,   // set for the test version below
   },
 };
 export const LAST_WORLD = 3;
@@ -47,6 +47,6 @@ export function loadWild(scene) {
 }
 
 if (TEST3) Object.assign(WORLDS[3], {
-  view: { zoom: 0.7, gremlinAt: 0.37, gruntH: 660 },   // zoom out 30%; gremlin a third of the way across; Grunt ~2x her height
-  crossLog: true,                                      // fallen trunks drawn as a steep log crossing the path
+  view: { zoom: 0.7, gremlinAt: 0.42, gruntH: 660 },   // zoom out 30%; gremlin a little left of centre; Grunt ~2x her height
+  noTrunks: true,                                      // Cath: no fallen logs to slide under
 });

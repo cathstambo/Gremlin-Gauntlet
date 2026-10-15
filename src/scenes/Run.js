@@ -1,20 +1,19 @@
 // Running stages for every world (1 = easy to medium, 2 = busier and harder), then on to that world's boss.
 // Hearts, Chaos Meter and score carry from stage 1 to stage 2 to the boss; part 2 is a checkpoint.
-import { Gremlin } from '../gremlin/Gremlin.js?v=20261015124852';
-import { WORLDS, worldNo, loadMeadow, loadWild } from '../worlds.js?v=20261015124852';
-import { Chase, CHASE } from './Chase.js?v=20261015124852';
-import { Wolf, Eagle, Fox } from '../creatures/Wild.js?v=20261015124852';
-import { Music } from '../audio/Music.js?v=20261015124852';
-import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js?v=20261015124852';
-import { Bunny, Kitten, Flower, Swarm } from '../creatures/Meadow.js?v=20261015124852';
+import { Gremlin } from '../gremlin/Gremlin.js?v=20261015125752';
+import { WORLDS, worldNo, loadMeadow, loadWild } from '../worlds.js?v=20261015125752';
+import { Chase, CHASE } from './Chase.js?v=20261015125752';
+import { Wolf, Eagle, Fox } from '../creatures/Wild.js?v=20261015125752';
+import { Music } from '../audio/Music.js?v=20261015125752';
+import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js?v=20261015125752';
+import { Bunny, Kitten, Flower, Swarm } from '../creatures/Meadow.js?v=20261015125752';
 
 const CREATURES = { frog: Frog, gator: Gator, bat: Bat, spider: Spider, bunny: Bunny, kitten: Kitten, flower: Flower, swarm: Swarm, wolf: Wolf, eagle: Eagle, fox: Fox };
 // rainbow beam (World 2): turret size, how far it sinks into the path, and the beam's band (px above the ground)
 const BEAM = { low: { s: 0.5, sink: 95, y0: 112, y1: 38 }, high: { s: 0.72, sink: 4, y0: 262, y1: 172 }, warn: 0.95, fire: 0.5, startGap: 1320 };
 export const GROUND_Y = 870, GREMLIN_H = 330;
 export let GREMLIN_X = 520;   // the World 3 test version moves the gremlin (see create)
-const TRUNK = { s: 2.3, cut: 135 };
-const LOG = { s: 2.2, base: 300 };   // World 3 test: the steep cross-path log (scale; how far below the path its base sits)   // World 3 fallen trunk: scale, and the row of the art where the log ends and the gap begins
+const TRUNK = { s: 2.3, cut: 135 };   // World 3 fallen trunk: scale, and the row of the art where the log ends and the gap begins
 
 export const POINTS = { taco: 100, margarita: 250, levelComplete: 500, perHeart: 200, noDamage: 1000 };
 const MOULD_HURT_AFTER = 0.55;   // seconds standing in mould before it costs a heart (it always slows you)
@@ -77,7 +76,7 @@ export class Run extends Phaser.Scene {
     } else { cam.setOrigin(0.5, 0.5).setZoom(1).setScroll(0, 0); GREMLIN_X = 520; }
     this.swamp = new this.W.backdrop(this, GROUND_Y, view ? { view } : undefined);
     Music.play(this, { 1: 'run', 2: 'w2' }[this.world] || null);   // each world has its own music; World 3 has none yet
-    this.items = this.W.stages[this.stage - 1].map(c => ({ ...c, obj: null, done: false }));
+    this.items = this.W.stages[this.stage - 1].filter(c => !(this.W.noTrunks && c.t === 'trunk')).map(c => ({ ...c, obj: null, done: false }));
     this.beamG = this.add.graphics().setDepth(10).setBlendMode(Phaser.BlendModes.ADD);
     this.blind = [];   // butterflies covering the screen after the gremlin blunders into a swarm
     this.orbs = []; this.creatures = [];
@@ -196,9 +195,6 @@ export class Run extends Phaser.Scene {
     if (it.t === 'deco') {   // scenery beside the path (World 3): behind the gremlin, never in the way
       it.obj = this.add.image(x, GROUND_Y - 28, it.key).setOrigin(0.5, 1).setScale(it.s * 0.8).setDepth(3.9); return;   // just behind the path's front edge
     }
-    if (it.t === 'trunk' && this.W.crossLog) {   // test version: a steep log crossing the path, its base in the foreground, top up in the trees
-      it.obj = this.add.image(x, GROUND_Y + LOG.base, 'w_haz_log_cross').setOrigin(0.5, 1).setScale(LOG.s).setDepth(11); return;
-    }
     if (it.t === 'trunk') {   // fallen trunk across the path: slide under it
       // big and in two layers: the log hangs IN FRONT of the gremlin (she slides under it), the stumps and ferns sit behind her
       const T = TRUNK, img = d => this.add.image(x, GROUND_Y + 18, 'w_haz_trunk').setOrigin(0.5, 1).setScale(T.s).setDepth(d);
@@ -244,7 +240,6 @@ export class Run extends Phaser.Scene {
   itemRect(it) {
     const o = it.obj;
     if (it.t === 'vines') return new Phaser.Geom.Rectangle(o.x - 150, 0, 300, GROUND_Y - 150);
-    if (it.t === 'trunk' && this.W.crossLog) return new Phaser.Geom.Rectangle(o.x - 80, GROUND_Y - 480, 190, 355);   // where it crosses above the path
     if (it.t === 'trunk') return new Phaser.Geom.Rectangle(o.x - 200, GROUND_Y - 440, 400, 315);   // the log itself; the gap under it (125 px) is clear for a slide
     if (it.t === 'arrow') return it.landed ? new Phaser.Geom.Rectangle(o.x - 30, GROUND_Y - 120, 60, 120) : null;
     if (it.t === 'deco') return null;
@@ -302,7 +297,7 @@ export class Run extends Phaser.Scene {
     const S = this.shadowG; S.clear();
     for (const it of this.items) {
       if (!it.obj || it.done) continue;
-      const sw = SHADOW_W[it.t] || (it.t === 'trunk' && this.W.crossLog ? 320 : 0);
+      const sw = SHADOW_W[it.t];
       if (sw) { S.fillStyle(0x050805, 0.55).fillEllipse(it.obj.x, GROUND_Y + 8, sw, 38); S.fillStyle(0x050805, 0.35).fillEllipse(it.obj.x, GROUND_Y + 8, sw * 1.15, 54); }
       if (it.t === 'sludge' || it.t === 'sludgeWide') {
         const w = (it.t === 'sludgeWide' ? 520 : 200);

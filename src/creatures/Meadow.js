@@ -1,7 +1,7 @@
 // World 2 creatures: Meadows of Malicious Happiness. Deceptively cute, all dangerous (GDD).
 // Same cut-out puppet method and interface as the swamp creatures:
 // update(dt, ctx) moves it; hitbox() is what hurts the gremlin; shot() is called when magic hits it.
-import { Puppet, Creature } from './Creatures.js?v=20261015124852';
+import { Puppet, Creature } from './Creatures.js?v=20261015125752';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const ease = k => (k < 0 ? 0 : k > 1 ? 1 : k * k * (3 - 2 * k));
