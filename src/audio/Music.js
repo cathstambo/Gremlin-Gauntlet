@@ -66,3 +66,28 @@ export const Music = {
     this.playing = null;
   },
 };
+
+// Sound effects (Grunt's cat noises). They follow the same speaker button as the music: on = music + sounds.
+// Downloaded the first time sound is on in World 3.
+const SFX = ['yowl_long', 'yowl', 'yowl2', 'hiss_growl', 'growl', 'screech', 'meow', 'meow2', 'mrrrp', 'snarl'];
+const SFX_VOL = 0.55;
+export const Sfx = {
+  loading: false, last: {},
+  /** Play a sound if sound is on (pick one at random from a list). gap = don't repeat the same sound within this many seconds. */
+  play(scene, names, gap = 0) {
+    if (!Music.on || !scene.sound.context) return;
+    const name = Array.isArray(names) ? names[Math.floor(Math.random() * names.length)] : names;
+    const now = scene.time.now / 1000;
+    if (gap && this.last[name] && now - this.last[name] < gap) return;
+    if (!scene.cache.audio.exists('sfx_' + name)) { this.load(scene.game); return; }
+    this.last[name] = now;
+    scene.sound.play('sfx_' + name, { volume: SFX_VOL });
+  },
+  load(game) {
+    if (this.loading) return; this.loading = true;
+    const ctx = game.sound.context;
+    Promise.all(SFX.map(n => fetch(`assets/sfx/${n}.mp3`).then(r => r.arrayBuffer())
+      .then(b => new Promise((res, rej) => ctx.decodeAudioData(b, res, rej))).then(buf => game.cache.audio.add('sfx_' + n, buf))))
+      .catch(e => { this.loading = false; console.warn('sounds failed to load', e); });
+  },
+};

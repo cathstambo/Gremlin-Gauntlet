@@ -5,6 +5,7 @@
 //   At 100 he catches you: a giant paw swipe ends the attempt (retry this run, meter reset).
 //   The meter carries over to the next run; it only resets when you die.
 import { Grunt } from '../grunt/Grunt.js';
+import { Sfx } from '../audio/Music.js';
 
 export const CHASE = {
   creep: 0.9,          // meter points per second while running
@@ -27,6 +28,7 @@ export class Chase {
     // a retry or a later run starts with him already on your tail; the very first run opens with the eyes in the trees
     if (run.stage > 1 || run.retry) { this.phase = 'chase'; this.shown = this.prox; this.grunt.frontX = this.frontFor(this.prox); }
     run.events.emit('prox', this.phase === 'chase' ? this.prox : null);
+    Sfx.load(run.game);   // fetch the cat noises early (only plays if sound is on)
   }
   frontFor(p) { return 230 + (this.run.GREMLIN_X - 30 - 230) * clamp(p, -60, 100) / 100; }   // claws at x 230 when far, at the gremlin when 100
   say(text, dur = 1.2) {
@@ -56,6 +58,9 @@ export class Chase {
       this.shown += (this.prox - this.shown) * Math.min(1, dt * 2.5);
       run.events.emit('prox', this.prox);
       if (this.prox >= 100 && run.mode === 'running') this.caught();
+      // near-capture warning (GDD): red edges plus his yowl as he closes in
+      if (this.phase === 'chase' && this.prox >= CHASE.warnAt && !this.warned) { this.warned = true; Sfx.play(run, ['yowl', 'yowl2'], 4); }
+      if (this.prox < CHASE.warnAt - 8) this.warned = false;
     }
     const walking = run.mode !== 'dying' && run.mode !== 'gameover' || this.phase === 'catch';
     this.grunt.update(dt, this.phase === 'eyes' ? -500 : this.frontFor(this.shown), walking);
@@ -66,17 +71,19 @@ export class Chase {
     this.grunt.frontX = -300; this.shown = -30;
     run.cameras.main.shake(600, 0.012);
     this.grunt.act('bow', 1.1);
-    this.say('*RAAAWR!*', 1.4);
+    this.say('*RAAAWR!*', 1.4); Sfx.play(run, 'yowl_long');
     run.time.delayedCall(900, () => { this.phase = 'chase'; });
   }
   /** Something (a hit, a stumble) let him close in. */
   closer(n = CHASE.hit) { if (this.phase === 'chase') { this.prox = clamp(this.prox + n, 0, 100); if (this.prox > 60) this.say('*YOWL!*', 0.9); } }
   ease(n) { if (this.phase === 'chase') this.prox = clamp(this.prox - n, 0, 100); }
+  /** You got past one of his arrows: an irritated meow (GDD: irritated tail flick on misses). */
+  missed() { this.say('*mrow!*', 0.7); Sfx.play(this.run, ['meow', 'meow2'], 2); }
   /** A magic bolt fired back reached him. */
   blasted() {
     if (this.blastT > 0 || this.phase !== 'chase') return false;
     this.blastT = CHASE.blastCooldown; this.ease(CHASE.blast);
-    this.grunt.hit(); this.say(Math.random() < 0.5 ? '*HISSS!*' : '*YOWL!*', 0.9);
+    this.grunt.hit(); this.say(Math.random() < 0.5 ? '*HISSS!*' : '*YOWL!*', 0.9); Sfx.play(this.run, ['screech', 'snarl']);
     return true;
   }
   /** Where a bolt fired back counts as hitting him. */
@@ -88,14 +95,14 @@ export class Chase {
     const paw = run.add.image(this.grunt.frontX - 200, run.GROUND_Y - 520, 'gr_paw_stomp').setDepth(12).setScale(1.6).setAngle(-30).setFlipX(false);
     run.tweens.add({ targets: paw, x: run.GREMLIN_X + 40, y: run.GROUND_Y - 150, angle: 20, duration: 260, ease: 'Quad.easeIn',
       onComplete: () => { run.cameras.main.shake(400, 0.02); run.g.die(); run.tweens.add({ targets: paw, alpha: 0, delay: 600, duration: 300 }); } });
-    this.say('*SWAT!*', 1.2);
+    this.say('*SWAT!*', 1.2); Sfx.play(run, 'hiss_growl');
     run.events.emit('danger', 1);
   }
   /** Fire an arrow from the bow: a marker shows where it lands in the path, then it sticks there (jump it). */
   fireArrow(it) {
     const run = this.run;
     if (this.phase !== 'chase') { it.skip = true; return; }
-    this.grunt.act('bow', 0.9); this.say('*grrrr...*', 0.8);
+    this.grunt.act('bow', 0.9); this.say('*grrrr...*', 0.8); Sfx.play(run, 'growl');
     it.flightT = 0; it.flight = 1.15;
   }
   destroy() { this.grunt.destroy(); }
