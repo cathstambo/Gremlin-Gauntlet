@@ -1,12 +1,12 @@
 // Running stages for every world (1 = easy to medium, 2 = busier and harder), then on to that world's boss.
 // Hearts, Chaos Meter and score carry from stage 1 to stage 2 to the boss; part 2 is a checkpoint.
-import { Gremlin } from '../gremlin/Gremlin.js?v=20261015115916';
-import { WORLDS, worldNo, loadMeadow, loadWild } from '../worlds.js?v=20261015115916';
-import { Chase, CHASE } from './Chase.js?v=20261015115916';
-import { Wolf, Eagle, Fox } from '../creatures/Wild.js?v=20261015115916';
-import { Music } from '../audio/Music.js?v=20261015115916';
-import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js?v=20261015115916';
-import { Bunny, Kitten, Flower, Swarm } from '../creatures/Meadow.js?v=20261015115916';
+import { Gremlin } from '../gremlin/Gremlin.js?v=20261015121157';
+import { WORLDS, worldNo, loadMeadow, loadWild } from '../worlds.js?v=20261015121157';
+import { Chase, CHASE } from './Chase.js?v=20261015121157';
+import { Wolf, Eagle, Fox } from '../creatures/Wild.js?v=20261015121157';
+import { Music } from '../audio/Music.js?v=20261015121157';
+import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js?v=20261015121157';
+import { Bunny, Kitten, Flower, Swarm } from '../creatures/Meadow.js?v=20261015121157';
 
 const CREATURES = { frog: Frog, gator: Gator, bat: Bat, spider: Spider, bunny: Bunny, kitten: Kitten, flower: Flower, swarm: Swarm, wolf: Wolf, eagle: Eagle, fox: Fox };
 // rainbow beam (World 2): turret size, how far it sinks into the path, and the beam's band (px above the ground)
@@ -64,7 +64,7 @@ export class Run extends Phaser.Scene {
     this.dist = 0; this.timeScale = 1; this.showBoxes = false;
     this.sizes = this.W.sizes(this);
     this.swamp = new this.W.backdrop(this, GROUND_Y);
-    Music.play(this, this.world === 1 ? 'run' : null);   // the current tracks belong to World 1; other worlds get their own later
+    Music.play(this, { 1: 'run', 2: 'w2' }[this.world] || null);   // each world has its own music; World 3 has none yet
     this.items = this.W.stages[this.stage - 1].map(c => ({ ...c, obj: null, done: false }));
     this.beamG = this.add.graphics().setDepth(10).setBlendMode(Phaser.BlendModes.ADD);
     this.blind = [];   // butterflies covering the screen after the gremlin blunders into a swarm

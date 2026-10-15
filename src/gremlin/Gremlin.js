@@ -5,8 +5,8 @@
 import {
   TAU, clamp, ease, seg, lerpPose, runPose, crouchPose, risePose, fallPose, tuckPose, slidePose, hurtPose,
   dieAirPose, deadPose, winPose, idlePose, meltPose, meltLift, MELT_T, MELT_BLAST_AT,
-} from './poses.js?v=20261015115916';
-import { Effects } from './Effects.js?v=20261015115916';
+} from './poses.js?v=20261015121157';
+import { Effects } from './Effects.js?v=20261015121157';
 
 // ---- tuning: placeholders until playtesting (art units; the gremlin is ~800 units tall) ----
 export const TUNING = {

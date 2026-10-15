@@ -1,14 +1,18 @@
 // Background music. Off by default; the speaker button turns it on and off (remembered on this device).
 // The tracks are only downloaded the first time music is switched on, so the game still starts fast.
-//   Running stages: instrumental 1 + 2 joined, on a loop, quiet.
-//   Boss arena:     boss chorus + boss 2 once, then the instrumental loop, a little louder.
+//   World 1 running stages: instrumental 1 + 2 joined, on a loop, quiet.
+//   World 1 boss arena:     boss chorus + boss 2 once, then the instrumental loop, a little louder.
+//   World 2 (runs and the Overlord arena): "It's a small world", on a loop.
+// Each world only downloads its own music.
 const FILES = {
   music_run: ['assets/audio/music_run.opus', 'assets/audio/music_run.mp3'],
   music_boss_intro: ['assets/audio/music_boss_intro.opus', 'assets/audio/music_boss_intro.mp3'],
+  music_w2: ['assets/audio/music_w2.opus', 'assets/audio/music_w2.mp3'],
 };
 const TRACKS = {
   run: { vol: 0.22, parts: [['music_run', true]] },
   boss: { vol: 0.32, parts: [['music_boss_intro', false], ['music_run', true]] },
+  w2: { vol: 0.24, parts: [['music_w2', true]] },
 };
 const STORE = 'gremlinGauntlet.music';
 
@@ -35,7 +39,7 @@ export const Music = {
 
   start(scene) {
     if (!this.want || this.playing === this.want) return;
-    const missing = Object.keys(FILES).filter(k => !scene.cache.audio.exists(k));
+    const missing = [...new Set(TRACKS[this.want].parts.map(p => p[0]))].filter(k => !scene.cache.audio.exists(k));
     if (missing.length) { this.load(scene.game, missing); return; }
     this.stop();
     this.playing = this.want;
@@ -68,14 +72,14 @@ export const Music = {
   },
 };
 
-// Sound effects (Grunt's cat noises). Always on (the speaker button is for music only); they follow the phone's volume.
+// Sound effects (Grunt's cat noises). The speaker button turns them on and off along with the music.
 const SFX = ['yowl_long', 'yowl', 'yowl2', 'hiss_growl', 'growl', 'screech', 'meow', 'meow2', 'mrrrp', 'snarl'];
 const SFX_VOL = 0.55;
 export const Sfx = {
   loading: false, last: {},
   /** Play a sound if sound is on (pick one at random from a list). gap = don't repeat the same sound within this many seconds. */
   play(scene, names, gap = 0) {
-    if (!scene.sound.context) return;
+    if (!Music.on || !scene.sound.context) return;
     const name = Array.isArray(names) ? names[Math.floor(Math.random() * names.length)] : names;
     const now = scene.time.now / 1000;
     if (gap && this.last[name] && now - this.last[name] < gap) return;
