@@ -6,18 +6,21 @@
 //     - a magic bolt fired BACK at him (BLAST BACK / swipe left) knocks him well back and stuns him for a moment.
 //   At 100 he catches you: a giant paw swipe ends the attempt (retry this run, meter reset).
 //   The meter carries over to the next run; it only resets when you die.
-import { Grunt } from '../grunt/Grunt.js?v=20261015121157';
-import { Sfx } from '../audio/Music.js?v=20261015121157';
+import { Grunt } from '../grunt/Grunt.js?v=20261015122920';
+import { Sfx } from '../audio/Music.js?v=20261015122920';
 
 export const CHASE = {
-  pullAway: 2.2,       // meter points per second you gain on him while running clean...
-  cleanAfter: 2.5,     // ...once you've gone this many seconds without a hit
-  floor: 12,           // he never drops further back than this (he's always coming)
-  creep: 1.2,          // he gains this much per second while you're not running clean
-  surgeEvery: [9, 13], // seconds between his surges
-  surgeTime: 2.2, surgeRate: 11,   // a surge lasts this long and closes the gap this fast (per second)
-  clear: 3,            // eased back for each hazard / creature cleared without being hit
-  hit: 20,             // brought closer when you take a hit (you stumble)
+  // Difficulty ramps up (Cath, 15 Oct): gentle at the start of Into the Wild, tighter towards its end, and tighter again
+  // on each later run. Settings with an [easy, hard] pair slide between the two as the "heat" rises (see heat()).
+  pullAway: [3.6, 2.4],    // meter points per second you gain on him while running clean...
+  cleanAfter: 2.0,         // ...once you've gone this many seconds without a hit
+  floor: 10,               // he never drops further back than this (he's always coming; off screen you see his shadow)
+  creep: [0.5, 1.5],       // he gains this much per second while you're not running clean
+  surgeEvery: [[16, 20], [8, 11]],   // seconds between his surges
+  firstSurge: [12, 6],     // seconds before his first surge
+  surgeTime: 2.2, surgeRate: [7, 12],   // a surge lasts this long and closes the gap this fast (per second)
+  clear: 3,                // eased back for each hazard / creature cleared without being hit
+  hit: [14, 22],           // brought closer when you take a hit (you stumble)
   blast: 15,           // knocked back by a bolt fired back at him (and it stops a surge)
   stun: 1.2,           // ...and he's stunned (stands still) for this long
   blastCooldown: 2.5,  // seconds before another bolt can knock him back again
@@ -27,6 +30,7 @@ export const CHASE = {
   warnAt: 72,          // red screen edges from here
 };
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const mix = (v, h) => Array.isArray(v) ? v[0] + (v[1] - v[0]) * h : v;
 
 export class Chase {
   constructor(run, startProx) {
@@ -41,6 +45,12 @@ export class Chase {
     Sfx.load(run.game);   // fetch the cat noises early (only plays if sound is on)
   }
   // where his front claws are on screen: off the left edge when far back (only his shadow and stomps), at the gremlin at 100
+  /** 0 = easiest (start of run 1) … 1 = hardest (end of run 4). Each run adds a quarter; going through a run adds up to 0.45. */
+  heat() {
+    const run = this.run, end = this.endD || (this.endD = (run.items.find(i => i.t === 'finish') || { d: 25000 }).d);
+    return clamp((run.stage - 1) * 0.25 + 0.45 * clamp(run.dist / end, 0, 1), 0, 1);
+  }
+  get(k) { return mix(CHASE[k], this.heat()); }
   frontFor(p) { return -60 + (this.run.GREMLIN_X - 30 + 60) * clamp(p, -60, 100) / 100; }
   say(text, dur = 1.2) {
     const h = this.grunt.headPoint();
@@ -83,17 +93,19 @@ export class Chase {
   pace(dt) {
     const run = this.run;
     this.cleanT = (this.cleanT || 0) + dt; this.stunT = Math.max(0, (this.stunT || 0) - dt);
-    if (this.stunT > 0) { this.prox = clamp(this.prox - CHASE.pullAway * dt, 0, 100); return; }
+    const h = this.heat(), pull = mix(CHASE.pullAway, h);
+    if (this.stunT > 0) { this.prox = Math.max(Math.min(this.prox, CHASE.floor), this.prox - pull * dt); return; }
     if (this.surgeT > 0) {
-      this.surgeT -= dt; this.prox = clamp(this.prox + CHASE.surgeRate * dt, 0, 100);
+      this.surgeT -= dt; this.prox = clamp(this.prox + mix(CHASE.surgeRate, h) * dt, 0, 100);
     } else {
-      this.nextSurge = (this.nextSurge ?? 6) - dt;
+      this.nextSurge = (this.nextSurge ?? mix(CHASE.firstSurge, h)) - dt;
       if (this.nextSurge <= 0) {   // telegraphed: a roar and a big stomp, then he charges
-        this.surgeT = CHASE.surgeTime; this.nextSurge = CHASE.surgeEvery[0] + Math.random() * (CHASE.surgeEvery[1] - CHASE.surgeEvery[0]);
+        const [a, b] = CHASE.surgeEvery.map(r => r[0] + (r[1] - r[0]) * h);
+        this.surgeT = CHASE.surgeTime; this.nextSurge = a + Math.random() * (b - a);
         this.say('*RAAAWR!*', 1.0); Sfx.play(run, ['yowl', 'yowl2'], 1); run.cameras.main.shake(300, 0.008);
         run.events.emit('surge');
-      } else if (this.cleanT > CHASE.cleanAfter) this.prox = Math.max(Math.min(this.prox, CHASE.floor), this.prox - CHASE.pullAway * dt);
-      else this.prox = clamp(this.prox + CHASE.creep * dt, 0, 100);
+      } else if (this.cleanT > CHASE.cleanAfter) this.prox = Math.max(Math.min(this.prox, CHASE.floor), this.prox - pull * dt);
+      else this.prox = clamp(this.prox + mix(CHASE.creep, h) * dt, 0, 100);
     }
   }
   /** When he's off screen, his huge shadow and the thump of his steps show he's still coming. */
@@ -116,8 +128,8 @@ export class Chase {
     run.time.delayedCall(900, () => { this.phase = 'chase'; });
   }
   /** Something (a hit, a stumble) let him close in. */
-  closer(n = CHASE.hit, stumble = true) { if (stumble) this.cleanT = 0; if (this.phase === 'chase') { this.prox = clamp(this.prox + n, 0, 100); if (this.prox > 60) this.say('*YOWL!*', 0.9); } }
-  ease(n) { if (this.phase === 'chase') this.prox = clamp(this.prox - n, 0, 100); }
+  closer(n = this.get('hit'), stumble = true) { if (stumble) this.cleanT = 0; if (this.phase === 'chase') { this.prox = clamp(this.prox + n, 0, 100); if (this.prox > 60) this.say('*YOWL!*', 0.9); } }
+  ease(n) { if (this.phase === 'chase') this.prox = Math.max(Math.min(this.prox, CHASE.floor), this.prox - n); }   // never further back than the floor
   /** You got past one of his arrows: an irritated meow (GDD: irritated tail flick on misses). */
   missed() { this.say('*mrow!*', 0.7); Sfx.play(this.run, ['meow', 'meow2'], 2); }
   /** A magic bolt fired back reached him. */

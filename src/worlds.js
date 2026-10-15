@@ -1,8 +1,8 @@
 // The worlds, in the locked GDD order. Each world = two running stages, then its boss.
-import { STAGE1, STAGE2, W2_STAGE1, W2_STAGE2, W3_RUN1 } from './course.js?v=20261015121157';
-import { Swamp, Meadow, Wild, MEADOW_FILES, WILD_FILES } from './world/Swamp.js?v=20261015121157';
-import { GRUNT_PARTS } from './grunt/Grunt.js?v=20261015121157';
-import { MEADOW_CREATURE_PARTS } from './creatures/Creatures.js?v=20261015121157';
+import { STAGE1, STAGE2, W2_STAGE1, W2_STAGE2, W3_RUN1 } from './course.js?v=20261015122920';
+import { Swamp, Meadow, Wild, MEADOW_FILES, WILD_FILES } from './world/Swamp.js?v=20261015122920';
+import { GRUNT_PARTS } from './grunt/Grunt.js?v=20261015122920';
+import { MEADOW_CREATURE_PARTS } from './creatures/Creatures.js?v=20261015122920';
 
 export const WORLDS = {
   1: {
@@ -20,7 +20,7 @@ export const WORLDS = {
   3: {
     place: 'Lush Alaskan wilderness', stageName: 'INTO THE WILD', boss: null, bossTitle: 'WRATH OF THE HAIRBALL', bossName: 'GRUNT',
     backdrop: Wild, stages: [W3_RUN1], runNames: ['INTO THE WILD', 'RIVER RUN', 'UZI RAMPAGE', 'FINAL SPRINT'],
-    chase: { start: [45, 45, 50, 60] },   // Grunt's starting Proximity Meter for each run (used at the start, and after a death)
+    chase: { start: [30, 35, 40, 50] },   // Grunt's starting Proximity Meter for each run (used at the start, and after a death)
     maxHearts: 5, plats: {}, sizes: () => ({}),
   },
 };
