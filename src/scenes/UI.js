@@ -1,8 +1,8 @@
 // HUD and controls for whichever game scene is active ('Run' = test course, 'Boss' = Eddie's arena):
 // hearts, Chaos Meter, boss health, pause, touch buttons, swipe gestures, keyboard, overlays.
-import { Music } from '../audio/Music.js?v=20261016105852';
-import { DIFF, saveBest } from '../difficulty.js?v=20261016105852';
-import { WORLDS, worldNo, LAST_WORLD } from '../worlds.js?v=20261016105852';
+import { Music } from '../audio/Music.js?v=20261016122744';
+import { DIFF, saveBest } from '../difficulty.js?v=20261016122744';
+import { WORLDS, worldNo, LAST_WORLD } from '../worlds.js?v=20261016122744';
 const FONT = 'Lilita One, Arial Rounded MT Bold, Trebuchet MS, sans-serif';
 const BODY = 'Atkinson Hyperlegible, system-ui, sans-serif';
 const INK = '#ece6f5', VIOLET = 0x9b4dff, ACID = 0xc6f135, MOULD = 0x9fcc1e;
@@ -37,7 +37,7 @@ export class UI extends Phaser.Scene {
       this.add.rectangle(bx, 78, 560, 34, 0x0e1614, 0.75).setStrokeStyle(3, 0xd8ff8a, 0.45);
       this.bossBar = this.add.rectangle(bx - 276, 78, 552, 26, MOULD).setOrigin(0, 0.5);
       for (const f of [0.7, 0.35]) this.add.rectangle(bx - 276 + 552 * f, 78, 4, 30, 0x0e1614, 0.9);   // phase marks
-      this.phaseNames = this.world === 2 ? ['', 'PHASE 1 · SALMON SLAPPER', 'PHASE 2 · SPOONAGEDDON', 'PHASE 3 · ROYAL TANTRUM'] : ['', 'PHASE 1 · ROCK BUFFET', 'PHASE 2 · MOULD MAYHEM', 'PHASE 3 · THE MOULDENING'];
+      this.phaseNames = this.world === 4 ? ['', 'PHASE 1 · LA CHANCLA OF DOOM', 'PHASE 2 · GIN & TONIC WARFARE', 'PHASE 3 · THE BIG CHEESE MELTDOWN'] : this.world === 2 ? ['', 'PHASE 1 · SALMON SLAPPER', 'PHASE 2 · SPOONAGEDDON', 'PHASE 3 · ROYAL TANTRUM'] : ['', 'PHASE 1 · ROCK BUFFET', 'PHASE 2 · MOULD MAYHEM', 'PHASE 3 · THE MOULDENING'];
       this.phaseTxt = this.add.text(bx, 122, this.phaseNames[1], { fontFamily: FONT, fontSize: 24, color: '#d8ff8a' }).setOrigin(0.5).setAlpha(0.85);
       this.vulTxt = this.add.text(bx, 160, 'VULNERABLE! BLAST HIM!', { fontFamily: FONT, fontSize: 30, color: '#c6f135', stroke: '#14200a', strokeThickness: 8 }).setOrigin(0.5).setAlpha(0);
     }
@@ -105,7 +105,9 @@ export class UI extends Phaser.Scene {
     this.overlay = this.add.container(0, 0).setDepth(50);
     const stage = this.registry.get('stage') || 1, fresh = !this.registry.get('carry');
     const Wd = WORLDS[this.world], stick = 'Left thumb: drag to run · pull down (or diagonally) to slide · flick up to jump\n';
-    if (this.isBoss && this.world === 2) this.showMessage('THE EVIL OVERLORD', 'Level 2 boss · Meadows of Malicious Happiness · tap to start',
+    if (this.isBoss && this.world === 4) this.showMessage('QUESO JEFE', 'Level 4 boss · The Cheddar Cartel · tap to start',
+      stick + 'JUMP button: jump and double jump   ·   MAGIC: only hurts her while she’s VULNERABLE\nChanclas: low = jump, high = slide · Gold rings: a cheese wheel lands there · Gin puddles are slippery');
+    else if (this.isBoss && this.world === 2) this.showMessage('THE EVIL OVERLORD', 'Level 2 boss · Meadows of Malicious Happiness · tap to start',
       stick + 'JUMP button: jump and double jump   ·   MAGIC: only hurts her while she’s VULNERABLE\nWatch the sparkles: they show where fish and spoons are about to go');
     else if (this.isBoss) this.showMessage('THE MOULD KING', 'Level 1 boss · The Festering Swamp · tap to start',
       stick + 'JUMP button: jump and double jump   ·   MAGIC: only hurts Eddie while he’s VULNERABLE\nWatch the markers: green = mould bomb, red = danger, gold = where Eddie lands');
@@ -114,7 +116,8 @@ export class UI extends Phaser.Scene {
       : stage === 3 ? 'He’s got the Uzis out.\nRed marker = debris landing there: it stays on the trail, so jump it\nRock shelves: slide · Bears and moose: double jump or blast · Hawks: slide or blast'
       : stage === 2 ? 'Over the river. He’s still coming.\nRocks: jump · Broken bridge: jump · Canyon: DOUBLE jump · Leaping salmon: slide\nBears swipe where the red line shows: low = jump, high = slide · Moose: double jump or blast twice'
       : 'Grunt is still right behind you. Keep running.');
-    else if (stage === 2) this.showMessage(`${Wd.stageName} · PART 2`, 'Deeper in. Nastier. · tap to start', `${Wd.bossName === 'EDDIE' ? 'Eddie waits' : 'The Evil Overlord waits'} at the end of this one.`);
+    else if (stage === 2) this.showMessage(`${Wd.stageName} · PART 2`, 'Deeper in. Nastier. · tap to start', `${Wd.bossName === 'EDDIE' ? 'Eddie waits' : Wd.bossName === 'RINA' ? 'The Queso Jefe waits' : 'The Evil Overlord waits'} at the end of this one.`);
+    else if (this.world === 4) this.showMessage('WORLD 4', 'The Cheddar Cartel · tap to start', 'Welcome to the wrong neighbourhood.\nRats & rolling cheese wheels: jump · Flying crackers: slide · Mozzarella: jump it, it’s sticky\nCheese river: jump (wide ones: DOUBLE jump) · Armoured rats take two blasts');
     else if (this.world === 2) this.showMessage('WORLD 2', 'Meadows of Malicious Happiness · tap to start', 'Everything here is cute. Everything here wants you dead.\nBunnies: jump · Kittens: slide · Flowers: jump · Butterflies: they blind you\nCrystal turrets fire rainbow beams: low beam = jump, high beam = slide');
     else this.showMessage('WORLD 1', 'The Festering Swamp · tap to start', 'Tap / swipe up: jump (tap again in the air to double jump)\nSwipe down: slide   ·   Swipe right: magic\nCollect 10 crystals to fill the Chaos Meter, then hit MELTDOWN');
 
@@ -131,13 +134,14 @@ export class UI extends Phaser.Scene {
     ev.on('finished', info => this.time.delayedCall(this.isBoss ? 300 : 1200, () => {
       if (this.isBoss || (this.world === 3 && info.ending)) {
         const best = saveBest(this.world, info.score, this.registry.get('assisted'));
-        const what = this.world === 3 ? `Grunt has been hairballed · Final Sprint ${info.time.toFixed(1)} s` : `${this.world === 2 ? 'The Evil Overlord has been dethroned' : 'The Mould King has been mouldered'} · ${info.time.toFixed(1)} s`;
+        const what = this.world === 3 ? `Grunt has been hairballed · Final Sprint ${info.time.toFixed(1)} s` : `${this.world === 4 ? 'The Queso Jefe has been cheesed' : this.world === 2 ? 'The Evil Overlord has been dethroned' : 'The Mould King has been mouldered'} · ${info.time.toFixed(1)} s`;
         this.showMessage(best ? 'NEW BEST!' : 'BOSS DEFEATED', `${what} · score ${info.score.toLocaleString()}`,
           info.breakdown + (this.registry.get('assisted') ? '\n(Assisted retry: doesn’t count towards your best score)' : '') + '\n\nTap to return to the menu');
       }
       else if (this.world === 3) { const Wd = WORLDS[3], more = info.stage < Wd.stages.length;
         this.showMessage(`RUN ${info.stage} CLEARED`, more ? `Tap for run ${info.stage + 1}: ${Wd.runNames[info.stage]}` : 'You escaped (for now) · tap to play Into the Wild again',
           `Score so far: ${info.score.toLocaleString()}` + (more ? '' : '\nRuns ' + (Wd.stages.length + 1) + ' to 4 (' + Wd.runNames.slice(Wd.stages.length).join(', ') + ') are on their way')); }
+      else if (this.world === 4) this.showMessage(info.stage === 1 ? 'VILLAGE PART 1 CLEARED' : 'VILLAGE CLEARED', info.stage === 1 ? 'Tap for part 2' : 'Tap to face THE QUESO JEFE', `Score so far: ${info.score.toLocaleString()}`);
       else if (info.stage === 1) this.showMessage('SWAMP PART 1 CLEARED', 'Tap for part 2', `Score so far: ${info.score.toLocaleString()}`);
       else this.showMessage('SWAMP CLEARED', 'Tap to face THE MOULD KING', `Score so far: ${info.score.toLocaleString()}`);
     }));

@@ -1,8 +1,8 @@
 // The worlds, in the locked GDD order. Each world = two running stages, then its boss.
-import { STAGE1, STAGE2, W2_STAGE1, W2_STAGE2, W3_RUN1, W3_RUN2, W3_RUN3, W3_RUN4 } from './course.js?v=20261016105852';
-import { Swamp, Meadow, Wild, River, Canyon, Sprint, MEADOW_FILES, WILD_FILES, RIVER_FILES, CANYON_FILES, SPRINT_FILES } from './world/Swamp.js?v=20261016105852';
-import { GRUNT_PARTS } from './grunt/Grunt.js?v=20261016105852';
-import { MEADOW_CREATURE_PARTS } from './creatures/Creatures.js?v=20261016105852';
+import { STAGE1, STAGE2, W2_STAGE1, W2_STAGE2, W3_RUN1, W3_RUN2, W3_RUN3, W3_RUN4, W4_STAGE1, W4_STAGE2 } from './course.js?v=20261016122744';
+import { Swamp, Meadow, Wild, River, Canyon, Sprint, Queso, MEADOW_FILES, WILD_FILES, RIVER_FILES, CANYON_FILES, SPRINT_FILES, QUESO_FILES, RINA_FILES } from './world/Swamp.js?v=20261016122744';
+import { GRUNT_PARTS } from './grunt/Grunt.js?v=20261016122744';
+import { MEADOW_CREATURE_PARTS } from './creatures/Creatures.js?v=20261016122744';
 
 export const WORLDS = {
   1: {
@@ -26,8 +26,15 @@ export const WORLDS = {
     // Grunt ~2x her height and always fully on screen, no fallen logs to slide under
     view: { zoom: 0.7, gremlinAt: 0.42, gruntH: 660 }, noTrunks: true,
   },
+  4: {
+    place: 'The Cheddar Cartel', stageName: 'THE CHEESE VILLAGE', boss: 'Boss4', bossTitle: 'QUESO JEFE', bossName: 'RINA',
+    backdrop: Queso, stages: [W4_STAGE1, W4_STAGE2],
+    // floating cheese-rock islands (bonus routes); size = the island art, s = display scale, top = row of its flat top in the art
+    plats: { isl1: { key: 'q_isl1', size: 'isl1', s: 1.0 }, isl2: { key: 'q_isl2', size: 'isl2', s: 1.0 }, isl3: { key: 'q_isl3', size: 'isl3', s: 1.2 } },
+    sizes: () => ({ isl1: { w: 291, top: 14 }, isl2: { w: 236, top: 10 }, isl3: { w: 186, top: 10 } }),
+  },
 };
-export const LAST_WORLD = 3;
+export const LAST_WORLD = 4;
 export const worldNo = registry => registry.get('world') || 1;
 
 /** Queue World 2's art on a scene's loader (only what isn't loaded yet). Call from preload(). */
@@ -47,4 +54,10 @@ export function loadWild(scene) {
   if (st >= 2) for (const [k, f] of Object.entries(RIVER_FILES)) if (!scene.textures.exists(k)) scene.load.image(k, f);   // run 3 reuses the bear and moose
   if (st >= 3) for (const [k, f] of Object.entries(CANYON_FILES)) if (!scene.textures.exists(k)) scene.load.image(k, f);
   if (st >= 4) for (const [k, f] of Object.entries(SPRINT_FILES)) if (!scene.textures.exists(k)) scene.load.image(k, f);
+}
+
+/** Queue World 4's art (only what isn't loaded yet). boss = also Rina's arena art. */
+export function loadQueso(scene, boss = false) {
+  const files = boss ? { ...QUESO_FILES, ...RINA_FILES } : QUESO_FILES;
+  for (const [k, f] of Object.entries(files)) if (!scene.textures.exists(k)) scene.load.image(k, f);
 }

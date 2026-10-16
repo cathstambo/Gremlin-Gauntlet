@@ -1,17 +1,19 @@
 // Running stages for every world (1 = easy to medium, 2 = busier and harder), then on to that world's boss.
-import { DIFF } from '../difficulty.js?v=20261016105852';
+import { DIFF } from '../difficulty.js?v=20261016122744';
 // Hearts, Chaos Meter and score carry from stage 1 to stage 2 to the boss; part 2 is a checkpoint.
-import { Gremlin } from '../gremlin/Gremlin.js?v=20261016105852';
-import { WORLDS, worldNo, loadMeadow, loadWild } from '../worlds.js?v=20261016105852';
-import { Chase, CHASE } from './Chase.js?v=20261016105852';
-import { Goat } from '../world/Goat.js?v=20261016105852';
-import { Moose, Bear, Salmon, ChargeBear } from '../creatures/River.js?v=20261016105852';
-import { Wolf, Eagle, Fox } from '../creatures/Wild.js?v=20261016105852';
-import { Music, Sfx } from '../audio/Music.js?v=20261016105852';
-import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js?v=20261016105852';
-import { Bunny, Kitten, Flower, Swarm } from '../creatures/Meadow.js?v=20261016105852';
+import { Gremlin } from '../gremlin/Gremlin.js?v=20261016122744';
+import { WORLDS, worldNo, loadMeadow, loadWild, loadQueso } from '../worlds.js?v=20261016122744';
+import { Chase, CHASE } from './Chase.js?v=20261016122744';
+import { Goat } from '../world/Goat.js?v=20261016122744';
+import { Moose, Bear, Salmon, ChargeBear } from '../creatures/River.js?v=20261016122744';
+import { Wolf, Eagle, Fox } from '../creatures/Wild.js?v=20261016122744';
+import { Music, Sfx } from '../audio/Music.js?v=20261016122744';
+import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js?v=20261016122744';
+import { Bunny, Kitten, Flower, Swarm } from '../creatures/Meadow.js?v=20261016122744';
+import { Rat, ArmourRat, Cracker, Wheel, GingyThrow, GingyDropper, GingyRats } from '../creatures/Queso.js?v=20261016122744';
 
-const CREATURES = { frog: Frog, gator: Gator, bat: Bat, spider: Spider, bunny: Bunny, kitten: Kitten, flower: Flower, swarm: Swarm, wolf: Wolf, eagle: Eagle, fox: Fox, moose: Moose, bear: Bear, salmon: Salmon, cbear: ChargeBear, hawk: Eagle };
+const CREATURES = { frog: Frog, gator: Gator, bat: Bat, spider: Spider, bunny: Bunny, kitten: Kitten, flower: Flower, swarm: Swarm, wolf: Wolf, eagle: Eagle, fox: Fox, moose: Moose, bear: Bear, salmon: Salmon, cbear: ChargeBear, hawk: Eagle,
+  rat: Rat, arat: ArmourRat, cracker: Cracker, wheel: Wheel, gingy1: GingyThrow, gingy2: GingyDropper, gingy3: GingyRats };
 // rainbow beam (World 2): turret size, how far it sinks into the path, and the beam's band (px above the ground)
 const BEAM = { low: { s: 0.5, sink: 95, y0: 112, y1: 38 }, high: { s: 0.72, sink: 4, y0: 262, y1: 172 }, warn: 0.95, fire: 0.5, startGap: 1320 };
 export const GROUND_Y = 870, GREMLIN_H = 330;
@@ -45,12 +47,16 @@ export const SHELF = {
 };   // World 3 fallen trunk: scale, and the row of the art where the log ends and the gap begins
 
 export const POINTS = { taco: 100, margarita: 250, levelComplete: 500, perHeart: 200, noDamage: 1000, chase: 1000 };
-const MOULD_HURT_AFTER = 0.55;   // seconds standing in mould before it costs a heart (it always slows you)
+const MOULD_HURT_AFTER = 0.55;
+// World 4 cheese-river gaps: the street stops, a molten-cheese river below (fall in = lose a heart, like River Run's bridges).
+// w = gap width in px: 'gap' 280 (one jump), 'gapWide' 580 (double jump; a single jump only makes it from the very edge).
+const GAP = { gap: 280, gapWide: 580, s: 1.25 };   // seconds standing in mould before it costs a heart (it always slows you)
 
 // how each hazard / pickup is drawn: texture, display scale, and how far the image bottom sits below the ground line
 const LOOK = {
   roots: { key: 'haz_roots', s: 0.92, sink: 22 },
   mould: { key: 'haz_mould', s: 0.92, sink: 22 },
+  moz: { key: 'q_moz1', s: 1.0, sink: 30 },
   sludge: { key: 'haz_sludge', s: 0.92, sink: 34 },
   sludgeWide: { key: 'haz_sludge', s: 2.0, sink: 74 },
   vines: { key: 'haz_vines_hang', s: 1.3 },
@@ -63,7 +69,7 @@ const LOOK = {
 const BOX = {
   root: { w: 230, h: 85 }, boulder: { w: 170, h: 110 },
   rockS: { w: 150, h: 70 }, rockM: { w: 220, h: 85 }, rockL: { w: 230, h: 105 },
-  roots: { w: 170, h: 80 }, mould: { w: 220, h: 60 }, sludge: { w: 220, h: 40 }, sludgeWide: { w: 600, h: 40 },
+  roots: { w: 170, h: 80 }, mould: { w: 220, h: 60 }, moz: { w: 250, h: 50 }, sludge: { w: 220, h: 40 }, sludgeWide: { w: 600, h: 40 },
   taco: { w: 90, h: 80 }, margarita: { w: 80, h: 90 }, crystal: { w: 70, h: 90 }, potion: { w: 80, h: 90 },
 };
 const rnd = (a, b) => a + Math.random() * (b - a);
@@ -80,6 +86,11 @@ export class Run extends Phaser.Scene {
       const t = this.add.text(this.scale.width / 2, this.scale.height / 2, 'Something big is in the woods…', { fontFamily: 'Lilita One, Trebuchet MS, sans-serif', fontSize: 44, color: '#ece6f5' }).setOrigin(0.5);
       this.load.once('complete', () => t.destroy());
       loadWild(this);
+    }
+    if (worldNo(this.registry) === 4) {
+      const t = this.add.text(this.scale.width / 2, this.scale.height / 2, 'Melting the cheese…', { fontFamily: 'Lilita One, Trebuchet MS, sans-serif', fontSize: 44, color: '#ece6f5' }).setOrigin(0.5);
+      this.load.once('complete', () => t.destroy());
+      loadQueso(this);
     }
     if (worldNo(this.registry) === 2) {
       const t = this.add.text(this.scale.width / 2, this.scale.height / 2, 'Picking flowers…', { fontFamily: 'Lilita One, Trebuchet MS, sans-serif', fontSize: 44, color: '#ece6f5' }).setOrigin(0.5);
@@ -107,7 +118,7 @@ export class Run extends Phaser.Scene {
     } else { cam.setOrigin(0.5, 0.5).setZoom(1).setScroll(0, 0); GREMLIN_X = 520; }
     const Backdrop = (this.W.backdrops && this.W.backdrops[this.stage - 1]) || this.W.backdrop;
     this.swamp = new Backdrop(this, GROUND_Y, view ? { view } : undefined);
-    Music.play(this, { 1: 'run', 2: 'w2', 3: 'w3' }[this.world] || null);   // each world has its own music
+    Music.play(this, { 1: 'run', 2: 'w2', 3: 'w3' }[this.world] || null);   // (World 4: no track yet)   // each world has its own music
     this.items = this.W.stages[this.stage - 1].filter(c => !(this.W.noTrunks && c.t === 'trunk')).map(c => ({ ...c, obj: null, done: false }));
     this.beamG = this.add.graphics().setDepth(10).setBlendMode(Phaser.BlendModes.ADD);
     this.blind = [];   // butterflies covering the screen after the gremlin blunders into a swarm
@@ -184,7 +195,7 @@ export class Run extends Phaser.Scene {
   }
   meltBlast() {
     // Provisional rule: the blast clears every enemy ahead of the gremlin on screen (to be confirmed in playtesting).
-    for (const c of this.creatures) if (c.alive && c.x > this.g.x - 100 && c.x < this.viewW + 100) { c.hurt(99); this.defeated(c); }
+    for (const c of this.creatures) if (c.alive && !c.noShoot && c.x > this.g.x - 100 && c.x < this.viewW + 100) { c.hurt(99); this.defeated(c); }
   }
   defeated(c) { this.g.fx.burst(c.centre, 0.8); this.addScore(c.points); if (this.chase) { c.cleared = true; this.chase.ease(CHASE.defeat); } }
 
@@ -199,7 +210,7 @@ export class Run extends Phaser.Scene {
     this.swamp.scroll(this.dist);
     this.checkFall();
     this.updateItems(dt);
-    const ctx = { gx: this.g.x, groundY: GROUND_Y, scroll: v * dt * (this.mode === 'ready' ? 0 : 1) };
+    const ctx = { gx: this.g.x, groundY: GROUND_Y, viewW: this.viewW, scroll: v * dt * (this.mode === 'ready' ? 0 : 1) };
     for (const c of this.creatures) c.update(dt, ctx);
     for (const c of this.creatures) if (c.gone) c.destroy();
     this.creatures = this.creatures.filter(c => !c.gone);
@@ -224,7 +235,7 @@ export class Run extends Phaser.Scene {
       if (it.t === 'sludge' || it.t === 'sludgeWide') it.obj.scaleY = it.baseScale * (1 + 0.025 * Math.sin(t * 5 + it.d));   // slow bubbling heave
       if (it.t === 'vines') it.obj.rotation = 0.012 * Math.sin(t * 1.6 + it.d);                                                  // gentle sway
       if (it.glow) it.glow.outerStrength = 2.6 + 1.6 * (0.5 + 0.5 * Math.sin(t * 5));                                            // warning pulse
-      if (x + (it.t === 'bridge' ? BRIDGE.w : 0) < -600) { if (it.goat) it.goat.destroy(); else it.obj.destroy(); if (it.rest) it.rest.destroy(); if (it.fallObj) it.fallObj.destroy(); it.obj = null; it.done = true; if (it.back) { it.back.destroy(); it.back = null; } }
+      if (x + (it.t === 'bridge' ? BRIDGE.w : (it.t === 'gap' || it.t === 'gapWide') ? GAP[it.t] : 0) < -600) { if (it.goat) it.goat.destroy(); else it.obj.destroy(); if (it.rest) it.rest.destroy(); if (it.fallObj) it.fallObj.destroy(); it.obj = null; it.done = true; if (it.back) { it.back.destroy(); it.back = null; } }
       if (it.t === 'fishbreak' && !it.fired && x <= GREMLIN_X + 150 && this.chase) { it.fired = true; this.chase.distract(2.6); }
       if (it.t === 'jam' && !it.fired && x <= GREMLIN_X + 150 && this.chase) { it.fired = true; this.chase.jam(2.6); }
       if (it.goat) { it.goat.x = x; it.goat.update(dt, this.g.x); }
@@ -239,6 +250,19 @@ export class Run extends Phaser.Scene {
       it.obj = this.add.image(x, GROUND_Y - BRIDGE.deck * BRIDGE.s, BRIDGE[it.kind].key).setOrigin(0, 0).setScale(BRIDGE.s).setDepth(4.5); return;
     }
     if (it.t === 'fishbreak' || it.t === 'jam') { it.obj = this.add.zone(x, 0, 1, 1); return; }
+    if (it.t === 'gap' || it.t === 'gapWide') {   // a cheese-river gap: cliff edges either side, molten cheese far below
+      const w = GAP[it.t], s = GAP.s;
+      it.back = this.add.container(x, 0).setDepth(4.3);
+      const ch = this.add.graphics();   // the chasm: fades from the street's own shadow into darkness
+      ch.fillGradientStyle(0x2a160a, 0x2a160a, 0x140a04, 0x140a04, 0.0, 0.0, 0.95, 0.95).fillRect(0, GROUND_Y - 60, w, 170);
+      ch.fillStyle(0x140a04, 0.95).fillRect(0, GROUND_Y + 110, w, this.viewH);
+      it.back.add(ch);
+      it.back.add(this.add.tileSprite(0, GROUND_Y + 95, w, 161 * s, 'q_river').setOrigin(0, 0).setTileScale(s));
+      it.obj = this.add.container(x, 0).setDepth(4.5);
+      it.obj.add(this.add.image(30, GROUND_Y - 22, 'q_cliff_l').setOrigin(1, 0).setScale(s));
+      it.obj.add(this.add.image(w - 30, GROUND_Y - 18, 'q_cliff_r').setOrigin(0, 0).setScale(s));
+      return;
+    }
     if (it.t === 'drop') { it.obj = this.add.zone(x, 0, 1, 1); it.st = 'wait'; it.stT = 0; return; }
     if (it.t === 'goat') { it.goat = new Goat(this, x, GROUND_Y - 20, it.s || 0.62); it.obj = it.goat.body; return; }
     if (it.t === 'shelf') {   // the slab in front of the gremlin, its support behind the trail (so you slide under the lip)
@@ -294,6 +318,11 @@ export class Run extends Phaser.Scene {
         if (x > a + 20 && x < b - 20) { this.gapAt = it.d + g0 * BRIDGE.s; return -5000; }
       }
     }
+    for (const it of this.items) {   // a cheese-river gap
+      if (it.t !== 'gap' && it.t !== 'gapWide') continue;
+      const a = GREMLIN_X + (it.d - this.dist), b = a + GAP[it.t];
+      if (x > a + 20 && x < b - 20) { this.gapAt = it.d; return -5000; }
+    }
     for (const it of this.items) if (it.t === 'plat' && it.obj && Math.abs(x - it.obj.x) < it.w / 2 - 25) return it.h;
     return 0;
   }
@@ -302,7 +331,7 @@ export class Run extends Phaser.Scene {
     if (it.t === 'vines') return new Phaser.Geom.Rectangle(o.x - 150, 0, 300, GROUND_Y - 150);
     if (it.t === 'trunk') return new Phaser.Geom.Rectangle(o.x - 200, GROUND_Y - 440, 400, 315);   // the log itself; the gap under it (125 px) is clear for a slide
     if (it.t === 'arrow') return it.landed ? new Phaser.Geom.Rectangle(o.x - 30, GROUND_Y - 120, 60, 120) : null;
-    if (it.t === 'deco' || it.t === 'bridge' || it.t === 'fishbreak' || it.t === 'jam' || it.t === 'goat') return null;
+    if (it.t === 'deco' || it.t === 'bridge' || it.t === 'gap' || it.t === 'gapWide' || it.t === 'fishbreak' || it.t === 'jam' || it.t === 'goat') return null;
     if (it.t === 'drop') { if (!it.landed) return null; const b = DROP[it.k].box; return new Phaser.Geom.Rectangle(o.x - b.w / 2, GROUND_Y - b.h, b.w, b.h); }
     if (it.t === 'shelf') { const S = SHELF[it.n]; return new Phaser.Geom.Rectangle(o.x + 30, GROUND_Y - SHELF.U - 200, S.w * (S.s || SHELF.s) * 0.64, 200 + 20); }   // the slab, up to where the support drops behind the trail
     if (it.t === 'beam') { if (it.state !== 'fire') return null; const B = BEAM[it.lane]; return new Phaser.Geom.Rectangle(-100, GROUND_Y - B.y0, it.obj.x - 60 + 100, B.y0 - B.y1); }
@@ -314,7 +343,7 @@ export class Run extends Phaser.Scene {
     const g = this.g, hb = g.hitbox(); if (!hb) return;
     let inMould = false;
     for (const it of this.items) {
-      if (!it.obj || it.done || it.t === 'finish' || it.t === 'plat' || it.t === 'bridge' || it.t === 'fishbreak' || it.t === 'jam' || it.t === 'goat') continue;
+      if (!it.obj || it.done || it.t === 'finish' || it.t === 'plat' || it.t === 'bridge' || it.t === 'gap' || it.t === 'gapWide' || it.t === 'fishbreak' || it.t === 'jam' || it.t === 'goat') continue;
       if (it.t === 'beam' && it.state !== 'fire') continue;
       const r = this.itemRect(it); if (!r || !Phaser.Geom.Intersects.RectangleToRectangle(hb, r)) continue;
       if (it.t === 'crystal') { this.collect(it); this.chaos = Math.min(100, this.chaos + 10); this.events.emit('chaos', this.chaos); }
@@ -322,13 +351,15 @@ export class Run extends Phaser.Scene {
       else if (it.t === 'potion') {
         // +1 heart; at full health it gives a gold bonus heart (max 6). Already on 6: it stays put for later.
         if (this.hearts < this.maxHearts) { this.collect(it); this.hearts++; this.events.emit('hearts', this.hearts); }
-      } else if (it.t === 'mould') {
+      } else if (it.t === 'mould' || it.t === 'moz') {   // mould (World 1) / sticky mozzarella (World 4): slows you; stay in and it costs a heart
         inMould = true; g.slow(0.5);
         this.mouldT = (this.mouldT || 0) + dt;
         if (this.mouldT > MOULD_HURT_AFTER) { this.mouldT = 0; this.takeHit(); }
       } else this.takeHit();
     }
     if (!inMould) this.mouldT = 0;
+    // stuck in mozzarella: strings of cheese stretch from her feet
+    if (this.world === 4) { this.mozStr ||= this.add.image(0, 0, 'q_mozstr').setOrigin(0.5, 1).setDepth(10.5).setScale(0.55); this.mozStr.setVisible(inMould).setPosition(g.x + 10, GROUND_Y + 10).setScale(0.5 + 0.06 * Math.sin(this.time.now / 70), 0.55); }
     for (const c of this.creatures) {
       const r = c.hitbox(); if (!r || !Phaser.Geom.Intersects.RectangleToRectangle(hb, r)) continue;
       if (c.harmless) { c.hurt(99); this.blinded(); }   // butterflies: no damage, but you can't see for a moment
@@ -461,6 +492,11 @@ export class Run extends Phaser.Scene {
       const x = GREMLIN_X + (it.d - this.dist);
       if (x < this.viewW + 200 && x + BRIDGE.w > -200) hole = [x + BRIDGE.path[0] * BRIDGE.s, x + BRIDGE.path[1] * BRIDGE.s];
     }
+    for (const it of this.items) {   // World 4 cheese-river gaps
+      if ((it.t !== 'gap' && it.t !== 'gapWide') || it.done) continue;
+      const x = GREMLIN_X + (it.d - this.dist);
+      if (x < this.viewW + 200 && x + GAP[it.t] > -200) hole = [x, x + GAP[it.t]];
+    }
     if (this.swamp.setHole) this.swamp.setHole(...(hole || [null]));
   }
   /** Fell into a bridge gap: lose a heart, pop back up just before the gap, and Grunt gains a lot of ground. */
@@ -502,10 +538,16 @@ export class Run extends Phaser.Scene {
   drawHazardFx() {
     const G = this.hazG; G.clear(); const t = this.time.now / 1000;
     const S = this.shadowG; S.clear();
+    if (this.world === 4) for (const c of this.creatures) {   // dark contact shadows sit World 4's rats and wheels on the street
+      if (c.dead || !c.shadowW) continue;
+      const lift = Math.min(1, Math.max(0, c.air ?? c.y ?? 0) / 300), w = c.shadowW * (1 - 0.4 * lift);
+      S.fillStyle(0x050805, 0.5 * (1 - 0.5 * lift)).fillEllipse(c.x, GROUND_Y + 8, w, 36);
+    }
     for (const it of this.items) {
       if (!it.obj || it.done) continue;
       const sw = SHADOW_W[it.t] || (it.t === 'drop' && it.landed ? 220 : 0);
       if (sw) { S.fillStyle(0x050805, 0.55).fillEllipse(it.obj.x, GROUND_Y + 8, sw, 38); S.fillStyle(0x050805, 0.35).fillEllipse(it.obj.x, GROUND_Y + 8, sw * 1.15, 54); }
+      if (it.t === 'moz') { S.fillStyle(0x050805, 0.35).fillEllipse(it.obj.x, GROUND_Y + 8, 300, 40); }
       if (it.t === 'sludge' || it.t === 'sludgeWide') {
         const w = (it.t === 'sludgeWide' ? 520 : 200);
         for (let i = 0; i < (it.t === 'sludgeWide' ? 7 : 3); i++) {

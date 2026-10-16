@@ -38,6 +38,18 @@ export const CANYON_FILES = Object.fromEntries(['bg_far', 'bg_mid', 'bg_near', '
 export const SPRINT_FILES = Object.fromEntries(['bg_far', 'bg_mid', 'bg_near', 'ground', 'paw_down', 'paw_hit', 'paw_planted',
   'hairball', 'hairball_roll', 'hairball_burst', 'fishbone', 'dust', 'hair1', 'hair2'].map(f => ['f_' + f, 'assets/sprint/' + f + '.webp']));
 
+// World 4, Queso Jefe (Rina, The Cheddar Cartel): backgrounds, run hazards/enemies, Gingy, and Rina's arena art (loaded when World 4 starts)
+export const QUESO_FILES = Object.fromEntries(['bg_mid', 'bg_near', 'ground',
+  'moz1', 'moz2', 'mozstr', 'crk', 'crk_fly', 'crk_break', 'cliff_l', 'cliff_r', 'isl1', 'isl2', 'isl3', 'river',
+  'rat1', 'rat2', 'rat3', 'rat_leap', 'rat_hit', 'rat_dead', 'arat1', 'arat2', 'arat_crack', 'arat_b1', 'arat_b2', 'arat_dead',
+  'gant1', 'gant2', 'gant_open', 'gant_break', 'wfall', 'splat1', 'splat2', 'crash', 'wheel', 'wheel_smash',
+  'g_front', 'g_side', 'g_wave', 'g_kick', 'g_run', 'g_cheer', 'g_spoon', 'g_cheese', 'g_panic', 'g_fall', 'g_dizzy', 'g_chunk',
+  'gt_hold', 'gt_lift', 'gt_throw', 'chunk1', 'chunk2', 'csplash', 'cdust', 'ring'].map(f => ['q_' + f, 'assets/queso/' + f + '.webp']));
+QUESO_FILES.q_bg_far = 'assets/queso/bg_far.jpg';
+export const RINA_FILES = Object.fromEntries(['r_front', 'r_side', 'r_back', 'r_over', 'r_dance', 'p_smug', 'p_laugh', 'p_flirt', 'p_angry', 'p_shock',
+  'chancla', 'chancla_top', 'gin', 'gin_tilt', 'gin_shatter', 'gin_splash', 'gin_pud1', 'gin_pud2', 'c_load', 'c_fire', 'c_empty', 'c_broken',
+  'pool1', 'pool2', 'pack', 'r_legs', 'arena_near', 'arena_mid'].map(f => ['q_' + f, 'assets/queso/' + f + '.webp']));
+
 export const SWAMP = {
   far: 'bg_far', mid: 'bg_mid', near: 'bg_near', ground: 'swamp_ground',
   groundSurface: 100,   // row in the ground strip the gremlin walks on: the middle of the lit path, so hazards sit IN the way
@@ -149,6 +161,18 @@ export const SPRINT = {
   midTint: 0xffffff, nearTint: 0xffffff, props: [], propScale: () => 1, propTint: () => 0xffffff, propGap: [1000, 100],
   groundBottom: 520,
 };
+// World 4: the cheese village (Cath's four approved images; checkerboard removed, made seamless)
+export const QUESO = {
+  far: 'q_bg_far', mid: 'q_bg_mid', near: 'q_bg_near', ground: 'q_ground',
+  groundSurface: 475,   // the middle of the cobbled street's top
+  midBottom: 684, nearBottom: 670, midS: 0.95, nearS: 1.0, gS: 1.25, midDrop: -130, nearDrop: -14,
+  midTint: 0xa8a2b4, nearTint: 0x9a9088,   // the village is busy and cheese-coloured: set it back so rats, wheels and crackers stand out props: [], propScale: () => 1, propTint: () => 0xffffff, propGap: [1000, 100],
+  groundBottom: 650,
+};
+/** World 4: Queso Jefe's cheese village. */
+export class Queso extends Backdrop {
+  constructor(scene, groundY, opts) { super(scene, groundY, QUESO, { props: false, ...opts }); }
+}
 /** World 3 run 4: Final Sprint. */
 export class Sprint extends Backdrop {
   constructor(scene, groundY, opts) { super(scene, groundY, SPRINT, { props: false, ...opts }); }

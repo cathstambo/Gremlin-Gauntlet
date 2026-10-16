@@ -314,3 +314,78 @@ export const W3_RUN4 = [
   ...row('taco', 18170 + B + 16100, 4, 70),
   { t: 'finish', d: 18170 + B + 18400 },   // the riverside clearing: then the hairball
 ];
+
+// =====================================================================================================
+// World 4, The Cheddar Cartel (Rina, QUESO JEFE). Same layout every attempt.
+//   Creatures: rat (scurries at you: jump / blast; lane 'leap' = crouches then leaps at head height: slide / blast),
+//              arat (armoured rat: charges; jump it, or blast twice — the armour cracks off first; 150),
+//              cracker (flies in at head height: slide / blast), wheel (rolling cheese wheel: jump; magic bounces off).
+//   Hazards:   moz (sticky mozzarella: jump it; stepping in slows you, staying in costs a heart),
+//              gap (cheese-river gap: jump), gapWide (double jump). Falling in costs a heart.
+//   Gingy (GDD): gingy1 lobs cheese then runs off; gingy2 = overhead wheel dropper (red marker, then the wheel rolls at you;
+//              the last drop wrecks the rig and the heap blocks the street: jump it); gingy3 lets the rats loose, then a rat
+//              steals his cheese. Gingy himself can't be hurt.
+//   Platforms: plat 'isl1' | 'isl2' | 'isl3' (floating cheese-rock islands).
+// ---- Part 1: easy to medium; each danger on its own first. Gingy encounters 1 and 2. ----
+export const W4_STAGE1 = [
+  ...row('taco', 1100, 3, 70),
+  { t: 'moz', d: 2200 },
+  ...row('crystal', 2800, 2, 70, 200),
+  { t: 'rat', d: 3700 },
+  ...row('taco', 4300, 3, 70),
+  { t: 'gap', d: 5200 }, { t: 'crystal', d: 5340, h: 300 },
+  { t: 'cracker', d: 6600 },
+  { t: 'plat', size: 'isl1', d: 7700, h: 220 }, ...row('taco', 7590, 3, 300),
+  { t: 'wheel', d: 9000 },
+  ...row('crystal', 9600, 2, 70, 200),
+  { t: 'gingy1', d: 11200 },
+  ...row('taco', 14000, 3, 70, 160),
+  { t: 'potion', d: 15200, h: 70 },
+  { t: 'arat', d: 16200 },
+  ...row('taco', 16900, 3, 70),
+  { t: 'moz', d: 17600 },
+  { t: 'rat', d: 19100, lane: 'leap' },
+  ...row('crystal', 19400, 2, 70, 200),
+  { t: 'gapWide', d: 20400 }, { t: 'margarita', d: 20690, h: 420 },
+  { t: 'cracker', d: 22700 },
+  { t: 'plat', size: 'isl2', d: 23600, h: 230 }, { t: 'margarita', d: 23600, h: 320 },
+  { t: 'wheel', d: 24500 },
+  { t: 'gingy2', d: 25600 },
+  ...row('taco', 30400, 3, 70),
+  { t: 'finish', d: 31600 },
+];
+// ---- Part 2: busier and a touch harder; dangers start to pair up. Gingy encounter 3. ----
+export const W4_STAGE2 = [
+  { t: 'rat', d: 1700 },
+  ...row('taco', 2200, 3, 70),
+  { t: 'cracker', d: 3200 },
+  { t: 'moz', d: 4100 },
+  { t: 'wheel', d: 5500 },
+  ...row('crystal', 6000, 2, 70, 200),
+  { t: 'gap', d: 6800 },
+  { t: 'arat', d: 7600 },
+  { t: 'plat', size: 'isl1', d: 8800, h: 230 }, ...row('taco', 8690, 3, 310), { t: 'margarita', d: 9010, h: 310 },
+  { t: 'rat', d: 9700, lane: 'leap' }, { t: 'rat', d: 10900 },
+  { t: 'potion', d: 11600, h: 70 },
+  { t: 'gingy3', d: 12600 },
+  ...row('crystal', 16600, 2, 70, 200),
+  { t: 'gapWide', d: 17500 }, { t: 'crystal', d: 17790, h: 430 },
+  { t: 'cracker', d: 18800 },
+  { t: 'moz', d: 19700 },
+  { t: 'wheel', d: 21100 },
+  { t: 'plat', size: 'isl3', d: 22100, h: 240 }, { t: 'margarita', d: 22100, h: 330 },
+  { t: 'arat', d: 23000 },
+  ...row('taco', 23700, 3, 70),
+  { t: 'gap', d: 24400 },
+  ...row('crystal', 24900, 3, 70, 180),
+  // the closing stretch: busiest, with about a second between threats (a good place for Gremlin Meltdown)
+  { t: 'rat', d: 26700 },
+  { t: 'cracker', d: 27000 },
+  { t: 'wheel', d: 28000 },
+  { t: 'moz', d: 29000 },
+  { t: 'rat', d: 30400, lane: 'leap' },
+  { t: 'gapWide', d: 31100 },
+  { t: 'arat', d: 33300 },
+  ...row('taco', 34100, 4, 70),
+  { t: 'finish', d: 35300 },
+];

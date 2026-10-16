@@ -1,4 +1,4 @@
-import { DIFF } from '../difficulty.js?v=20261016105852';
+import { DIFF } from '../difficulty.js?v=20261016122744';
 // The playable gremlin: a cut-out rig built from the approved artwork.
 // Each body part is a Phaser Image hung on a chain of containers (one per joint); every frame the
 // joints are rotated from the current pose. Nothing is redrawn, so the character always matches
@@ -6,8 +6,8 @@ import { DIFF } from '../difficulty.js?v=20261016105852';
 import {
   TAU, clamp, ease, seg, lerpPose, runPose, crouchPose, risePose, fallPose, tuckPose, slidePose, hurtPose,
   dieAirPose, deadPose, winPose, idlePose, meltPose, meltLift, MELT_T, MELT_BLAST_AT,
-} from './poses.js?v=20261016105852';
-import { Effects } from './Effects.js?v=20261016105852';
+} from './poses.js?v=20261016122744';
+import { Effects } from './Effects.js?v=20261016122744';
 
 // ---- tuning: placeholders until playtesting (art units; the gremlin is ~800 units tall) ----
 export const TUNING = {
@@ -160,6 +160,8 @@ export class Gremlin extends Phaser.Events.EventEmitter {
   floorUnder(x) { return this.floorAt ? this.floorAt(x) / this.k : 0; }
   get trapped() { return this.S.trapT > 0; }
   /** Stuck in mould: moves at half speed for a moment. */
+  /** World 4 gin puddles: for a moment the gremlin skids (keeps sliding the way she was going; hard to stop or turn). */
+  slip(t) { this.S.slipT = Math.max(this.S.slipT || 0, t); }
   slow(t, tint = true) { this.S.slowT = Math.max(this.S.slowT, t); this.S.slowTint = tint; }   // tint: the green mould look (off for a stumble)
   get slowed() { return this.S.slowT > 0; }
   /** Caught in a mould net: frozen in place; every jump press shortens it. */
@@ -296,7 +298,11 @@ export class Gremlin extends Phaser.Events.EventEmitter {
       let target = canMove ? S.moveDir * 620 * (S.slowT > 0 ? 0.5 : 1) : 0;
       if (canMove && S.dashT > 0) { S.dashT -= dt; target = S.dashDir * 1500; }
       if (canMove && S.st === 'slide') target = (S.moveDir || this.face) * 760;   // slides carry you the way you're steering (and under a boss's legs)   // slides carry you forward (and under a boss's legs)
-      S.vx += (target - S.vx) * Math.min(1, dt * (S.dashT > 0 ? 30 : 14));
+      if (S.slipT > 0) {   // skidding on gin: barely any grip, and she keeps sliding
+        S.slipT -= dt;
+        if (Math.abs(S.vx) < 380) S.vx = (S.vx !== 0 ? Math.sign(S.vx) : (this.face || 1)) * 380;
+        S.vx += (target - S.vx) * Math.min(1, dt * 1.2);
+      } else S.vx += (target - S.vx) * Math.min(1, dt * (S.dashT > 0 ? 30 : 14));
       this.x = clamp(this.x + S.vx * dt, this.arena.minX, this.arena.maxX);
       if (this.x === this.arena.minX || this.x === this.arena.maxX) S.vx = 0;
       // turn to face where you're going; when standing still, face the boss
