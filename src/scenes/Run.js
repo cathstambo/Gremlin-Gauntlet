@@ -1,16 +1,16 @@
 // Running stages for every world (1 = easy to medium, 2 = busier and harder), then on to that world's boss.
-import { DIFF } from '../difficulty.js?v=20261016133224';
+import { DIFF } from '../difficulty.js?v=20261016134000';
 // Hearts, Chaos Meter and score carry from stage 1 to stage 2 to the boss; part 2 is a checkpoint.
-import { Gremlin } from '../gremlin/Gremlin.js?v=20261016133224';
-import { WORLDS, worldNo, loadMeadow, loadWild, loadQueso } from '../worlds.js?v=20261016133224';
-import { Chase, CHASE } from './Chase.js?v=20261016133224';
-import { Goat } from '../world/Goat.js?v=20261016133224';
-import { Moose, Bear, Salmon, ChargeBear } from '../creatures/River.js?v=20261016133224';
-import { Wolf, Eagle, Fox } from '../creatures/Wild.js?v=20261016133224';
-import { Music, Sfx } from '../audio/Music.js?v=20261016133224';
-import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js?v=20261016133224';
-import { Bunny, Kitten, Flower, Swarm } from '../creatures/Meadow.js?v=20261016133224';
-import { Rat, ArmourRat, Cracker, Wheel, GingyThrow, GingyDropper, GingyRats } from '../creatures/Queso.js?v=20261016133224';
+import { Gremlin } from '../gremlin/Gremlin.js?v=20261016134000';
+import { WORLDS, worldNo, loadMeadow, loadWild, loadQueso } from '../worlds.js?v=20261016134000';
+import { Chase, CHASE } from './Chase.js?v=20261016134000';
+import { Goat } from '../world/Goat.js?v=20261016134000';
+import { Moose, Bear, Salmon, ChargeBear } from '../creatures/River.js?v=20261016134000';
+import { Wolf, Eagle, Fox } from '../creatures/Wild.js?v=20261016134000';
+import { Music, Sfx } from '../audio/Music.js?v=20261016134000';
+import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js?v=20261016134000';
+import { Bunny, Kitten, Flower, Swarm } from '../creatures/Meadow.js?v=20261016134000';
+import { Rat, ArmourRat, Cracker, Wheel, GingyThrow, GingyDropper, GingyRats } from '../creatures/Queso.js?v=20261016134000';
 
 const CREATURES = { frog: Frog, gator: Gator, bat: Bat, spider: Spider, bunny: Bunny, kitten: Kitten, flower: Flower, swarm: Swarm, wolf: Wolf, eagle: Eagle, fox: Fox, moose: Moose, bear: Bear, salmon: Salmon, cbear: ChargeBear, hawk: Eagle,
   rat: Rat, arat: ArmourRat, cracker: Cracker, wheel: Wheel, gingy1: GingyThrow, gingy2: GingyDropper, gingy3: GingyRats };

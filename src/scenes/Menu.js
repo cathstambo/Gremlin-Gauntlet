@@ -1,9 +1,9 @@
 // Start menu (Cath, 16 Oct 2026): GREMLIN GAUNTLET, EASY / NORMAL / HARD, the five worlds as cards in two rows
 // (title, thumbnail, best score, FULL EVENT / BOSS), and a ? button for How to Play. No sound on this screen.
-// Worlds 4 and 5 show "Coming soon". All built worlds are open from the start. Background: Cath's art to come.
-import { Music } from '../audio/Music.js?v=20261016133224';
-import { WORLDS } from '../worlds.js?v=20261016133224';
-import { DIFF, LEVELS, getBest } from '../difficulty.js?v=20261016133224';
+// World 5 shows "Coming soon". All built worlds are open from the start. Background: Cath's art to come.
+import { Music } from '../audio/Music.js?v=20261016134000';
+import { WORLDS } from '../worlds.js?v=20261016134000';
+import { DIFF, LEVELS, getBest } from '../difficulty.js?v=20261016134000';
 
 const FONT = 'Lilita One, Arial Rounded MT Bold, Trebuchet MS, sans-serif';
 const BODY = 'Atkinson Hyperlegible, system-ui, sans-serif';
@@ -13,8 +13,7 @@ const CARDS = [
   { n: 1, title: 'THE FESTERING SWAMP', boss: 'EDDIE · THE MOULD KING' },
   { n: 2, title: 'MEADOWS OF MALICIOUS HAPPINESS', boss: 'CATALYTIK · THE EVIL OVERLORD' },
   { n: 3, title: 'THE ALASKAN WILDERNESS', boss: 'GRUNT · WRATH OF THE HAIRBALL' },
-  // World 4 is in testing: its card only opens on the test address (…/#test4) until Cath approves it
-  { n: 4, title: 'THE CHEDDAR CARTEL', boss: 'RINA · QUESO JEFE', soon: location.hash !== '#test4' },
+  { n: 4, title: 'THE CHEDDAR CARTEL', boss: 'RINA · QUESO JEFE' },   // approved by Cath, 16 Oct 2026
   { n: 5, title: 'DUNGEON OF QUESTIONABLE PLEASURES', boss: 'SYLVANAS', soon: true },
 ];
 const CW = 560, CH = 392, TH = 184;   // card size, thumbnail height
