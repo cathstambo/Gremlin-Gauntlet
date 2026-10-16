@@ -50,6 +50,20 @@ export const RINA_FILES = Object.fromEntries(['r_front', 'r_side', 'r_back', 'r_
   'chancla', 'chancla_top', 'gin', 'gin_tilt', 'gin_shatter', 'gin_splash', 'gin_pud1', 'gin_pud2', 'c_load', 'c_fire', 'c_empty', 'c_broken',
   'pool1', 'pool2', 'pack', 'r_legs', 'arena_near', 'arena_mid'].map(f => ['q_' + f, 'assets/queso/' + f + '.webp']));
 
+// World 5, Dungeon of Questionable Pleasures (Sylvanas, LASER TITS): run art, and the boss arena art (loaded when World 5 starts)
+export const DUNGEON_FILES = Object.fromEntries(['bg_mid', 'bg_near', 'ground',
+  'maid1', 'maid2', 'maid3', 'maid_throw', 'maid_throw2', 'maid_dead', 'hound1', 'hound2', 'hound_leap', 'hound_crouch', 'hound_dead',
+  'garg1', 'garg2', 'garg_swoop', 'garg_dead', 'knight1', 'knight_wind', 'knight_swing', 'knight_paddle',
+  'mimic_shut', 'mimic_open', 'mimic_tongue', 'mimic_lash', 'mimic_dead', 'paddle',
+  'flogger', 'cross_up', 'cross_tip', 'cross_down', 'plate', 'spikes', 'flame0', 'flame1', 'flame2', 'flame3', 'flame4', 'flame5', 'bench',
+  'reception', 'knitter', 'reader', 'polisher', 'sign_tacos', 'sign_refunds', 'sign_fivestar', 'sign_dungeon', 'sign_ways', 'candles', 'gargoyle_torch',
+  'beam', 'beam2', 'spark', 'ring'].map(f => ['d_' + f, 'assets/dungeon/' + f + '.webp']));
+DUNGEON_FILES.d_bg_far = 'assets/dungeon/bg_far.jpg';
+export const SYLV_FILES = Object.fromEntries(['s_front', 's_reach', 's_battle', 's_back', 's_side', 's_walk', 's_lunge', 's_side2', 's_walk2', 's_throw', 's_hurt',
+  'f_smug', 'f_angry', 'f_shock', 'f_hurt', 'l_charge', 'l_recover', 'l_charge2', 'bench_l', 'bench_m', 'bench_s', 'floor',
+  'nov_pink_s', 'nov_cyan_s', 'nov_purple_s', 'nov_lime_s', 'nov_pink_l', 'nov_cyan_l', 'nov_purple_l', 'nov_lime_l'].map(f => ['d_' + f, 'assets/dungeon/' + f + '.webp']));
+SYLV_FILES.d_arena_bg = 'assets/dungeon/arena_bg.jpg';
+
 export const SWAMP = {
   far: 'bg_far', mid: 'bg_mid', near: 'bg_near', ground: 'swamp_ground',
   groundSurface: 100,   // row in the ground strip the gremlin walks on: the middle of the lit path, so hazards sit IN the way
@@ -102,7 +116,7 @@ export class Backdrop {
     this.ground2 = scene.add.tileSprite(0, this.ground.y, 10, this.ground.height, cfg.ground).setOrigin(0, 0).setTileScale(gS).setDepth(4).setVisible(false);
     this.viewW = SW / Z; this.hole = null;
     // zoomed out, the view reaches below the bottom of the path art: dark earth underneath
-    if (view) this.under = scene.add.rectangle(0, groundY - cfg.groundSurface * gS + (cfg.groundBottom ?? 448) * gS - 2, SW / Z, 400, 0x1a1208).setOrigin(0, 0).setDepth(3.95);
+    if (view || cfg.under) this.under = scene.add.rectangle(0, groundY - cfg.groundSurface * gS + (cfg.groundBottom ?? 448) * gS - 2, SW / Z, 400, cfg.under || 0x1a1208).setOrigin(0, 0).setDepth(3.95);
     // decorations: a fixed, repeating sequence so every run looks the same (fair-comparison rule)
     this.props = [];
     if (props) {
@@ -172,6 +186,18 @@ export const QUESO = {
 /** World 4: Queso Jefe's cheese village. */
 export class Queso extends Backdrop {
   constructor(scene, groundY, opts) { super(scene, groundY, QUESO, { props: false, ...opts }); }
+}
+// World 5: the dungeon (Cath's four approved images; checkerboard removed, made seamless)
+export const DUNGEON = {
+  far: 'd_bg_far', mid: 'd_bg_mid', near: 'd_bg_near', ground: 'd_ground',
+  groundSurface: 350,   // the middle of the flagstone walkway's top
+  midBottom: 700, nearBottom: 505, midS: 1.0, nearS: 1.4, gS: 1.35, midDrop: -120, nearDrop: -30,
+  midTint: 0x7c7488, nearTint: 0x8c8088, under: 0x15101a,   // the dungeon is dark and busy: set it well back so skeletons and traps stand out props: [], propScale: () => 1, propTint: () => 0xffffff, propGap: [1000, 100],
+  groundBottom: 495,
+};
+/** World 5: Dungeon of Questionable Pleasures. */
+export class Dungeon extends Backdrop {
+  constructor(scene, groundY, opts) { super(scene, groundY, DUNGEON, { props: false, ...opts }); }
 }
 /** World 3 run 4: Final Sprint. */
 export class Sprint extends Backdrop {

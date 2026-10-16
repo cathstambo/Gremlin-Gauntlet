@@ -389,3 +389,96 @@ export const W4_STAGE2 = [
   ...row('taco', 34100, 4, 70),
   { t: 'finish', d: 35300 },
 ];
+
+// =====================================================================================================
+// World 5, Dungeon of Questionable Pleasures (Sylvanas, LASER TITS). Same layout every attempt.
+// Four areas (GDD): part 1 = The Reception, then The Equipment Room; part 2 = The Pleasure Chambers, then The Royal Dungeon.
+//   Creatures: maid (skeleton maid / Boner Brigade: marches at you and throws a bone that bounces along the floor; jump / blast),
+//              hound (fast; crouches, then leaps: jump / blast), garg (gargoyle / Restless Spirit: swoops to head height: slide / blast),
+//              knight (Disciplinarian: magic bounces off; whip crack at head height where the red band shows: slide),
+//              mimic (chest on the path; lashes its tongue along the floor: jump; blast ×2, 150),
+//              paddle (possessed paddle: lane 'fly' = head height: slide; 'bounce' = along the floor: jump; blast ×1).
+//   Hazards:   flogger (swings across head height: slide), cross (topples across the path onto a red marker, then lies there: jump),
+//              bench (padded bench: jump), spikes (plate rattles, spikes pop up: jump), flames (purple flame vent: jump).
+//   Set pieces: area (area name), zap (Royal Dungeon: Sylvanas's laser from up in the castle zaps one of her own guards).
+//   Scenery (deco): no collision. up = hung higher on the wall.
+//   Platforms: plat 'bench' | 'benchS' (floating royal-purple benches).
+const deco = (d, key, s = 1, up = 0) => ({ t: 'deco', d, key, s, up });
+// ---- Part 1: The Reception, then The Equipment Room ----
+export const W5_STAGE1 = [
+  { t: 'area', d: 300, name: 'THE RECEPTION' },
+  deco(600, 'd_sign_dungeon', 1.2, 120), deco(1500, 'd_reception', 1.15), deco(1950, 'd_sign_refunds', 1.0, 330),
+  ...row('taco', 1200, 3, 70),
+  { t: 'maid', d: 2700, lane: 'nothrow' },
+  ...row('crystal', 3300, 2, 70, 200),
+  { t: 'bench', d: 4200 },
+  deco(4600, 'd_candles', 1.1),
+  { t: 'paddle', d: 5400, lane: 'fly' },
+  ...row('taco', 6000, 3, 70),
+  { t: 'maid', d: 7000 },
+  { t: 'plat', size: 'bench', d: 8200, h: 220 }, ...row('taco', 8080, 3, 300),
+  { t: 'paddle', d: 9500, lane: 'bounce' },
+  ...row('crystal', 10100, 2, 70, 200),
+  { t: 'potion', d: 10900, h: 70 },
+  { t: 'area', d: 12000, name: 'THE EQUIPMENT ROOM' },
+  deco(12400, 'd_polisher', 1.1), deco(13100, 'd_sign_tacos', 0.95, 330),
+  { t: 'knight', d: 13800 },
+  ...row('taco', 14600, 3, 70),
+  { t: 'flogger', d: 15700 },
+  deco(16300, 'd_reader', 1.0),
+  { t: 'cross', d: 17200 },
+  ...row('crystal', 17800, 2, 70, 200),
+  { t: 'maid', d: 18800 },
+  { t: 'bench', d: 20000 },
+  { t: 'plat', size: 'benchS', d: 21000, h: 230 }, { t: 'margarita', d: 21000, h: 320 },
+  { t: 'knight', d: 22300 },
+  { t: 'flogger', d: 23800 },
+  ...row('taco', 24400, 3, 70),
+  { t: 'cross', d: 25400 },
+  { t: 'paddle', d: 26600, lane: 'fly' },
+  deco(27200, 'd_candles', 1.1),
+  { t: 'maid', d: 28000 },
+  ...row('taco', 28700, 3, 70),
+  { t: 'finish', d: 30000 },
+];
+// ---- Part 2: The Pleasure Chambers, then The Royal Dungeon ----
+export const W5_STAGE2 = [
+  { t: 'area', d: 300, name: 'THE PLEASURE CHAMBERS' },
+  deco(700, 'd_sign_ways', 1.1, 60), deco(1700, 'd_knitter', 0.95),
+  { t: 'garg', d: 2400 },
+  ...row('taco', 3000, 3, 70),
+  { t: 'flames', d: 3900 },
+  { t: 'mimic', d: 5000 },
+  ...row('crystal', 5700, 2, 70, 200),
+  { t: 'hound', d: 6700 },
+  deco(7200, 'd_sign_fivestar', 0.9, 330),
+  { t: 'spikes', d: 7900 },
+  { t: 'plat', size: 'bench', d: 9000, h: 230 }, ...row('taco', 8880, 3, 310), { t: 'margarita', d: 9200, h: 310 },
+  { t: 'paddle', d: 10200, lane: 'bounce' },
+  { t: 'garg', d: 11300 },
+  { t: 'potion', d: 12000, h: 70 },
+  { t: 'flogger', d: 12900 },
+  { t: 'mimic', d: 14000 },
+  ...row('crystal', 14700, 2, 70, 200),
+  { t: 'area', d: 15800, name: 'THE ROYAL DUNGEON' },
+  deco(16100, 'd_gargoyle_torch', 1.2), deco(17400, 'd_gargoyle_torch', 1.2),
+  { t: 'maid', d: 16900 }, { t: 'zap', d: 16300 },
+  { t: 'knight', d: 18200 },
+  ...row('taco', 19000, 3, 70),
+  { t: 'hound', d: 20000 },
+  { t: 'cross', d: 21200 },
+  { t: 'garg', d: 22300 },
+  { t: 'maid', d: 23300 }, { t: 'zap', d: 22900 },
+  { t: 'plat', size: 'benchS', d: 24300, h: 240 }, { t: 'margarita', d: 24300, h: 330 },
+  ...row('crystal', 25100, 3, 70, 180),
+  // the closing stretch: busiest, about a second between threats (a good place for Gremlin Meltdown)
+  { t: 'spikes', d: 26200 },
+  { t: 'paddle', d: 27200, lane: 'fly' },
+  { t: 'flames', d: 28200 },
+  { t: 'knight', d: 29300 },
+  { t: 'mimic', d: 30700 },
+  { t: 'hound', d: 31900 },
+  deco(32600, 'd_gargoyle_torch', 1.2),
+  ...row('taco', 33000, 4, 70),
+  { t: 'finish', d: 34200 },
+];

@@ -1,8 +1,8 @@
 // The worlds, in the locked GDD order. Each world = two running stages, then its boss.
-import { STAGE1, STAGE2, W2_STAGE1, W2_STAGE2, W3_RUN1, W3_RUN2, W3_RUN3, W3_RUN4, W4_STAGE1, W4_STAGE2 } from './course.js?v=20261016134000';
-import { Swamp, Meadow, Wild, River, Canyon, Sprint, Queso, MEADOW_FILES, WILD_FILES, RIVER_FILES, CANYON_FILES, SPRINT_FILES, QUESO_FILES, RINA_FILES } from './world/Swamp.js?v=20261016134000';
-import { GRUNT_PARTS } from './grunt/Grunt.js?v=20261016134000';
-import { MEADOW_CREATURE_PARTS } from './creatures/Creatures.js?v=20261016134000';
+import { STAGE1, STAGE2, W2_STAGE1, W2_STAGE2, W3_RUN1, W3_RUN2, W3_RUN3, W3_RUN4, W4_STAGE1, W4_STAGE2, W5_STAGE1, W5_STAGE2 } from './course.js?v=20261016162515';
+import { Swamp, Meadow, Wild, River, Canyon, Sprint, Queso, Dungeon, MEADOW_FILES, WILD_FILES, RIVER_FILES, CANYON_FILES, SPRINT_FILES, QUESO_FILES, RINA_FILES, DUNGEON_FILES, SYLV_FILES } from './world/Swamp.js?v=20261016162515';
+import { GRUNT_PARTS } from './grunt/Grunt.js?v=20261016162515';
+import { MEADOW_CREATURE_PARTS } from './creatures/Creatures.js?v=20261016162515';
 
 export const WORLDS = {
   1: {
@@ -33,8 +33,14 @@ export const WORLDS = {
     plats: { isl1: { key: 'q_isl1', size: 'isl1', s: 1.0 }, isl2: { key: 'q_isl2', size: 'isl2', s: 1.0 }, isl3: { key: 'q_isl3', size: 'isl3', s: 1.2 } },
     sizes: () => ({ isl1: { w: 291, top: 14 }, isl2: { w: 236, top: 10 }, isl3: { w: 186, top: 10 } }),
   },
+  5: {
+    place: 'Dungeon of Questionable Pleasures', stageName: 'THE DUNGEON', boss: 'Boss5', bossTitle: 'LASER TITS', bossName: 'SYLVANAS',
+    backdrop: Dungeon, stages: [W5_STAGE1, W5_STAGE2],
+    plats: { bench: { key: 'd_bench_m', size: 'bench', s: 0.62 }, benchS: { key: 'd_bench_s', size: 'benchS', s: 1.0 } },
+    sizes: () => ({ bench: { w: 450, top: 26 }, benchS: { w: 202, top: 26 } }),
+  },
 };
-export const LAST_WORLD = 4;
+export const LAST_WORLD = 5;
 export const worldNo = registry => registry.get('world') || 1;
 
 /** Queue World 2's art on a scene's loader (only what isn't loaded yet). Call from preload(). */
@@ -59,5 +65,11 @@ export function loadWild(scene) {
 /** Queue World 4's art (only what isn't loaded yet). boss = also Rina's arena art. */
 export function loadQueso(scene, boss = false) {
   const files = boss ? { ...QUESO_FILES, ...RINA_FILES } : QUESO_FILES;
+  for (const [k, f] of Object.entries(files)) if (!scene.textures.exists(k)) scene.load.image(k, f);
+}
+
+/** Queue World 5's art (only what isn't loaded yet). boss = also Sylvanas and her arena. */
+export function loadDungeon(scene, boss = false) {
+  const files = boss ? { ...DUNGEON_FILES, ...SYLV_FILES } : DUNGEON_FILES;
   for (const [k, f] of Object.entries(files)) if (!scene.textures.exists(k)) scene.load.image(k, f);
 }

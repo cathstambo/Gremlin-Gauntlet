@@ -1,19 +1,21 @@
 // Running stages for every world (1 = easy to medium, 2 = busier and harder), then on to that world's boss.
-import { DIFF } from '../difficulty.js?v=20261016134000';
+import { DIFF } from '../difficulty.js?v=20261016162515';
 // Hearts, Chaos Meter and score carry from stage 1 to stage 2 to the boss; part 2 is a checkpoint.
-import { Gremlin } from '../gremlin/Gremlin.js?v=20261016134000';
-import { WORLDS, worldNo, loadMeadow, loadWild, loadQueso } from '../worlds.js?v=20261016134000';
-import { Chase, CHASE } from './Chase.js?v=20261016134000';
-import { Goat } from '../world/Goat.js?v=20261016134000';
-import { Moose, Bear, Salmon, ChargeBear } from '../creatures/River.js?v=20261016134000';
-import { Wolf, Eagle, Fox } from '../creatures/Wild.js?v=20261016134000';
-import { Music, Sfx } from '../audio/Music.js?v=20261016134000';
-import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js?v=20261016134000';
-import { Bunny, Kitten, Flower, Swarm } from '../creatures/Meadow.js?v=20261016134000';
-import { Rat, ArmourRat, Cracker, Wheel, GingyThrow, GingyDropper, GingyRats } from '../creatures/Queso.js?v=20261016134000';
+import { Gremlin } from '../gremlin/Gremlin.js?v=20261016162515';
+import { WORLDS, worldNo, loadMeadow, loadWild, loadQueso, loadDungeon } from '../worlds.js?v=20261016162515';
+import { Chase, CHASE } from './Chase.js?v=20261016162515';
+import { Goat } from '../world/Goat.js?v=20261016162515';
+import { Moose, Bear, Salmon, ChargeBear } from '../creatures/River.js?v=20261016162515';
+import { Wolf, Eagle, Fox } from '../creatures/Wild.js?v=20261016162515';
+import { Music, Sfx } from '../audio/Music.js?v=20261016162515';
+import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js?v=20261016162515';
+import { Bunny, Kitten, Flower, Swarm } from '../creatures/Meadow.js?v=20261016162515';
+import { Maid, Hound, Gargoyle, Knight, Mimic, Paddle } from '../creatures/Dungeon.js?v=20261016162515';
+import { Rat, ArmourRat, Cracker, Wheel, GingyThrow, GingyDropper, GingyRats } from '../creatures/Queso.js?v=20261016162515';
 
 const CREATURES = { frog: Frog, gator: Gator, bat: Bat, spider: Spider, bunny: Bunny, kitten: Kitten, flower: Flower, swarm: Swarm, wolf: Wolf, eagle: Eagle, fox: Fox, moose: Moose, bear: Bear, salmon: Salmon, cbear: ChargeBear, hawk: Eagle,
-  rat: Rat, arat: ArmourRat, cracker: Cracker, wheel: Wheel, gingy1: GingyThrow, gingy2: GingyDropper, gingy3: GingyRats };
+  rat: Rat, arat: ArmourRat, cracker: Cracker, wheel: Wheel, gingy1: GingyThrow, gingy2: GingyDropper, gingy3: GingyRats,
+  maid: Maid, hound: Hound, garg: Gargoyle, knight: Knight, mimic: Mimic, paddle: Paddle };
 // rainbow beam (World 2): turret size, how far it sinks into the path, and the beam's band (px above the ground)
 const BEAM = { low: { s: 0.5, sink: 95, y0: 112, y1: 38 }, high: { s: 0.72, sink: 4, y0: 262, y1: 172 }, warn: 0.95, fire: 0.5, startGap: 1320 };
 export const GROUND_Y = 870, GREMLIN_H = 330;
@@ -57,6 +59,7 @@ const LOOK = {
   roots: { key: 'haz_roots', s: 0.92, sink: 22 },
   mould: { key: 'haz_mould', s: 0.92, sink: 22 },
   moz: { key: 'q_moz1', s: 1.15, sink: 30 },
+  bench: { key: 'd_bench', s: 1.15, sink: 14 },
   sludge: { key: 'haz_sludge', s: 0.92, sink: 34 },
   sludgeWide: { key: 'haz_sludge', s: 2.0, sink: 74 },
   vines: { key: 'haz_vines_hang', s: 1.3 },
@@ -69,13 +72,13 @@ const LOOK = {
 const BOX = {
   root: { w: 230, h: 85 }, boulder: { w: 170, h: 110 },
   rockS: { w: 150, h: 70 }, rockM: { w: 220, h: 85 }, rockL: { w: 230, h: 105 },
-  roots: { w: 170, h: 80 }, mould: { w: 220, h: 60 }, moz: { w: 300, h: 50 }, sludge: { w: 220, h: 40 }, sludgeWide: { w: 600, h: 40 },
+  roots: { w: 170, h: 80 }, mould: { w: 220, h: 60 }, moz: { w: 300, h: 50 }, bench: { w: 230, h: 140 }, sludge: { w: 220, h: 40 }, sludgeWide: { w: 600, h: 40 },
   taco: { w: 90, h: 80 }, margarita: { w: 80, h: 90 }, crystal: { w: 70, h: 90 }, potion: { w: 80, h: 90 },
 };
 const rnd = (a, b) => a + Math.random() * (b - a);
 const PICKUPS = new Set(['taco', 'margarita', 'crystal', 'potion']);
 const HAZARDS = new Set(['roots', 'vines', 'mould', 'sludge', 'sludgeWide']);
-const SHADOW_W = { rockS: 210, rockM: 280, rockL: 290, root: 330, boulder: 250, roots: 300, mould: 300, sludge: 300, sludgeWide: 680 };
+const SHADOW_W = { bench: 300,  rockS: 210, rockM: 280, rockL: 290, root: 330, boulder: 250, roots: 300, mould: 300, sludge: 300, sludgeWide: 680 };
 export const MAX_HEARTS = 6;   // 3 normal + up to 3 gold bonus hearts from potions drunk at full health
 
 export class Run extends Phaser.Scene {
@@ -86,6 +89,11 @@ export class Run extends Phaser.Scene {
       const t = this.add.text(this.scale.width / 2, this.scale.height / 2, 'Something big is in the woods…', { fontFamily: 'Lilita One, Trebuchet MS, sans-serif', fontSize: 44, color: '#ece6f5' }).setOrigin(0.5);
       this.load.once('complete', () => t.destroy());
       loadWild(this);
+    }
+    if (worldNo(this.registry) === 5) {
+      const t = this.add.text(this.scale.width / 2, this.scale.height / 2, 'Polishing the paddles…', { fontFamily: 'Lilita One, Trebuchet MS, sans-serif', fontSize: 44, color: '#ece6f5' }).setOrigin(0.5);
+      this.load.once('complete', () => t.destroy());
+      loadDungeon(this);
     }
     if (worldNo(this.registry) === 4) {
       const t = this.add.text(this.scale.width / 2, this.scale.height / 2, 'Melting the cheese…', { fontFamily: 'Lilita One, Trebuchet MS, sans-serif', fontSize: 44, color: '#ece6f5' }).setOrigin(0.5);
@@ -216,6 +224,7 @@ export class Run extends Phaser.Scene {
     this.creatures = this.creatures.filter(c => !c.gone);
     this.updateOrbs(dt);
     if (this.chase) { this.chase.update(dt); this.updateArrows(dt); this.updateDrops(dt); this.checkCleared(); }
+    if (this.world === 5) this.updateDungeon(dt);
     this.drawHazardFx();
     this.updateBeams(dt);
     this.updateBlind(dt);
@@ -245,12 +254,22 @@ export class Run extends Phaser.Scene {
   }
   spawnItem(it, x) {
     if (it.t === 'deco') {   // scenery beside the path (World 3): behind the gremlin, never in the way
-      it.obj = this.add.image(x, GROUND_Y - 28, it.key).setOrigin(0.5, 1).setScale(it.s * 0.8).setDepth(3.9); return;   // just behind the path's front edge
+      it.obj = this.add.image(x, GROUND_Y - 28 - (it.up || 0), it.key).setOrigin(0.5, 1).setScale(it.s * 0.8).setDepth(it.up ? 3.8 : 3.9); return;   // just behind the path's front edge
     }
     if (it.t === 'bridge') {   // a bridge crossing: the drawing's own banks replace the path (see bridgeHole); its deck is the walking line
       it.obj = this.add.image(x, GROUND_Y - BRIDGE.deck * BRIDGE.s, BRIDGE[it.kind].key).setOrigin(0, 0).setScale(BRIDGE.s).setDepth(4.5); return;
     }
-    if (it.t === 'fishbreak' || it.t === 'jam') { it.obj = this.add.zone(x, 0, 1, 1); return; }
+    if (it.t === 'fishbreak' || it.t === 'jam' || it.t === 'zap' || it.t === 'area') { it.obj = this.add.zone(x, 0, 1, 1); return; }
+    if (it.t === 'flogger') {   // World 5: a flogger hanging on a chain from the ceiling, swinging across head height: slide
+      it.obj = this.add.container(x, GROUND_Y - 470).setDepth(9.5);
+      const ch = this.add.graphics(); ch.lineStyle(7, 0x2a2228, 1); for (let y = -900; y < 0; y += 22) ch.strokeEllipse(0, y + 11, 12, 20);
+      it.obj.add([ch, this.add.image(0, -10, 'd_flogger').setOrigin(0.5, 0).setScale(1.9)]); return;
+    }
+    if (it.t === 'cross') {   // World 5: a St Andrew's cross beside the path that topples across it (then lies there: jump)
+      it.obj = this.add.image(x, GROUND_Y - 10, 'd_cross_up').setOrigin(0.5, 1).setScale(1.55).setDepth(3.9); it.st = 'stand'; it.stT = 0; return;
+    }
+    if (it.t === 'spikes') { it.obj = this.add.image(x, GROUND_Y + 14, 'd_plate').setOrigin(0.5, 1).setScale(1.5).setDepth(5); it.st = 'down'; it.stT = 0; return; }
+    if (it.t === 'flames') { it.obj = this.add.image(x, GROUND_Y + 16, 'd_flame3').setOrigin(0.5, 1).setScale(1.55).setDepth(5); return; }
     if (it.t === 'gap' || it.t === 'gapWide') {   // a cheese-river gap: cliff edges either side, molten cheese far below
       const w = GAP[it.t], s = GAP.s;
       it.back = this.add.container(x, 0).setDepth(4.3);
@@ -334,6 +353,11 @@ export class Run extends Phaser.Scene {
     if (it.t === 'vines') return new Phaser.Geom.Rectangle(o.x - 150, 0, 300, GROUND_Y - 150);
     if (it.t === 'trunk') return new Phaser.Geom.Rectangle(o.x - 200, GROUND_Y - 440, 400, 315);   // the log itself; the gap under it (125 px) is clear for a slide
     if (it.t === 'arrow') return it.landed ? new Phaser.Geom.Rectangle(o.x - 30, GROUND_Y - 120, 60, 120) : null;
+    if (it.t === 'flogger') { const tx = it.obj.x + Math.sin(it.obj.rotation) * -360; return new Phaser.Geom.Rectangle(tx - 70, GROUND_Y - 300, 140, 140); }
+    if (it.t === 'cross') return it.st === 'down' ? new Phaser.Geom.Rectangle(it.obj.x - 140, GROUND_Y - 105, 280, 105) : null;
+    if (it.t === 'spikes') return it.st === 'up' ? new Phaser.Geom.Rectangle(it.obj.x - 85, GROUND_Y - 70, 170, 70) : null;
+    if (it.t === 'flames') return new Phaser.Geom.Rectangle(it.obj.x - 45, GROUND_Y - 150, 90, 150);
+    if (it.t === 'zap' || it.t === 'area') return null;
     if (it.t === 'deco' || it.t === 'bridge' || it.t === 'gap' || it.t === 'gapWide' || it.t === 'fishbreak' || it.t === 'jam' || it.t === 'goat') return null;
     if (it.t === 'drop') { if (!it.landed) return null; const b = DROP[it.k].box; return new Phaser.Geom.Rectangle(o.x - b.w / 2, GROUND_Y - b.h, b.w, b.h); }
     if (it.t === 'shelf') { const S = SHELF[it.n]; return new Phaser.Geom.Rectangle(o.x + 30, GROUND_Y - SHELF.U - 200, S.w * (S.s || SHELF.s) * 0.64, 200 + 20); }   // the slab, up to where the support drops behind the trail
@@ -366,7 +390,7 @@ export class Run extends Phaser.Scene {
     for (const c of this.creatures) {
       const r = c.hitbox(); if (!r || !Phaser.Geom.Intersects.RectangleToRectangle(hb, r)) continue;
       if (c.harmless) { c.hurt(99); this.blinded(); }   // butterflies: no damage, but you can't see for a moment
-      else this.takeHit();
+      else { if (!this.g.invulnerable) c.onHitGremlin?.(); this.takeHit(); }
     }
   }
   // ---------- World 3 ending (GDD, locked: Hairball Apocalypse; Cath 15 Oct: no floating in the river — the hairball knocks
@@ -537,11 +561,66 @@ export class Run extends Phaser.Scene {
     this.time.delayedCall(250, () => { this.g.win(); this.events.emit('finished', { stage: this.stage, score: this.score }); });
   }
 
+  /** World 5 hazards and set pieces: swinging floggers, toppling crosses, spike plates, flame vents, Sylvanas's background
+   *  laser (Royal Dungeon: she zaps her own guards), and the area names as you enter each part of the dungeon. */
+  updateDungeon(dt) {
+    const t = this.time.now / 1000, G = this.dungG || (this.dungG = this.add.graphics().setDepth(4.8)); G.clear();
+    for (const it of this.items) {
+      if (!it.obj || it.done) continue;
+      const x = it.obj.x, gap = x - this.g.x;
+      if (it.t === 'flogger') it.obj.rotation = 0.42 * Math.sin(t * 2.6 + it.d * 0.01);
+      else if (it.t === 'cross') {
+        it.stT += dt;
+        if (it.st === 'stand' && gap < 1000 && this.mode === 'running') { it.st = 'shake'; it.stT = 0; }
+        if (it.st === 'shake' || it.st === 'fall') {   // the warning: it rattles, and a red marker shows where it will land
+          const p = 0.5 + 0.5 * Math.sin(t * 18);
+          G.lineStyle(6, 0xff3a2a, 0.6 + 0.4 * p).strokeEllipse(x - 40, GROUND_Y + 4, 320, 36).fillStyle(0xff3a2a, 0.2 + 0.25 * p).fillEllipse(x - 40, GROUND_Y + 4, 320, 36);
+        }
+        if (it.st === 'shake') { it.obj.setRotation(0.05 * Math.sin(it.stT * 40)); if (it.stT > 0.6) { it.st = 'fall'; it.stT = 0; it.obj.setTexture('d_cross_tip'); } }
+        else if (it.st === 'fall') { const u = Math.min(1, it.stT / 0.35); it.obj.setRotation(-1.35 * u * u); if (u >= 1) {
+          it.obj.destroy(); it.obj = this.add.image(x - 40, GROUND_Y + 14, 'd_cross_down').setOrigin(0.5, 1).setScale(1.3).setDepth(5); it.st = 'down';
+          this.cameras.main.shake(160, 0.007); this.g.fx.dust?.(12, 1.3, [x - 40, GROUND_Y]);
+          const hb = this.g.hitbox(); if (hb && Math.abs(hb.centerX - (x - 40)) < 150 && hb.bottom > GROUND_Y - 120 && this.mode === 'running') this.takeHit();
+        } }
+        if (it.st === 'down') { const p = 0.5 + 0.5 * Math.sin(t * 6); G.lineStyle(5, 0xff3a2a, 0.35 + 0.25 * p).strokeEllipse(x, GROUND_Y + 6, 330, 34); }
+      } else if (it.t === 'spikes') {
+        it.stT += dt;
+        if (it.st === 'down' && gap < 700) { it.st = 'rattle'; it.stT = 0; }
+        if (it.st === 'rattle') { it.obj.x += Math.sin(it.stT * 70) * 3; if (it.stT > 0.4) { it.st = 'up'; it.obj.setTexture('d_spikes'); this.cameras.main.shake(60, 0.003); } }
+        if (it.st !== 'down') { const p = 0.5 + 0.5 * Math.sin(t * 8); G.lineStyle(5, 0xff3a2a, 0.4 + 0.4 * p).strokeEllipse(x, GROUND_Y + 4, 250, 34); }
+      } else if (it.t === 'flames') {
+        it.obj.setTexture('d_flame' + (3 + (Math.floor(t * 10 + it.d) % 3)));
+        const p = 0.5 + 0.5 * Math.sin(t * 7); G.fillStyle(0xc04dff, 0.18 + 0.12 * p).fillEllipse(x, GROUND_Y, 200, 40);
+      } else if (it.t === 'area' && !it.fired && x <= GREMLIN_X + 600) {
+        it.fired = true;
+        const tx = this.add.text(this.viewW / 2, 260, it.name, { fontFamily: 'Lilita One, Trebuchet MS, sans-serif', fontSize: 64, color: '#ffd6f5', stroke: '#1a0a1e', strokeThickness: 10 }).setOrigin(0.5).setDepth(25).setAlpha(0);
+        this.tweens.add({ targets: tx, alpha: 1, duration: 300, yoyo: true, hold: 1600, onComplete: () => tx.destroy() });
+      } else if (it.t === 'zap' && !it.fired && x <= this.viewW - 200) {   // Sylvanas fires a laser from somewhere up in the castle... and hits her own guard
+        it.fired = true;
+        const tgt = this.creatures.filter(c => c.alive && !c.immune && ['maid', 'hound', 'garg'].includes(c.kind) && c.x > this.g.x + 250).sort((a, b) => a.x - b.x)[0];
+        const tx = tgt ? tgt.centre[0] : x, ty = tgt ? tgt.centre[1] : GROUND_Y - 40;
+        this.zaps = this.zaps || []; this.zaps.push({ x0: this.viewW + 50, y0: -60, tx, ty, t: 0 });
+        this.time.delayedCall(250, () => {
+          if (tgt && tgt.alive) { tgt.hurt(99); this.g.fx.burst(tgt.centre, 0.8); }
+          const sp = this.add.image(tx, ty, 'd_spark').setScale(1.3).setDepth(12).setBlendMode(Phaser.BlendModes.ADD);
+          this.tweens.add({ targets: sp, alpha: 0, scale: 2, duration: 450, onComplete: () => sp.destroy() });
+          this.cameras.main.shake(120, 0.004);
+        });
+      }
+    }
+    for (const z of this.zaps || []) {   // the beam: a warning flicker, then a fat pink laser for a moment
+      z.t += dt; const a = z.t < 0.25 ? 0.4 * Math.sin(z.t * 80) ** 2 : Math.max(0, 1 - (z.t - 0.25) / 0.35);
+      G.lineStyle(z.t < 0.25 ? 4 : 26, 0xff3ab8, a).lineBetween(z.x0, z.y0, z.tx, z.ty);
+      if (z.t >= 0.25) G.lineStyle(8, 0xffffff, a).lineBetween(z.x0, z.y0, z.tx, z.ty);
+    }
+    this.zaps = (this.zaps || []).filter(z => z.t < 0.6);
+  }
+
   // bubbles rising out of sludge pools, spores drifting off mould
   drawHazardFx() {
     const G = this.hazG; G.clear(); const t = this.time.now / 1000;
     const S = this.shadowG; S.clear();
-    if (this.world === 4) for (const c of this.creatures) {   // dark contact shadows sit World 4's rats and wheels on the street
+    if (this.world >= 4) for (const c of this.creatures) {   // dark contact shadows sit World 4's rats and wheels on the street
       if (c.dead || !c.shadowW) continue;
       const lift = Math.min(1, Math.max(0, c.air ?? c.y ?? 0) / 300), w = c.shadowW * (1 - 0.4 * lift);
       S.fillStyle(0x050805, 0.5 * (1 - 0.5 * lift)).fillEllipse(c.x, GROUND_Y + 8, w, 36);

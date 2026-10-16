@@ -1,9 +1,9 @@
 // Start menu (Cath, 16 Oct 2026): GREMLIN GAUNTLET, EASY / NORMAL / HARD, the five worlds as cards in two rows
 // (title, thumbnail, best score, FULL EVENT / BOSS), and a ? button for How to Play. No sound on this screen.
 // World 5 shows "Coming soon". All built worlds are open from the start. Background: Cath's art to come.
-import { Music } from '../audio/Music.js?v=20261016134000';
-import { WORLDS } from '../worlds.js?v=20261016134000';
-import { DIFF, LEVELS, getBest } from '../difficulty.js?v=20261016134000';
+import { Music } from '../audio/Music.js?v=20261016162515';
+import { WORLDS } from '../worlds.js?v=20261016162515';
+import { DIFF, LEVELS, getBest } from '../difficulty.js?v=20261016162515';
 
 const FONT = 'Lilita One, Arial Rounded MT Bold, Trebuchet MS, sans-serif';
 const BODY = 'Atkinson Hyperlegible, system-ui, sans-serif';
@@ -14,7 +14,8 @@ const CARDS = [
   { n: 2, title: 'MEADOWS OF MALICIOUS HAPPINESS', boss: 'CATALYTIK · THE EVIL OVERLORD' },
   { n: 3, title: 'THE ALASKAN WILDERNESS', boss: 'GRUNT · WRATH OF THE HAIRBALL' },
   { n: 4, title: 'THE CHEDDAR CARTEL', boss: 'RINA · QUESO JEFE' },   // approved by Cath, 16 Oct 2026
-  { n: 5, title: 'DUNGEON OF QUESTIONABLE PLEASURES', boss: 'SYLVANAS', soon: true },
+  // World 5 is in testing: its card only opens on the test address (…/#test5) until Cath approves it
+  { n: 5, title: 'DUNGEON OF QUESTIONABLE PLEASURES', boss: 'SYLVANAS · LASER TITS', soon: location.hash !== '#test5' },
 ];
 const CW = 560, CH = 392, TH = 184;   // card size, thumbnail height
 
