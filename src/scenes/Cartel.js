@@ -1,19 +1,19 @@
 // Level 4 boss: Rina, THE QUESO JEFE, and her henchman Gingy, in the cheese village (GDD, LOCKED).
 //   Phase 1 La Chancla of Doom (100–70%): chanclas thrown high or low that boomerang back (a purple line shows the path);
-//     Gingy lobs cheese (a gold ring shows where). Vulnerable ~3 s while she fetches a chancla that didn't come back.
+//     Gingy lobs cheese (a gold ring shows where). Vulnerable ~3 s while she tugs out a chancla that didn't come back (it sticks just behind her; she stays put).
 //   Phase 2 Gin & Tonic Warfare (70–35%): arcing gin bottles leave slippery puddles; Gingy's cheese-wheel catapult (gold ring
 //     shadow first; sometimes it misfires backwards). Vulnerable while she pours herself a drink.
 //   Phase 3 The Big Cheese Meltdown (<35%): combined attacks, a telegraphed rat stampede, bubbling cheese at the arena edges;
 //     the catapult jams and she screams at Gingy (longer vulnerable window).
 // Arena rules as the other bosses (joystick, high ground, everything aimed and telegraphed), reusing the Eddie scene's machinery.
-import { DIFF } from '../difficulty.js?v=20261016122744';
-import { Boss, GROUND_Y, BOSS_TUNING } from './Boss.js?v=20261016122744';
-import { Gremlin } from '../gremlin/Gremlin.js?v=20261016122744';
-import { Rina } from '../queso/Rina.js?v=20261016122744';
-import { Music } from '../audio/Music.js?v=20261016122744';
-import { loadQueso } from '../worlds.js?v=20261016122744';
-import { Backdrop, QUESO } from '../world/Swamp.js?v=20261016122744';
-import { bubble, GINGY_LINES } from '../creatures/Queso.js?v=20261016122744';
+import { DIFF } from '../difficulty.js?v=20261016133224';
+import { Boss, GROUND_Y, BOSS_TUNING } from './Boss.js?v=20261016133224';
+import { Gremlin } from '../gremlin/Gremlin.js?v=20261016133224';
+import { Rina } from '../queso/Rina.js?v=20261016133224';
+import { Music } from '../audio/Music.js?v=20261016133224';
+import { loadQueso } from '../worlds.js?v=20261016133224';
+import { Backdrop, QUESO } from '../world/Swamp.js?v=20261016133224';
+import { bubble, GINGY_LINES } from '../creatures/Queso.js?v=20261016133224';
 
 const W = 1920;
 const GREM_H = 330, BOSS_H = 640;
@@ -162,7 +162,7 @@ export class Cartel extends Boss {
     if (s.wait) { this.stepBusy = true; this.after(s.wait, () => { this.stepBusy = false; }); return; }
     if (s.m) { e.play(s.m); return; }
     if (s.rest) { e.play(s.rest); return; }
-    if (s.lost) { this.nextLost = true; e.play('chancla'); return; }
+    if (s.lost) { this.nextLost = true; this.stepBusy = true; e.play('chancla'); return; }   // she waits for it (it lands behind her)
     if (s.gingy) { this.gingyAttack(s.gingy); return; }
     if (s.jam) { this.jam(); return; }
     if (s.hop) { const n = s.hop === 'far' ? this.farSpot() : s.hop; if (n !== e.spot) this.hopTo(SPOTS[n], n); }
@@ -194,7 +194,7 @@ export class Cartel extends Boss {
       case 'stampede': this.stampede(); break;
       case 'moveDone':
         if (a[0] === 'entrance') { this.mode = 'running'; this.events.emit('fightStart'); }
-        if (a[0] === 'pickup') { e.vulnT = 0; this.queue.unshift({ hop: 'far' }); }
+        if (a[0] === 'tug') { e.vulnT = 0; this.stepBusy = false; this.queue.unshift({ hop: 'far' }); }
         if (a[0] === 'scold') e.face = this.g.x < e.x ? 1 : -1;
         break;
     }
@@ -214,23 +214,18 @@ export class Cartel extends Boss {
     const lost = !!this.nextLost; this.nextLost = false;
     this.shots.push({ k: 'chancla', img, x: this.e.x + 60 * L.dir, y: L.y, vx: L.dir * T4.chanclaSpeed, dir: L.dir, r: 40, state: 'out', lost, trail: [] });
   }
-  /** A chancla that didn't come back: it sticks in the ground at the far side and she has to go and fetch it (vulnerable). */
+  /** A chancla that didn't come back (Cath, 16 Oct 2026: she must stand still while vulnerable and not come at you):
+   *  on its way back it sails over her head and sticks in the ground just behind her, on the side away from the gremlin.
+   *  She turns her back and tugs at it on the spot: vulnerable ~3 s, no walking. */
   chanclaStuck(s) {
     s.dead = true;
-    const x = clamp(s.x, 260, 1600);
-    this.stuck = { x, img: this.add.image(x, GROUND_Y + 10, 'q_chancla').setOrigin(0.5, 0.85).setScale(0.6).setRotation(s.dir > 0 ? 0.9 : -0.9).setDepth(6) };
-    this.dustBurst(x, GROUND_Y, 10, 0xb06cff); this.cameras.main.shake(120, 0.004);
-    const e = this.e;
+    const e = this.e, x = clamp(s.x, 160, 1760), fy = GROUND_Y - e.floor;
+    this.stuck = { x, img: this.add.image(x, fy + 10, 'q_chancla').setOrigin(0.5, 0.85).setScale(0.6).setRotation(s.vx > 0 ? 0.9 : -0.9).setDepth(6) };
+    this.dustBurst(x, fy, 10, 0xb06cff); this.cameras.main.shake(120, 0.004);
     this.say(pick(['¡AY, NO! MY CHANCLA!', 'Don’t. Touch. My. Chancla.']), 1.6, 'shock');
-    // she drops down from wherever she is and stomps over to get it, back turned
     this.stepBusy = true;
-    const go = () => {
-      e.face = x < e.x ? 1 : -1; e.play('fetch'); e.vulnT = 99; this.events.emit('bossvuln', Math.abs(x - e.x) / 300 + 1.2);
-      const d = Math.max(0.6, Math.abs(x - e.x) / 300), from = e.x;
-      this.animate(d, u => { e.x = from + (x - from) * u; }, () => { e.x = x; e.play('pickup'); e.vulnT = 1.2; this.stepBusy = false; });
-    };
-    if (e.floor > 0) { const f = e.floor; e.play('hop'); this.animate(0.4, u => { e.floor = f * (1 - u); }, () => { e.floor = 0; e.spot = 'fetch'; this.dustBurst(e.x, GROUND_Y, 8, 0xe8b84a); go(); }); }
-    else { e.spot = 'fetch'; go(); }
+    e.face = x < e.x ? 1 : -1;   // turns towards the chancla: her back to the gremlin
+    e.play('tug');
   }
   throwGin() {   // an arcing bottle; a green ring shows where it will smash (and leave a slippery puddle)
     const h = this.e.handPoint(), g = this.g, tx = clamp(g.x + rnd(-40, 40), 140, 1780), floorY = this.gFloorY();
@@ -296,7 +291,7 @@ export class Cartel extends Boss {
     this.hp = Math.max(0, this.hp - n); this.events.emit('bosshp', this.hp / BOSS_TUNING.hp, this.phase);
     this.e.flashT = 0.09;
     if (this.hurtLineT <= 0 && Math.random() < 0.35) { this.say(TAUNTS.hurt[0], 1.4, 'angry'); this.hurtLineT = 4; }
-    if (heavy && !['hop', 'takeoff', 'fetch', 'pickup'].includes(this.e.move) && !this.stepBusy) this.e.play('hitHeavy');
+    if (heavy && !['hop', 'takeoff', 'tug', 'pour', 'scold'].includes(this.e.move) && !this.stepBusy) this.e.play('hitHeavy');
     if (this.hp <= 0) return this.win();
     const ph = this.hp <= BOSS_TUNING.phase3At ? 3 : this.hp <= BOSS_TUNING.phase2At ? 2 : 1;
     if (ph !== this.phase) {
@@ -422,13 +417,18 @@ export class Cartel extends Boss {
         if (s.state === 'out') {
           s.x += s.vx * dt;
           if (s.x < 70 || s.x > W - 70) {
-            if (s.lost) { this.chanclaStuck(s); continue; }
-            s.state = 'turn'; s.turnT = 0.25;
+            s.state = 'turn'; s.turnT = 0.25; s.y0 = s.y;
           }
         } else if (s.state === 'turn') { s.turnT -= dt; if (s.turnT <= 0) { s.state = 'back'; s.vx = -s.vx; } }
+        else if (s.state === 'back' && s.lost) {   // the one that doesn't come back: sails up over her head and lands behind her
+          s.x += s.vx * dt;
+          const past = (s.x - this.e.x) * Math.sign(s.vx), high = this.e.feetY - 700;
+          s.y += ((past > -500 ? high : s.y0) - s.y) * Math.min(1, dt * 7);
+          if (past > 170) { this.chanclaStuck(s); continue; }
+        }
         else if (s.state === 'back') {   // boomerangs back to her hand
           s.x += s.vx * dt;
-          if (Math.abs(s.x - this.e.x) < 70 || s.x < -100 || s.x > W + 100) { s.dead = true; if (!['fetch', 'pickup', 'scold', 'pour'].includes(this.e.move) && !this.stepBusy && this.mode === 'running') this.e.play('catch'); }
+          if (Math.abs(s.x - this.e.x) < 70 || s.x < -100 || s.x > W + 100) { s.dead = true; if (!['tug', 'scold', 'pour'].includes(this.e.move) && !this.stepBusy && this.mode === 'running') this.e.play('catch'); }
         }
       } else if (s.k === 'gin' || s.k === 'chunk' || s.k === 'wheel') {
         s.t += dt; const u = Math.min(1, s.t / s.T);

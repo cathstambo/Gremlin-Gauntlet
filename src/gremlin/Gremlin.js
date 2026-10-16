@@ -1,4 +1,4 @@
-import { DIFF } from '../difficulty.js?v=20261016122744';
+import { DIFF } from '../difficulty.js?v=20261016133224';
 // The playable gremlin: a cut-out rig built from the approved artwork.
 // Each body part is a Phaser Image hung on a chain of containers (one per joint); every frame the
 // joints are rotated from the current pose. Nothing is redrawn, so the character always matches
@@ -6,8 +6,8 @@ import { DIFF } from '../difficulty.js?v=20261016122744';
 import {
   TAU, clamp, ease, seg, lerpPose, runPose, crouchPose, risePose, fallPose, tuckPose, slidePose, hurtPose,
   dieAirPose, deadPose, winPose, idlePose, meltPose, meltLift, MELT_T, MELT_BLAST_AT,
-} from './poses.js?v=20261016122744';
-import { Effects } from './Effects.js?v=20261016122744';
+} from './poses.js?v=20261016133224';
+import { Effects } from './Effects.js?v=20261016133224';
 
 // ---- tuning: placeholders until playtesting (art units; the gremlin is ~800 units tall) ----
 export const TUNING = {

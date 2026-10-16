@@ -1,16 +1,16 @@
 // Running stages for every world (1 = easy to medium, 2 = busier and harder), then on to that world's boss.
-import { DIFF } from '../difficulty.js?v=20261016122744';
+import { DIFF } from '../difficulty.js?v=20261016133224';
 // Hearts, Chaos Meter and score carry from stage 1 to stage 2 to the boss; part 2 is a checkpoint.
-import { Gremlin } from '../gremlin/Gremlin.js?v=20261016122744';
-import { WORLDS, worldNo, loadMeadow, loadWild, loadQueso } from '../worlds.js?v=20261016122744';
-import { Chase, CHASE } from './Chase.js?v=20261016122744';
-import { Goat } from '../world/Goat.js?v=20261016122744';
-import { Moose, Bear, Salmon, ChargeBear } from '../creatures/River.js?v=20261016122744';
-import { Wolf, Eagle, Fox } from '../creatures/Wild.js?v=20261016122744';
-import { Music, Sfx } from '../audio/Music.js?v=20261016122744';
-import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js?v=20261016122744';
-import { Bunny, Kitten, Flower, Swarm } from '../creatures/Meadow.js?v=20261016122744';
-import { Rat, ArmourRat, Cracker, Wheel, GingyThrow, GingyDropper, GingyRats } from '../creatures/Queso.js?v=20261016122744';
+import { Gremlin } from '../gremlin/Gremlin.js?v=20261016133224';
+import { WORLDS, worldNo, loadMeadow, loadWild, loadQueso } from '../worlds.js?v=20261016133224';
+import { Chase, CHASE } from './Chase.js?v=20261016133224';
+import { Goat } from '../world/Goat.js?v=20261016133224';
+import { Moose, Bear, Salmon, ChargeBear } from '../creatures/River.js?v=20261016133224';
+import { Wolf, Eagle, Fox } from '../creatures/Wild.js?v=20261016133224';
+import { Music, Sfx } from '../audio/Music.js?v=20261016133224';
+import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js?v=20261016133224';
+import { Bunny, Kitten, Flower, Swarm } from '../creatures/Meadow.js?v=20261016133224';
+import { Rat, ArmourRat, Cracker, Wheel, GingyThrow, GingyDropper, GingyRats } from '../creatures/Queso.js?v=20261016133224';
 
 const CREATURES = { frog: Frog, gator: Gator, bat: Bat, spider: Spider, bunny: Bunny, kitten: Kitten, flower: Flower, swarm: Swarm, wolf: Wolf, eagle: Eagle, fox: Fox, moose: Moose, bear: Bear, salmon: Salmon, cbear: ChargeBear, hawk: Eagle,
   rat: Rat, arat: ArmourRat, cracker: Cracker, wheel: Wheel, gingy1: GingyThrow, gingy2: GingyDropper, gingy3: GingyRats };
@@ -56,7 +56,7 @@ const GAP = { gap: 280, gapWide: 580, s: 1.25 };   // seconds standing in mould 
 const LOOK = {
   roots: { key: 'haz_roots', s: 0.92, sink: 22 },
   mould: { key: 'haz_mould', s: 0.92, sink: 22 },
-  moz: { key: 'q_moz1', s: 1.0, sink: 30 },
+  moz: { key: 'q_moz1', s: 1.15, sink: 30 },
   sludge: { key: 'haz_sludge', s: 0.92, sink: 34 },
   sludgeWide: { key: 'haz_sludge', s: 2.0, sink: 74 },
   vines: { key: 'haz_vines_hang', s: 1.3 },
@@ -69,7 +69,7 @@ const LOOK = {
 const BOX = {
   root: { w: 230, h: 85 }, boulder: { w: 170, h: 110 },
   rockS: { w: 150, h: 70 }, rockM: { w: 220, h: 85 }, rockL: { w: 230, h: 105 },
-  roots: { w: 170, h: 80 }, mould: { w: 220, h: 60 }, moz: { w: 250, h: 50 }, sludge: { w: 220, h: 40 }, sludgeWide: { w: 600, h: 40 },
+  roots: { w: 170, h: 80 }, mould: { w: 220, h: 60 }, moz: { w: 300, h: 50 }, sludge: { w: 220, h: 40 }, sludgeWide: { w: 600, h: 40 },
   taco: { w: 90, h: 80 }, margarita: { w: 80, h: 90 }, crystal: { w: 70, h: 90 }, potion: { w: 80, h: 90 },
 };
 const rnd = (a, b) => a + Math.random() * (b - a);
@@ -233,7 +233,8 @@ export class Run extends Phaser.Scene {
       it.obj.x = x; if (it.back) it.back.x = x;
       if (PICKUPS.has(it.t)) it.obj.y = GROUND_Y - it.h + 8 * Math.sin(t * 3 + it.d);
       if (it.t === 'sludge' || it.t === 'sludgeWide') it.obj.scaleY = it.baseScale * (1 + 0.025 * Math.sin(t * 5 + it.d));   // slow bubbling heave
-      if (it.t === 'vines') it.obj.rotation = 0.012 * Math.sin(t * 1.6 + it.d);                                                  // gentle sway
+      if (it.t === 'vines') it.obj.rotation = 0.012 * Math.sin(t * 1.6 + it.d);
+      if (it.t === 'moz' && it.back) it.back.setScale(0.62, 0.62 * (0.8 + 0.35 * Math.abs(Math.sin(t * 2.2 + it.d))));   // the string stretches and sags                                                  // gentle sway
       if (it.glow) it.glow.outerStrength = 2.6 + 1.6 * (0.5 + 0.5 * Math.sin(t * 5));                                            // warning pulse
       if (x + (it.t === 'bridge' ? BRIDGE.w : (it.t === 'gap' || it.t === 'gapWide') ? GAP[it.t] : 0) < -600) { if (it.goat) it.goat.destroy(); else it.obj.destroy(); if (it.rest) it.rest.destroy(); if (it.fallObj) it.fallObj.destroy(); it.obj = null; it.done = true; if (it.back) { it.back.destroy(); it.back = null; } }
       if (it.t === 'fishbreak' && !it.fired && x <= GREMLIN_X + 150 && this.chase) { it.fired = true; this.chase.distract(2.6); }
@@ -301,6 +302,8 @@ export class Run extends Phaser.Scene {
     } else if (L) {
       o = this.add.image(x, GROUND_Y + L.sink, L.key).setOrigin(0.5, 1).setScale(L.s).setDepth(5);
       it.baseScale = L.s;
+      // mozzarella: a stretchy string of cheese pulls up out of the puddle, so it reads as sticky (Cath, 16 Oct 2026)
+      if (it.t === 'moz') it.back = this.add.image(x, GROUND_Y + 4, 'q_mozstr').setOrigin(0.5, 1).setScale(0.62).setDepth(5.1);
     } else if (it.t === 'finish') {
       o = this.add.image(x, GROUND_Y + 6, 'flag').setOrigin(0.15, 1).setDepth(5);
     }
@@ -547,7 +550,15 @@ export class Run extends Phaser.Scene {
       if (!it.obj || it.done) continue;
       const sw = SHADOW_W[it.t] || (it.t === 'drop' && it.landed ? 220 : 0);
       if (sw) { S.fillStyle(0x050805, 0.55).fillEllipse(it.obj.x, GROUND_Y + 8, sw, 38); S.fillStyle(0x050805, 0.35).fillEllipse(it.obj.x, GROUND_Y + 8, sw * 1.15, 54); }
-      if (it.t === 'moz') { S.fillStyle(0x050805, 0.35).fillEllipse(it.obj.x, GROUND_Y + 8, 300, 40); }
+      if (it.t === 'moz') {   // stand-out look (Cath, 16 Oct 2026): dark rim underneath, pulsing red warning ring, popping bubbles
+        const x = it.obj.x, p = 0.5 + 0.5 * Math.sin(t * 6);
+        S.fillStyle(0x2a1405, 0.8).fillEllipse(x, GROUND_Y + 2, 410, 74).fillStyle(0xff3a2a, 0.25 + 0.2 * p).fillEllipse(x, GROUND_Y + 2, 430, 82);
+        G.lineStyle(9, 0xff3a2a, 0.6 + 0.4 * p).strokeEllipse(x, GROUND_Y + 2, 430 + 16 * p, 84 + 4 * p);
+        for (let i = 0; i < 4; i++) {
+          const ph = (t * 0.9 + i * 0.27 + it.d * 0.001) % 1, bx = x - 130 + i * 85 + 10 * Math.sin(t + i), by = GROUND_Y - 18 - ph * 30, r = 8 + 12 * ph;
+          G.fillStyle(0xfffaf0, 0.95 * (1 - ph)).fillCircle(bx, by, r).lineStyle(3, 0x5a3a1a, 0.9 * (1 - ph)).strokeCircle(bx, by, r);
+        }
+      }
       if (it.t === 'sludge' || it.t === 'sludgeWide') {
         const w = (it.t === 'sludgeWide' ? 520 : 200);
         for (let i = 0; i < (it.t === 'sludgeWide' ? 7 : 3); i++) {

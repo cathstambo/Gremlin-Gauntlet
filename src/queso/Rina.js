@@ -48,17 +48,19 @@ export const MOVES = {
   chancla: { d: 1.25, pose: t => keys(t, [[0, idle(t)], [0.45, windChancla()], [0.62, release()], [1.0, release()], [1.25, idle(t)]]),
     ev: [[0.05, 'taunt', 'chancla'], [0.05, 'chanclaWarn'], [0.6, 'throwChancla']] },
   catch: { d: 0.5, pose: t => keys(t, [[0, release()], [0.12, P_({ img: 'front', lean: 6, sy: 0.96, prop: 'chancla', propRot: 20 })], [0.5, idle(t)]]) },
-  // the chancla didn't come back: she stomps over to fetch it, back turned (vulnerable)
-  fetch: { d: 99, pose: t => walk(t, 'side') },
-  pickup: { d: 1.2, pose: t => keys(t, [[0, P_({ img: 'back', lean: 0 })], [0.35, P_({ img: 'back', lean: -16, sy: 0.9, dy: 10 })], [0.8, P_({ img: 'back', lean: -16, sy: 0.9, dy: 10 })], [1.2, P_({ img: 'front', prop: 'chancla', propRot: 10 })]]),
-    ev: [[0.7, 'chanclaBack']] },
+  // tugging her stuck chancla out of the ground, back turned, on the spot: vulnerable (she stays put)
+  tug: { d: 3.3, pose: t => {
+      const k = ease(t / 0.25), w = Math.sin(t * 10);
+      if (t > 3.0) return P_({ img: 'front', prop: 'chancla', propRot: 10 });
+      return lerpPose(idle(t), P_({ img: 'back', lean: -12 + 1.5 * w, sy: 0.93, dy: 8 }), k);
+    }, ev: [[0.1, 'vulnerable', 3.0], [2.95, 'chanclaBack'], [3.0, 'say', '¡Ya! Where were we?', 1.4, 'smug']] },
   // ---- phase 2: Gin & Tonic Warfare ----
   gin: { d: 1.3, pose: t => keys(t, [[0, idle(t)], [0.45, P_({ img: 'front', lean: 12, sy: 1.03, prop: 'gin', propRot: -30 })], [0.62, release()], [1.0, release()], [1.3, idle(t)]]),
     ev: [[0.05, 'taunt', 'gin'], [0.6, 'throwGin']] },
   // turns her back to pour herself a drink: vulnerable
   pour: { d: 3.4, pose: t => {
       const k = ease(t / 0.3) * (1 - ease((t - 3.1) / 0.3));
-      return lerpPose(idle(t), P_({ img: t < 3.1 ? 'back' : 'front', lean: -3 + 2 * Math.sin(t * 2), prop: t < 3.1 ? 'gin' : null, propRot: -70 + 15 * Math.sin(t * 3), sy: 1.01 }), k);
+      return lerpPose(idle(t), P_({ img: t < 3.1 ? 'back' : 'front', lean: -2, prop: t < 3.1 ? 'gin' : null, propRot: -70 + 15 * Math.sin(t * 3), sy: 1.01 }), k);
     }, ev: [[0.25, 'vulnerable', 3.0], [0.3, 'say', 'Hold on. Gin o’clock.', 1.6, 'flirt']] },
   // ---- phase 3: The Big Cheese Meltdown ----
   stampede: { d: 2.0, pose: t => keys(t, [[0, idle(t)], [0.4, P_({ img: 'dance', lean: -8, dy: -16 })], [1.6, P_({ img: 'dance', lean: -8 + 3 * Math.sin(t * 20), dy: -16 })], [2.0, idle(t)]]),
@@ -66,7 +68,7 @@ export const MOVES = {
   // the launcher jams; she turns on Gingy and screams at him (longer vulnerable window)
   scold: { d: 4.4, pose: t => {
       const k = ease(t / 0.3) * (1 - ease((t - 4.1) / 0.3)), w = Math.sin(t * 16);
-      return lerpPose(idle(t), P_({ img: 'over', lean: 4 + 3 * w, dy: -6 * Math.abs(w), sx: 1 + 0.02 * w }), k);
+      return lerpPose(idle(t), P_({ img: 'over', lean: 2 + 1 * w, sx: 1 + 0.01 * w }), k);   // stays put while she yells
     }, ev: [[0.2, 'vulnerable', 4.0], [0.3, 'say', 'GINGY! YOU USELESS LITTLE SHIT!', 2.0, 'angry'], [2.4, 'say', 'I SAID ATTACK THE GREMLIN, NOT ME!', 1.8, 'angry']] },
   // ---- movement ----
   takeoff: { d: 0.28, pose: t => keys(t, [[0, idle(t)], [0.28, crouch()]]) },

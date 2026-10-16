@@ -1,8 +1,8 @@
 // HUD and controls for whichever game scene is active ('Run' = test course, 'Boss' = Eddie's arena):
 // hearts, Chaos Meter, boss health, pause, touch buttons, swipe gestures, keyboard, overlays.
-import { Music } from '../audio/Music.js?v=20261016122744';
-import { DIFF, saveBest } from '../difficulty.js?v=20261016122744';
-import { WORLDS, worldNo, LAST_WORLD } from '../worlds.js?v=20261016122744';
+import { Music } from '../audio/Music.js?v=20261016133224';
+import { DIFF, saveBest } from '../difficulty.js?v=20261016133224';
+import { WORLDS, worldNo, LAST_WORLD } from '../worlds.js?v=20261016133224';
 const FONT = 'Lilita One, Arial Rounded MT Bold, Trebuchet MS, sans-serif';
 const BODY = 'Atkinson Hyperlegible, system-ui, sans-serif';
 const INK = '#ece6f5', VIOLET = 0x9b4dff, ACID = 0xc6f135, MOULD = 0x9fcc1e;
@@ -39,7 +39,7 @@ export class UI extends Phaser.Scene {
       for (const f of [0.7, 0.35]) this.add.rectangle(bx - 276 + 552 * f, 78, 4, 30, 0x0e1614, 0.9);   // phase marks
       this.phaseNames = this.world === 4 ? ['', 'PHASE 1 · LA CHANCLA OF DOOM', 'PHASE 2 · GIN & TONIC WARFARE', 'PHASE 3 · THE BIG CHEESE MELTDOWN'] : this.world === 2 ? ['', 'PHASE 1 · SALMON SLAPPER', 'PHASE 2 · SPOONAGEDDON', 'PHASE 3 · ROYAL TANTRUM'] : ['', 'PHASE 1 · ROCK BUFFET', 'PHASE 2 · MOULD MAYHEM', 'PHASE 3 · THE MOULDENING'];
       this.phaseTxt = this.add.text(bx, 122, this.phaseNames[1], { fontFamily: FONT, fontSize: 24, color: '#d8ff8a' }).setOrigin(0.5).setAlpha(0.85);
-      this.vulTxt = this.add.text(bx, 160, 'VULNERABLE! BLAST HIM!', { fontFamily: FONT, fontSize: 30, color: '#c6f135', stroke: '#14200a', strokeThickness: 8 }).setOrigin(0.5).setAlpha(0);
+      this.vulTxt = this.add.text(bx, 160, this.world === 1 ? 'VULNERABLE! BLAST HIM!' : 'VULNERABLE! BLAST HER!', { fontFamily: FONT, fontSize: 30, color: '#c6f135', stroke: '#14200a', strokeThickness: 8 }).setOrigin(0.5).setAlpha(0);
     }
 
     // World 3: Grunt's Proximity Meter, red danger edges, and the BLAST BACK button

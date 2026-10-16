@@ -1,15 +1,15 @@
 // Level 2 boss: Catalytik, THE EVIL OVERLORD, in the Meadows of Malicious Happiness (GDD, LOCKED).
-import { DIFF } from '../difficulty.js?v=20261016122744';
+import { DIFF } from '../difficulty.js?v=20261016133224';
 //   Phase 1 Salmon Slapper (100–70%): rotten-salmon swings and thrown fish; vulnerable while yanking a salmon out of the ground.
 //   Phase 2 Spoonageddon (70–35%): horizontal, falling and bouncing spoons with sparkling warnings; vulnerable while admiring herself.
 //   Phase 3 Royal Tantrum (<35%): horn glows purple; salmon + spoons combined; a telegraphed bunny stampede, then she's dizzy.
 // Arena rules are the same as Eddie's (whole-screen boss, joystick movement, high ground, everything aimed and telegraphed),
 // so this scene reuses the Eddie scene's machinery and swaps in her moves.
-import { Boss, GROUND_Y, BOSS_TUNING } from './Boss.js?v=20261016122744';
-import { Gremlin } from '../gremlin/Gremlin.js?v=20261016122744';
-import { Catalytik, ease } from '../overlord/Catalytik.js?v=20261016122744';
-import { Music } from '../audio/Music.js?v=20261016122744';
-import { loadMeadow } from '../worlds.js?v=20261016122744';
+import { Boss, GROUND_Y, BOSS_TUNING } from './Boss.js?v=20261016133224';
+import { Gremlin } from '../gremlin/Gremlin.js?v=20261016133224';
+import { Catalytik, ease } from '../overlord/Catalytik.js?v=20261016133224';
+import { Music } from '../audio/Music.js?v=20261016133224';
+import { loadMeadow } from '../worlds.js?v=20261016133224';
 
 const W = 1920;
 const GREM_H = 330, BOSS_H = 620;
