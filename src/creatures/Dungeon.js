@@ -5,8 +5,8 @@
 //   at head height: slide under). Chest mimics (sit on the path, lash their tongue along the floor: jump; 2 blasts).
 //   Possessed paddles (fly at head height: slide, or bounce along the floor: jump; 1 blast).
 // Same interface as the other creatures: update(dt, ctx), hitbox(), shot(), centre, points; noShoot / shootbox() / immune.
-import { Creature } from './Creatures.js?v=20261020094536';
-import { Sprite } from './Wild.js?v=20261020094536';
+import { Creature } from './Creatures.js?v=20261020094816';
+import { Sprite } from './Wild.js?v=20261020094816';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const ease = k => (k < 0 ? 0 : k > 1 ? 1 : k * k * (3 - 2 * k));

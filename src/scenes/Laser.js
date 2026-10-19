@@ -8,12 +8,12 @@
 //     the ultimate laser: the whole floor glows, GET UP HIGH on a bench; afterwards her armour melts down (long vulnerable window).
 //   Defeat: Skeleton Rebellion without the supervisor, on the bed (Cath): her own guards dump her in a padded chest.
 // Arena rules as the other bosses (joystick, high ground, everything aimed and telegraphed), reusing the Eddie scene's machinery.
-import { DIFF } from '../difficulty.js?v=20261020094536';
-import { Boss, GROUND_Y, BOSS_TUNING } from './Boss.js?v=20261020094536';
-import { Gremlin } from '../gremlin/Gremlin.js?v=20261020094536';
-import { Sylvanas } from '../dungeon/Sylvanas.js?v=20261020094536';
-import { Music } from '../audio/Music.js?v=20261020094536';
-import { loadDungeon } from '../worlds.js?v=20261020094536';
+import { DIFF } from '../difficulty.js?v=20261020094816';
+import { Boss, GROUND_Y, BOSS_TUNING } from './Boss.js?v=20261020094816';
+import { Gremlin } from '../gremlin/Gremlin.js?v=20261020094816';
+import { Sylvanas } from '../dungeon/Sylvanas.js?v=20261020094816';
+import { Music } from '../audio/Music.js?v=20261020094816';
+import { loadDungeon } from '../worlds.js?v=20261020094816';
 
 const W = 1920;
 const GREM_H = 330, BOSS_H = 600;
@@ -120,6 +120,8 @@ export class Laser extends Boss {
   farSpot() {
     const names = Object.keys(SPOTS).filter(n => n !== this.e.spot);
     const ok = names.filter(n => Math.abs(SPOTS[n].x - this.g.x) >= 600);
+    const side = Math.sign(this.e.x - this.g.x), same = ok.filter(n => Math.sign(SPOTS[n].x - this.g.x) === side);
+    if (same.length) return pick(same);   // stay on her side of the gremlin (Cath, 20 Oct 2026: no leaping through you)
     if (ok.length) return pick(ok);
     return names.sort((a, b) => Math.abs(SPOTS[b].x - this.g.x) - Math.abs(SPOTS[a].x - this.g.x))[0];
   }
@@ -169,7 +171,7 @@ export class Laser extends Boss {
     this.after(0.28, () => {
       e.play('hop'); e.face = spot.x < e.x ? 1 : -1;
       const dur = 0.85 / (this.phase === 3 ? T5.phase3Speed : 1);
-      this.animate(dur, u => { e.x = from.x + (spot.x - from.x) * u; e.floor = 0; e.air = from.floor + (spot.floor - from.floor) * u + 4 * 230 * u * (1 - u); },
+      this.animate(dur, u => { e.x = from.x + (spot.x - from.x) * u; e.floor = 0; e.air = from.floor + (spot.floor - from.floor) * u + 4 * (Math.sign(spot.x - this.g.x) !== Math.sign(from.x - this.g.x) ? 620 : 230) * u * (1 - u); },
         () => { e.x = spot.x; e.floor = spot.floor; e.air = 0; e.spot = name; this.faceGremlin(); marker.life = 0; e.play('land'); this.cameras.main.shake(140, 0.004); this.dustBurst(e.x, GROUND_Y - spot.floor, 10, 0xc08ad0); this.stepBusy = false; });
     });
   }
@@ -491,7 +493,7 @@ export class Laser extends Boss {
     const gc = new Phaser.Geom.Rectangle(hb.x, hb.y, hb.width, hb.height);
     // touching her hurts, except while she's vulnerable (get in close and blast her)
     const eb = this.e.hurtbox();
-    if (eb && !this.e.vulnerable && g.state !== 'slide') { const core = new Phaser.Geom.Rectangle(eb.x + eb.width * 0.15, eb.y + eb.height * 0.1, eb.width * 0.7, eb.height * 0.9); if (Phaser.Geom.Intersects.RectangleToRectangle(gc, core)) this.takeHit('touch'); }
+    if (eb && !this.e.vulnerable && g.state !== 'slide' && !['takeoff', 'hop', 'land'].includes(this.e.move) && this.e.air <= 0) { const core = new Phaser.Geom.Rectangle(eb.x + eb.width * 0.15, eb.y + eb.height * 0.1, eb.width * 0.7, eb.height * 0.9); if (Phaser.Geom.Intersects.RectangleToRectangle(gc, core)) this.takeHit('touch'); }
     for (const B of this.beams) {
       if (B.t < 0.06 || B.t > B.T - 0.08) continue;
       if (B.ult) { if (gc.bottom > GROUND_Y - B.w + 10) this.takeHit('ultimate'); continue; }

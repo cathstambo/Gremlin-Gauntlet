@@ -6,9 +6,9 @@
 //     - a magic bolt fired BACK at him (BLAST BACK / swipe left) knocks him well back and stuns him for a moment.
 //   At 100 he catches you: a giant paw swipe ends the attempt (retry this run, meter reset).
 //   The meter carries over to the next run; it only resets when you die.
-import { DIFF } from '../difficulty.js?v=20261020094536';
-import { Grunt } from '../grunt/Grunt.js?v=20261020094536';
-import { Sfx } from '../audio/Music.js?v=20261020094536';
+import { DIFF } from '../difficulty.js?v=20261020094816';
+import { Grunt } from '../grunt/Grunt.js?v=20261020094816';
+import { Sfx } from '../audio/Music.js?v=20261020094816';
 
 export const CHASE = {
   // Difficulty ramps up (Cath, 15 Oct): gentle at the start of Into the Wild, tighter towards its end, and tighter again
