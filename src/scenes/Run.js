@@ -1,17 +1,17 @@
 // Running stages for every world (1 = easy to medium, 2 = busier and harder), then on to that world's boss.
-import { DIFF } from '../difficulty.js?v=20261020101849';
+import { DIFF } from '../difficulty.js?v=20261020102710';
 // Hearts, Chaos Meter and score carry from stage 1 to stage 2 to the boss; part 2 is a checkpoint.
-import { Gremlin } from '../gremlin/Gremlin.js?v=20261020101849';
-import { WORLDS, worldNo, loadMeadow, loadWild, loadQueso, loadDungeon } from '../worlds.js?v=20261020101849';
-import { Chase, CHASE } from './Chase.js?v=20261020101849';
-import { Goat } from '../world/Goat.js?v=20261020101849';
-import { Moose, Bear, Salmon, ChargeBear } from '../creatures/River.js?v=20261020101849';
-import { Wolf, Eagle, Fox } from '../creatures/Wild.js?v=20261020101849';
-import { Music, Sfx } from '../audio/Music.js?v=20261020101849';
-import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js?v=20261020101849';
-import { Bunny, Kitten, Flower, Swarm } from '../creatures/Meadow.js?v=20261020101849';
-import { Maid, Hound, Gargoyle, Knight, Mimic, Paddle } from '../creatures/Dungeon.js?v=20261020101849';
-import { Rat, ArmourRat, Cracker, Wheel, GingyThrow, GingyDropper, GingyRats } from '../creatures/Queso.js?v=20261020101849';
+import { Gremlin } from '../gremlin/Gremlin.js?v=20261020102710';
+import { WORLDS, worldNo, loadMeadow, loadWild, loadQueso, loadDungeon } from '../worlds.js?v=20261020102710';
+import { Chase, CHASE } from './Chase.js?v=20261020102710';
+import { Goat } from '../world/Goat.js?v=20261020102710';
+import { Moose, Bear, Salmon, ChargeBear } from '../creatures/River.js?v=20261020102710';
+import { Wolf, Eagle, Fox } from '../creatures/Wild.js?v=20261020102710';
+import { Music, Sfx } from '../audio/Music.js?v=20261020102710';
+import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js?v=20261020102710';
+import { Bunny, Kitten, Flower, Swarm } from '../creatures/Meadow.js?v=20261020102710';
+import { Maid, Hound, Gargoyle, Knight, Mimic, Paddle } from '../creatures/Dungeon.js?v=20261020102710';
+import { Rat, ArmourRat, Cracker, Wheel, GingyThrow, GingyDropper, GingyRats } from '../creatures/Queso.js?v=20261020102710';
 
 const CREATURES = { frog: Frog, gator: Gator, bat: Bat, spider: Spider, bunny: Bunny, kitten: Kitten, flower: Flower, swarm: Swarm, wolf: Wolf, eagle: Eagle, fox: Fox, moose: Moose, bear: Bear, salmon: Salmon, cbear: ChargeBear, hawk: Eagle,
   rat: Rat, arat: ArmourRat, cracker: Cracker, wheel: Wheel, gingy1: GingyThrow, gingy2: GingyDropper, gingy3: GingyRats,
@@ -211,6 +211,7 @@ export class Run extends Phaser.Scene {
   update(time, deltaMs) {
     const dt = Math.min(0.05, deltaMs / 1000) * this.timeScale * DIFF.k.speed;   // difficulty: slower = more time to react
     this.g.update(dt);
+    this.gameT = (this.gameT || 0) + dt;   // game-time clock (follows the difficulty speed)
     const v = this.mode === 'ending' ? 0 : this.g.worldSpeed;   // in the ending the world stops; the gremlin runs on a little way
     if (this.mode !== 'ready') this.dist += v * dt;
     if (this.mode === 'running') this.runTime = (this.runTime || 0) + dt;
@@ -366,13 +367,19 @@ export class Run extends Phaser.Scene {
     if (PICKUPS.has(it.t)) return new Phaser.Geom.Rectangle(o.x - b.w / 2, o.y - b.h / 2, b.w, b.h);
     return new Phaser.Geom.Rectangle(o.x - b.w / 2, GROUND_Y - b.h, b.w, b.h);
   }
+  /** Difficulty: on Normal / Easy a danger's box shrinks around its middle, so near-misses don't count. */
+  forgive(r) {
+    const f = DIFF.k.fair || 0; if (!r || !f) return r;
+    return new Phaser.Geom.Rectangle(r.x + r.width * f / 2, r.y + r.height * f / 2, r.width * (1 - f), r.height * (1 - f));
+  }
   collide(dt) {
     const g = this.g, hb = g.hitbox(); if (!hb) return;
     let inMould = false;
     for (const it of this.items) {
       if (!it.obj || it.done || it.t === 'finish' || it.t === 'plat' || it.t === 'bridge' || it.t === 'gap' || it.t === 'gapWide' || it.t === 'fishbreak' || it.t === 'jam' || it.t === 'goat') continue;
       if (it.t === 'beam' && it.state !== 'fire') continue;
-      const r = this.itemRect(it); if (!r || !Phaser.Geom.Intersects.RectangleToRectangle(hb, r)) continue;
+      let r = this.itemRect(it); if (r && !PICKUPS.has(it.t)) r = this.forgive(r);
+      if (!r || !Phaser.Geom.Intersects.RectangleToRectangle(hb, r)) continue;
       if (it.t === 'crystal') { this.collect(it); this.chaos = Math.min(100, this.chaos + 10); this.events.emit('chaos', this.chaos); }
       else if (it.t === 'taco' || it.t === 'margarita') { this.collect(it); this.addScore(POINTS[it.t]); }
       else if (it.t === 'potion') {
@@ -388,7 +395,7 @@ export class Run extends Phaser.Scene {
     // stuck in mozzarella: strings of cheese stretch from her feet
     if (this.world === 4) { this.mozStr ||= this.add.image(0, 0, 'q_mozstr').setOrigin(0.5, 1).setDepth(10.5).setScale(0.55); this.mozStr.setVisible(inMould).setPosition(g.x + 10, GROUND_Y + 10).setScale(0.5 + 0.06 * Math.sin(this.time.now / 70), 0.55); }
     for (const c of this.creatures) {
-      const r = c.hitbox(); if (!r || !Phaser.Geom.Intersects.RectangleToRectangle(hb, r)) continue;
+      const r = this.forgive(c.hitbox()); if (!r || !Phaser.Geom.Intersects.RectangleToRectangle(hb, r)) continue;
       if (c.harmless) { c.hurt(99); this.blinded(); }   // butterflies: no damage, but you can't see for a moment
       else { if (!this.g.invulnerable) c.onHitGremlin?.(); this.takeHit(); }
     }
@@ -568,7 +575,7 @@ export class Run extends Phaser.Scene {
     for (const it of this.items) {
       if (!it.obj || it.done) continue;
       const x = it.obj.x, gap = x - this.g.x;
-      if (it.t === 'flogger') it.obj.rotation = 0.42 * Math.sin(t * 2.6 + it.d * 0.01);
+      if (it.t === 'flogger') it.obj.rotation = 0.42 * Math.sin(this.gameT * 2.6 + it.d * 0.01);
       else if (it.t === 'cross') {
         it.stT += dt;
         if (it.st === 'stand' && gap < 1450 && this.mode === 'running') { it.st = 'shake'; it.stT = 0; }

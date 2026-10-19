@@ -1,8 +1,8 @@
 // HUD and controls for whichever game scene is active ('Run' = test course, 'Boss' = Eddie's arena):
 // hearts, Chaos Meter, boss health, pause, touch buttons, swipe gestures, keyboard, overlays.
-import { Music } from '../audio/Music.js?v=20261020101849';
-import { DIFF, saveBest } from '../difficulty.js?v=20261020101849';
-import { WORLDS, worldNo, LAST_WORLD } from '../worlds.js?v=20261020101849';
+import { Music } from '../audio/Music.js?v=20261020102710';
+import { DIFF, saveBest } from '../difficulty.js?v=20261020102710';
+import { WORLDS, worldNo, LAST_WORLD } from '../worlds.js?v=20261020102710';
 const FONT = 'Lilita One, Arial Rounded MT Bold, Trebuchet MS, sans-serif';
 const BODY = 'Atkinson Hyperlegible, system-ui, sans-serif';
 const INK = '#ece6f5', VIOLET = 0x9b4dff, ACID = 0xc6f135, MOULD = 0x9fcc1e;

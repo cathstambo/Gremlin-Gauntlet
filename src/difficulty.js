@@ -5,11 +5,13 @@
 //   boss:  damage your magic does to a boss (higher = fewer hits needed)
 //   grunt: how hard Grunt presses in World 3 (lower = gains less, surges more gently, you pull away faster)
 //   inv:   how long you flash (can't be hurt) after a hit
+//   fair:  running sections: enemies and hazards must overlap the gremlin this much more before they hurt (near-misses forgiven)
+// Tuned 20 Oct 2026 after testing: the running sections were barely easier on Normal / Easy, so speed and fair were strengthened.
 const STORE = 'gremlinGauntlet.difficulty';
 export const LEVELS = {
-  easy:   { label: 'EASY',   speed: 0.85, boss: 1.56, grunt: 0.64, inv: 1.4 },
-  normal: { label: 'NORMAL', speed: 0.92, boss: 1.25, grunt: 0.8,  inv: 1.2 },
-  hard:   { label: 'HARD',   speed: 1,    boss: 1,    grunt: 1,    inv: 1 },
+  easy:   { label: 'EASY',   speed: 0.72, boss: 1.56, grunt: 0.64, inv: 1.4, fair: 0.3 },
+  normal: { label: 'NORMAL', speed: 0.85, boss: 1.25, grunt: 0.8,  inv: 1.2, fair: 0.15 },
+  hard:   { label: 'HARD',   speed: 1,    boss: 1,    grunt: 1,    inv: 1,   fair: 0 },
 };
 let current = 'normal';
 try { const v = localStorage.getItem(STORE); if (LEVELS[v]) current = v; } catch (e) { /* private mode */ }

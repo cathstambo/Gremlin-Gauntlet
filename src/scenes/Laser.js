@@ -8,12 +8,12 @@
 //     the ultimate laser: the whole floor glows, GET UP HIGH on a bench; afterwards her armour melts down (long vulnerable window).
 //   Defeat: Skeleton Rebellion without the supervisor, on the bed (Cath): her own guards dump her in a padded chest.
 // Arena rules as the other bosses (joystick, high ground, everything aimed and telegraphed), reusing the Eddie scene's machinery.
-import { DIFF } from '../difficulty.js?v=20261020101849';
-import { Boss, GROUND_Y, BOSS_TUNING } from './Boss.js?v=20261020101849';
-import { Gremlin } from '../gremlin/Gremlin.js?v=20261020101849';
-import { Sylvanas } from '../dungeon/Sylvanas.js?v=20261020101849';
-import { Music } from '../audio/Music.js?v=20261020101849';
-import { loadDungeon } from '../worlds.js?v=20261020101849';
+import { DIFF } from '../difficulty.js?v=20261020102710';
+import { Boss, GROUND_Y, BOSS_TUNING } from './Boss.js?v=20261020102710';
+import { Gremlin } from '../gremlin/Gremlin.js?v=20261020102710';
+import { Sylvanas } from '../dungeon/Sylvanas.js?v=20261020102710';
+import { Music } from '../audio/Music.js?v=20261020102710';
+import { loadDungeon } from '../worlds.js?v=20261020102710';
 
 const W = 1920;
 const GREM_H = 330, BOSS_H = 600;
