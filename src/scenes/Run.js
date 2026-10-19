@@ -1,17 +1,17 @@
 // Running stages for every world (1 = easy to medium, 2 = busier and harder), then on to that world's boss.
-import { DIFF } from '../difficulty.js?v=20261016162515';
+import { DIFF } from '../difficulty.js?v=20261020093249';
 // Hearts, Chaos Meter and score carry from stage 1 to stage 2 to the boss; part 2 is a checkpoint.
-import { Gremlin } from '../gremlin/Gremlin.js?v=20261016162515';
-import { WORLDS, worldNo, loadMeadow, loadWild, loadQueso, loadDungeon } from '../worlds.js?v=20261016162515';
-import { Chase, CHASE } from './Chase.js?v=20261016162515';
-import { Goat } from '../world/Goat.js?v=20261016162515';
-import { Moose, Bear, Salmon, ChargeBear } from '../creatures/River.js?v=20261016162515';
-import { Wolf, Eagle, Fox } from '../creatures/Wild.js?v=20261016162515';
-import { Music, Sfx } from '../audio/Music.js?v=20261016162515';
-import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js?v=20261016162515';
-import { Bunny, Kitten, Flower, Swarm } from '../creatures/Meadow.js?v=20261016162515';
-import { Maid, Hound, Gargoyle, Knight, Mimic, Paddle } from '../creatures/Dungeon.js?v=20261016162515';
-import { Rat, ArmourRat, Cracker, Wheel, GingyThrow, GingyDropper, GingyRats } from '../creatures/Queso.js?v=20261016162515';
+import { Gremlin } from '../gremlin/Gremlin.js?v=20261020093249';
+import { WORLDS, worldNo, loadMeadow, loadWild, loadQueso, loadDungeon } from '../worlds.js?v=20261020093249';
+import { Chase, CHASE } from './Chase.js?v=20261020093249';
+import { Goat } from '../world/Goat.js?v=20261020093249';
+import { Moose, Bear, Salmon, ChargeBear } from '../creatures/River.js?v=20261020093249';
+import { Wolf, Eagle, Fox } from '../creatures/Wild.js?v=20261020093249';
+import { Music, Sfx } from '../audio/Music.js?v=20261020093249';
+import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js?v=20261020093249';
+import { Bunny, Kitten, Flower, Swarm } from '../creatures/Meadow.js?v=20261020093249';
+import { Maid, Hound, Gargoyle, Knight, Mimic, Paddle } from '../creatures/Dungeon.js?v=20261020093249';
+import { Rat, ArmourRat, Cracker, Wheel, GingyThrow, GingyDropper, GingyRats } from '../creatures/Queso.js?v=20261020093249';
 
 const CREATURES = { frog: Frog, gator: Gator, bat: Bat, spider: Spider, bunny: Bunny, kitten: Kitten, flower: Flower, swarm: Swarm, wolf: Wolf, eagle: Eagle, fox: Fox, moose: Moose, bear: Bear, salmon: Salmon, cbear: ChargeBear, hawk: Eagle,
   rat: Rat, arat: ArmourRat, cracker: Cracker, wheel: Wheel, gingy1: GingyThrow, gingy2: GingyDropper, gingy3: GingyRats,

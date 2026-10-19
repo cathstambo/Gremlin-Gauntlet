@@ -61,7 +61,7 @@ export const DUNGEON_FILES = Object.fromEntries(['bg_mid', 'bg_near', 'ground',
 DUNGEON_FILES.d_bg_far = 'assets/dungeon/bg_far.jpg';
 export const SYLV_FILES = Object.fromEntries(['s_front', 's_reach', 's_battle', 's_back', 's_side', 's_walk', 's_lunge', 's_side2', 's_walk2', 's_throw', 's_hurt',
   'f_smug', 'f_angry', 'f_shock', 'f_hurt', 'l_charge', 'l_recover', 'l_charge2', 'bench_l', 'bench_m', 'bench_s', 'floor',
-  'nov_pink_s', 'nov_cyan_s', 'nov_purple_s', 'nov_lime_s', 'nov_pink_l', 'nov_cyan_l', 'nov_purple_l', 'nov_lime_l'].map(f => ['d_' + f, 'assets/dungeon/' + f + '.webp']));
+  'nov_pink_s', 'nov_cyan_s', 'nov_purple_s', 'nov_lime_s', 'nov_pink_l', 'nov_cyan_l', 'nov_purple_l', 'nov_lime_l', 'chest'].map(f => ['d_' + f, 'assets/dungeon/' + f + '.webp']));
 SYLV_FILES.d_arena_bg = 'assets/dungeon/arena_bg.jpg';
 
 export const SWAMP = {

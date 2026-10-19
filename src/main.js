@@ -1,12 +1,13 @@
 // Gremlin Gauntlet: game entry point.
 // Landscape 16:9 logical play area (1920×1080) scaled to fit any screen.
-import { Menu } from './scenes/Menu.js?v=20261016162515';
-import { Boot } from './scenes/Boot.js?v=20261016162515';
-import { Run } from './scenes/Run.js?v=20261016162515';
-import { UI } from './scenes/UI.js?v=20261016162515';
-import { Boss } from './scenes/Boss.js?v=20261016162515';
-import { Overlord } from './scenes/Overlord.js?v=20261016162515';
-import { Cartel } from './scenes/Cartel.js?v=20261016162515';
+import { Menu } from './scenes/Menu.js?v=20261020093249';
+import { Boot } from './scenes/Boot.js?v=20261020093249';
+import { Run } from './scenes/Run.js?v=20261020093249';
+import { UI } from './scenes/UI.js?v=20261020093249';
+import { Boss } from './scenes/Boss.js?v=20261020093249';
+import { Overlord } from './scenes/Overlord.js?v=20261020093249';
+import { Laser } from './scenes/Laser.js?v=20261020093249';
+import { Cartel } from './scenes/Cartel.js?v=20261020093249';
 
 window.game = new Phaser.Game({
   type: Phaser.AUTO,
@@ -16,5 +17,5 @@ window.game = new Phaser.Game({
   render: { antialias: true, powerPreference: 'high-performance' },
   input: { activePointers: 4 },
   fps: { target: 60 },
-  scene: [Boot, Menu, Run, Boss, Overlord, Cartel, UI],
+  scene: [Boot, Menu, Run, Boss, Overlord, Cartel, Laser, UI],
 });

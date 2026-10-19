@@ -2,8 +2,8 @@
 // Same interface as the other creatures: update(dt, ctx) moves it; hitbox() is what hurts the gremlin; shot() is called when
 // magic hits it; centre; points. Extras used by the Run scene: noShoot (magic passes by), shootbox().
 // Each is drawn from the approved drawings on the sheet (several frames per creature, swapped as it moves).
-import { Creature } from './Creatures.js?v=20261016162515';
-import { Sprite } from './Wild.js?v=20261016162515';
+import { Creature } from './Creatures.js?v=20261020093249';
+import { Sprite } from './Wild.js?v=20261020093249';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const ease = k => (k < 0 ? 0 : k > 1 ? 1 : k * k * (3 - 2 * k));
