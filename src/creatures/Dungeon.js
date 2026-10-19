@@ -5,8 +5,8 @@
 //   at head height: slide under). Chest mimics (sit on the path, lash their tongue along the floor: jump; 2 blasts).
 //   Possessed paddles (fly at head height: slide, or bounce along the floor: jump; 1 blast).
 // Same interface as the other creatures: update(dt, ctx), hitbox(), shot(), centre, points; noShoot / shootbox() / immune.
-import { Creature } from './Creatures.js?v=20261020093249';
-import { Sprite } from './Wild.js?v=20261020093249';
+import { Creature } from './Creatures.js?v=20261020094536';
+import { Sprite } from './Wild.js?v=20261020094536';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const ease = k => (k < 0 ? 0 : k > 1 ? 1 : k * k * (3 - 2 * k));
@@ -179,7 +179,17 @@ export class Knight extends Creature {
     if (this.st === 'walk') { this.x -= 90 * dt; bob = 4 * Math.abs(Math.sin(this.t * 6)); if (gap < 760 && gap > 0) { this.st = 'wind'; this.stT = 0; } }
     else if (this.st === 'wind') {   // the warning: whip drawn back, a red band shows where it will crack (head height)
       key = 'd_knight_wind'; const p = 0.5 + 0.5 * Math.sin(this.t * 20);
-      G.fillStyle(0xff3a2a, 0.15 + 0.2 * p).fillRect(this.x - 620, this.groundY - 330, 600, 170).lineStyle(4, 0xff3a2a, 0.6 + 0.4 * p).strokeRect(this.x - 620, this.groundY - 330, 600, 170);
+      // a sweeping arc of pulsing dots shows the whip's path at head height (Cath, 20 Oct 2026: no box), and a "!" over his helmet
+      const k = Math.min(1, this.stT / 0.5), now = this.t;
+      for (let i = 0; i <= 14; i++) {
+        const u = i / 14; if (u > k) break;
+        const x = this.x - 60 - 560 * u, y = this.groundY - 300 + 70 * Math.sin(u * Math.PI);
+        const r = 6 + 5 * (0.5 + 0.5 * Math.sin(now * 18 - i * 0.8));
+        G.fillStyle(0xff3a6a, 0.45 + 0.45 * p).fillCircle(x, y, r + 3).fillStyle(0xffffff, 0.7 * p).fillCircle(x, y, r * 0.45);
+      }
+      const hx = this.x - 10, hy = this.groundY - 400 - 6 * Math.abs(Math.sin(now * 10));
+      G.fillStyle(0xff3a6a, 1).fillCircle(hx, hy, 26).lineStyle(4, 0x1a0a1e, 1).strokeCircle(hx, hy, 26);
+      G.fillStyle(0xffffff, 1).fillRoundedRect(hx - 5, hy - 17, 10, 22, 4).fillCircle(hx, hy + 12, 5);
       if (this.stT > 0.7) { this.st = 'crack'; this.stT = 0; this.scene.cameras.main.shake(90, 0.004); }
     } else if (this.st === 'crack') {
       key = 'd_knight_swing';
