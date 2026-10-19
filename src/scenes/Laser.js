@@ -8,12 +8,12 @@
 //     the ultimate laser: the whole floor glows, GET UP HIGH on a bench; afterwards her armour melts down (long vulnerable window).
 //   Defeat: Skeleton Rebellion without the supervisor, on the bed (Cath): her own guards dump her in a padded chest.
 // Arena rules as the other bosses (joystick, high ground, everything aimed and telegraphed), reusing the Eddie scene's machinery.
-import { DIFF } from '../difficulty.js?v=20261020095847';
-import { Boss, GROUND_Y, BOSS_TUNING } from './Boss.js?v=20261020095847';
-import { Gremlin } from '../gremlin/Gremlin.js?v=20261020095847';
-import { Sylvanas } from '../dungeon/Sylvanas.js?v=20261020095847';
-import { Music } from '../audio/Music.js?v=20261020095847';
-import { loadDungeon } from '../worlds.js?v=20261020095847';
+import { DIFF } from '../difficulty.js?v=20261020101023';
+import { Boss, GROUND_Y, BOSS_TUNING } from './Boss.js?v=20261020101023';
+import { Gremlin } from '../gremlin/Gremlin.js?v=20261020101023';
+import { Sylvanas } from '../dungeon/Sylvanas.js?v=20261020101023';
+import { Music } from '../audio/Music.js?v=20261020101023';
+import { loadDungeon } from '../worlds.js?v=20261020101023';
 
 const W = 1920;
 const GREM_H = 330, BOSS_H = 600;
@@ -84,7 +84,7 @@ export class Laser extends Boss {
   }
 
   drawArena() {
-    Music.play(this, null);   // (no World 5 track yet)
+    Music.play(this, 'w5');   // "Careless Whisper" carries on from the runs into the arena
     const H = this.scale.height;
     const bg = this.add.image(W / 2, H / 2, 'd_arena_bg').setDepth(0);
     bg.setScale(Math.max(W / bg.width, H / bg.height)).setTint(0xa49cac);   // set back so lasers and projectiles stand out

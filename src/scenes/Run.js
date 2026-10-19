@@ -1,17 +1,17 @@
 // Running stages for every world (1 = easy to medium, 2 = busier and harder), then on to that world's boss.
-import { DIFF } from '../difficulty.js?v=20261020095847';
+import { DIFF } from '../difficulty.js?v=20261020101023';
 // Hearts, Chaos Meter and score carry from stage 1 to stage 2 to the boss; part 2 is a checkpoint.
-import { Gremlin } from '../gremlin/Gremlin.js?v=20261020095847';
-import { WORLDS, worldNo, loadMeadow, loadWild, loadQueso, loadDungeon } from '../worlds.js?v=20261020095847';
-import { Chase, CHASE } from './Chase.js?v=20261020095847';
-import { Goat } from '../world/Goat.js?v=20261020095847';
-import { Moose, Bear, Salmon, ChargeBear } from '../creatures/River.js?v=20261020095847';
-import { Wolf, Eagle, Fox } from '../creatures/Wild.js?v=20261020095847';
-import { Music, Sfx } from '../audio/Music.js?v=20261020095847';
-import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js?v=20261020095847';
-import { Bunny, Kitten, Flower, Swarm } from '../creatures/Meadow.js?v=20261020095847';
-import { Maid, Hound, Gargoyle, Knight, Mimic, Paddle } from '../creatures/Dungeon.js?v=20261020095847';
-import { Rat, ArmourRat, Cracker, Wheel, GingyThrow, GingyDropper, GingyRats } from '../creatures/Queso.js?v=20261020095847';
+import { Gremlin } from '../gremlin/Gremlin.js?v=20261020101023';
+import { WORLDS, worldNo, loadMeadow, loadWild, loadQueso, loadDungeon } from '../worlds.js?v=20261020101023';
+import { Chase, CHASE } from './Chase.js?v=20261020101023';
+import { Goat } from '../world/Goat.js?v=20261020101023';
+import { Moose, Bear, Salmon, ChargeBear } from '../creatures/River.js?v=20261020101023';
+import { Wolf, Eagle, Fox } from '../creatures/Wild.js?v=20261020101023';
+import { Music, Sfx } from '../audio/Music.js?v=20261020101023';
+import { Frog, Gator, Bat, Spider } from '../creatures/Creatures.js?v=20261020101023';
+import { Bunny, Kitten, Flower, Swarm } from '../creatures/Meadow.js?v=20261020101023';
+import { Maid, Hound, Gargoyle, Knight, Mimic, Paddle } from '../creatures/Dungeon.js?v=20261020101023';
+import { Rat, ArmourRat, Cracker, Wheel, GingyThrow, GingyDropper, GingyRats } from '../creatures/Queso.js?v=20261020101023';
 
 const CREATURES = { frog: Frog, gator: Gator, bat: Bat, spider: Spider, bunny: Bunny, kitten: Kitten, flower: Flower, swarm: Swarm, wolf: Wolf, eagle: Eagle, fox: Fox, moose: Moose, bear: Bear, salmon: Salmon, cbear: ChargeBear, hawk: Eagle,
   rat: Rat, arat: ArmourRat, cracker: Cracker, wheel: Wheel, gingy1: GingyThrow, gingy2: GingyDropper, gingy3: GingyRats,
@@ -126,7 +126,7 @@ export class Run extends Phaser.Scene {
     } else { cam.setOrigin(0.5, 0.5).setZoom(1).setScroll(0, 0); GREMLIN_X = 520; }
     const Backdrop = (this.W.backdrops && this.W.backdrops[this.stage - 1]) || this.W.backdrop;
     this.swamp = new Backdrop(this, GROUND_Y, view ? { view } : undefined);
-    Music.play(this, { 1: 'run', 2: 'w2', 3: 'w3', 4: 'w4' }[this.world] || null);   // (World 5: no track yet)   // each world has its own music
+    Music.play(this, { 1: 'run', 2: 'w2', 3: 'w3', 4: 'w4', 5: 'w5' }[this.world] || null);   // each world has its own music
     this.items = this.W.stages[this.stage - 1].filter(c => !(this.W.noTrunks && c.t === 'trunk')).map(c => ({ ...c, obj: null, done: false }));
     this.beamG = this.add.graphics().setDepth(10).setBlendMode(Phaser.BlendModes.ADD);
     this.blind = [];   // butterflies covering the screen after the gremlin blunders into a swarm
