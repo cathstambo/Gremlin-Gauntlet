@@ -571,7 +571,7 @@ export class Run extends Phaser.Scene {
       if (it.t === 'flogger') it.obj.rotation = 0.42 * Math.sin(t * 2.6 + it.d * 0.01);
       else if (it.t === 'cross') {
         it.stT += dt;
-        if (it.st === 'stand' && gap < 1000 && this.mode === 'running') { it.st = 'shake'; it.stT = 0; }
+        if (it.st === 'stand' && gap < 1450 && this.mode === 'running') { it.st = 'shake'; it.stT = 0; }
         if (it.st === 'shake' || it.st === 'fall') {   // the warning: it rattles, and a red marker shows where it will land
           const p = 0.5 + 0.5 * Math.sin(t * 18);
           G.lineStyle(6, 0xff3a2a, 0.6 + 0.4 * p).strokeEllipse(x - 40, GROUND_Y + 4, 320, 36).fillStyle(0xff3a2a, 0.2 + 0.25 * p).fillEllipse(x - 40, GROUND_Y + 4, 320, 36);

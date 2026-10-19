@@ -27,7 +27,7 @@ const tex = (p, key) => { if (p.img.texture.key !== key) p.img.setTexture(key); 
 export class Maid extends Creature {
   constructor(scene, x, groundY, lane) {
     super(scene, x, 'maid');
-    this.groundY = groundY; this.p = new Sprite(scene, 'd_maid1', 1.3); this.p.img.setFlipX(false);   // drawn facing the viewer / left
+    this.groundY = groundY; this.p = new Sprite(scene, 'd_maid1', 1.15); this.p.img.setFlipX(false);   // drawn facing the viewer / left
     this.points = 50; this.shadowW = 150; this.st = 'walk'; this.stT = 0; this.y = 0; this.threw = lane === 'nothrow';
   }
   update(dt, ctx) {
@@ -40,7 +40,7 @@ export class Maid extends Creature {
       this.stT += dt;
       const gap = this.x - ctx.gx;
       if (this.st === 'walk') {
-        this.x -= 240 * dt; key = (this.t * 4) % 2 < 1 ? 'd_maid2' : 'd_maid3'; this.y = 6 * Math.abs(Math.sin(this.t * 8));
+        this.x -= (gap < 600 ? 110 : 240) * dt; key = (this.t * 4) % 2 < 1 ? 'd_maid2' : 'd_maid3'; this.y = 6 * Math.abs(Math.sin(this.t * 8));
         if (!this.threw && gap < 1050 && gap > 300) { this.st = 'wind'; this.stT = 0; }
       } else if (this.st === 'wind') {   // the warning: winds back, feather duster up
         key = 'd_maid_throw'; this.y = 0; rot = -4;
@@ -54,7 +54,7 @@ export class Maid extends Creature {
   }
   get warning() { return this.st === 'wind'; }
   onHurt() { this.st = 'recoil'; this.stT = 0; }
-  hitbox() { if (this.dead) return null; return new Phaser.Geom.Rectangle(this.x - 65, this.groundY - 245, 130, 240); }
+  hitbox() { if (this.dead) return null; return new Phaser.Geom.Rectangle(this.x - 50, this.groundY - 145, 100, 140); }   // body and legs (her plumed head is not counted)
   get centre() { return [this.x, this.groundY - 110]; }
   destroy() { this.p.destroy(); }
 }
@@ -105,10 +105,10 @@ export class Hound extends Creature {
       if (this.st === 'run') {
         this.x -= 420 * dt; key = (this.t * 7) % 2 < 1 ? 'd_hound1' : 'd_hound2'; this.y = 14 * Math.abs(Math.sin(this.t * 11));
         if (gap < 560 && gap > 0) { this.st = 'crouch'; this.stT = 0; }
-      } else if (this.st === 'crouch') { key = 'd_hound_crouch'; this.y = 0; this.x -= 100 * dt; if (this.stT > 0.32) { this.st = 'leap'; this.stT = 0; this.vy = 820; } }
+      } else if (this.st === 'crouch') { key = 'd_hound_crouch'; this.y = 0; this.x -= 100 * dt; if (this.stT > 0.32) { this.st = 'leap'; this.stT = 0; this.vy = 0; } }
       else if (this.st === 'leap') {
-        key = 'd_hound_leap'; this.vy -= 2600 * dt; this.y = Math.max(0, this.y + this.vy * dt); this.x -= 700 * dt; rot = -6 + 12 * clamp(1 - this.vy / 820, 0, 1);
-        if (this.y <= 0 && this.vy < 0) { this.st = 'run2'; this.stT = 0; }
+        key = 'd_hound_leap'; this.y = 10 * Math.abs(Math.sin(this.stT * 14)); this.x -= 640 * dt; rot = -3;   // a low, fast lunge along the floor: jump it
+        if (this.stT > 0.9) { this.st = 'run2'; this.stT = 0; }
       } else if (this.st === 'run2') { this.x -= 420 * dt; key = (this.t * 7) % 2 < 1 ? 'd_hound1' : 'd_hound2'; }
       else if (this.st === 'recoil') { rot = 12 * Math.sin(this.stT * 30); if (this.stT > 0.3) { this.st = 'run'; this.stT = 0; } }
     }
@@ -118,7 +118,7 @@ export class Hound extends Creature {
   }
   get warning() { return this.st === 'crouch'; }
   onHurt() { this.st = 'recoil'; this.stT = 0; }
-  hitbox() { if (this.dead) return null; return new Phaser.Geom.Rectangle(this.x - 105, this.groundY - this.y - 135, 210, 125); }
+  hitbox() { if (this.dead) return null; return new Phaser.Geom.Rectangle(this.x - 95, this.groundY - this.y - 120, 190, 110); }
   get centre() { return [this.x, this.groundY - this.y - 80]; }
   destroy() { this.p.destroy(); }
 }
@@ -261,7 +261,7 @@ export class Paddle extends Creature {
     if (this.dead) { this.y += 500 * dt; c.alpha = clamp(1 - this.deadT * 2.5, 0, 1); c.rotation += dt * 12; if (this.deadT > 0.5) this.gone = true; }
     else if (this.lane === 'bounce') {   // bounds along the floor, spinning
       this.x -= 300 * dt; this.vy += 2600 * dt; this.y += this.vy * dt;
-      if (this.y > this.groundY - 105 && this.vy > 0) { this.y = this.groundY - 105; this.vy = -900; }
+      if (this.y > this.groundY - 105 && this.vy > 0) { this.y = this.groundY - 105; this.vy = -720; }
       c.rotation = this.t * -6;
     } else {   // sails in high, then drops into the lane at head height, swinging like it's spanking the air
       this.x -= 340 * dt;

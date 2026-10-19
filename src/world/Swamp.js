@@ -193,7 +193,7 @@ export const DUNGEON = {
   groundSurface: 350,   // the middle of the flagstone walkway's top
   midBottom: 700, nearBottom: 505, midS: 1.0, nearS: 1.4, gS: 1.35, midDrop: -120, nearDrop: -30,
   midTint: 0x7c7488, nearTint: 0x8c8088, under: 0x15101a,   // the dungeon is dark and busy: set it well back so skeletons and traps stand out props: [], propScale: () => 1, propTint: () => 0xffffff, propGap: [1000, 100],
-  groundBottom: 495,
+  groundBottom: 465,
 };
 /** World 5: Dungeon of Questionable Pleasures. */
 export class Dungeon extends Backdrop {
