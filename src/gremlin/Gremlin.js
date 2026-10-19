@@ -1,4 +1,4 @@
-import { DIFF } from '../difficulty.js?v=20261020101023';
+import { DIFF } from '../difficulty.js?v=20261020101849';
 // The playable gremlin: a cut-out rig built from the approved artwork.
 // Each body part is a Phaser Image hung on a chain of containers (one per joint); every frame the
 // joints are rotated from the current pose. Nothing is redrawn, so the character always matches
@@ -6,8 +6,8 @@ import { DIFF } from '../difficulty.js?v=20261020101023';
 import {
   TAU, clamp, ease, seg, lerpPose, runPose, crouchPose, risePose, fallPose, tuckPose, slidePose, hurtPose,
   dieAirPose, deadPose, winPose, idlePose, meltPose, meltLift, MELT_T, MELT_BLAST_AT,
-} from './poses.js?v=20261020101023';
-import { Effects } from './Effects.js?v=20261020101023';
+} from './poses.js?v=20261020101849';
+import { Effects } from './Effects.js?v=20261020101849';
 
 // ---- tuning: placeholders until playtesting (art units; the gremlin is ~800 units tall) ----
 export const TUNING = {
@@ -179,14 +179,20 @@ export class Gremlin extends Phaser.Events.EventEmitter {
   jump() {
     const S = this.S;
     if (S.trapT > 0) { S.trapT = Math.max(0, S.trapT - 0.17); this.emit('struggle'); return false; }   // mash jump to break free
-    if (FREE.has(S.st) || S.st === 'slide') { this.go('crouch', 0.05); return true; }   // jumping cancels a slide
+    if (FREE.has(S.st) || S.st === 'slide') { S.buf = null; this.go('crouch', 0.03); return true; }   // jumping cancels a slide
+    if (S.st === 'air' && S.usedDouble || S.st === 'spin') { S.buf = { a: 'jump', t: 0.18 }; return true; }   // pressed just before landing: jump as soon as you land
     if (S.st === 'air' && !S.usedDouble) {     // double jump always adds height, so it always lasts longer than a single jump
       S.usedDouble = true; S.vy = Math.max(TUNING.doubleJumpV, S.vy + TUNING.doubleJumpV * 0.5);
       this.go('spin', 0.06); S.spinT = 0; this.fx.burst(this.centre(), 1); return true;
     }
     return false;
   }
-  slide() { if (this.S.trapT > 0) return false; if (FREE.has(this.S.st)) { this.go('slide', 0.12); this.fx.dust(10, 1.4); return true; } return false; }
+  slide() {
+    const S = this.S; if (S.trapT > 0) return false;
+    if (FREE.has(S.st)) { S.buf = null; this.go('slide', 0.12); this.fx.dust(10, 1.4); return true; }
+    if (['air', 'spin', 'crouch'].includes(S.st) && !this.arena) { S.buf = { a: 'slide', t: S.st === 'crouch' ? 0.3 : 0.22 }; return true; }   // remembered: slide the moment you land
+    return false;
+  }
   attack() {
     const S = this.S;
     if (S.trapT > 0 || ['spin', 'hurt', 'die', 'dead', 'melt', 'crouch', 'victory'].includes(S.st)) return false;
@@ -265,7 +271,7 @@ export class Gremlin extends Phaser.Events.EventEmitter {
     const S = this.S, T = TUNING;
     S.t += dt; S.stT += dt;
     S.inv = Math.max(0, S.inv - dt); S.flash = Math.max(0, S.flash - dt); S.slowT = Math.max(0, S.slowT - dt);
-    if (S.st === 'crouch' && S.stT >= 0.07) { S.vy = T.jumpV; S.h = S.floor; S.usedDouble = false; S.airL = S.lockL; S.lock = 0; this.go('air', 0.1); }
+    if (S.st === 'crouch' && S.stT >= 0.04) { S.vy = T.jumpV; S.h = S.floor; S.usedDouble = false; S.airL = S.lockL; S.lock = 0; this.go('air', 0.1); }
     if (S.st === 'spin') { S.spinT += dt; if (S.spinT >= T.spinTime) { S.spinT = -1; this.go('air', 0.12); } }
     if (['air', 'spin', 'hurt', 'die'].includes(S.st)) {
       const prevH = S.h; S.vy -= T.gravity * dt; S.h += S.vy * dt;
@@ -287,6 +293,7 @@ export class Gremlin extends Phaser.Events.EventEmitter {
       }
       if (t >= MELT_T) { S.blasted = false; S.h = S.floor; S.vy = 0; this.go('run', 0.1); S.lock = 0; }
     }
+    if (S.buf) { S.buf.t -= dt; if (S.buf.t <= 0) S.buf = null; else if (FREE.has(S.st)) { const a = S.buf.a; S.buf = null; a === 'jump' ? this.jump() : this.slide(); } }
     if (S.st === 'land' && S.stT >= 0.13) this.go('run', 0.16);
     if (S.st === 'slide') { if (Math.random() < dt * 28) this.fx.dust(1, 1); if (S.stT >= T.slideTime) this.go('slideOut', 0.16); }
     if (S.st === 'slideOut' && S.stT >= 0.16) this.go('run', 0.1);
@@ -353,7 +360,8 @@ export class Gremlin extends Phaser.Events.EventEmitter {
       const sp = this.soles(X);
       const nearLow = Math.max(...sp.near.map(q => q[1])) >= Math.max(...sp.far.map(q => q[1]));
       const foot = nearLow ? 'near' : 'far', fx = (sp[foot][0][0] + sp[foot][1][0]) / 2;
-      if (S.prevFoot && S.prevFoot.foot === foot && dt > 0 && S.move > 0.98) { const v = -(fx - S.prevFoot.x) / dt; if (v > 0) S.speed = S.speed * 0.8 + v * 0.2; }
+      // (the speed used to follow the planted foot, which made it swing between ~930 and ~1,800 and made jump distances
+      //  depend on the exact frame you pressed jump; Cath, 20 Oct 2026. It is now a steady 1,500, the old average.)
       S.prevFoot = { foot, x: fx };
     } else S.prevFoot = null;
 

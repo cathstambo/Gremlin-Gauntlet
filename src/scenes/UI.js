@@ -1,8 +1,8 @@
 // HUD and controls for whichever game scene is active ('Run' = test course, 'Boss' = Eddie's arena):
 // hearts, Chaos Meter, boss health, pause, touch buttons, swipe gestures, keyboard, overlays.
-import { Music } from '../audio/Music.js?v=20261020101023';
-import { DIFF, saveBest } from '../difficulty.js?v=20261020101023';
-import { WORLDS, worldNo, LAST_WORLD } from '../worlds.js?v=20261020101023';
+import { Music } from '../audio/Music.js?v=20261020101849';
+import { DIFF, saveBest } from '../difficulty.js?v=20261020101849';
+import { WORLDS, worldNo, LAST_WORLD } from '../worlds.js?v=20261020101849';
 const FONT = 'Lilita One, Arial Rounded MT Bold, Trebuchet MS, sans-serif';
 const BODY = 'Atkinson Hyperlegible, system-ui, sans-serif';
 const INK = '#ece6f5', VIOLET = 0x9b4dff, ACID = 0xc6f135, MOULD = 0x9fcc1e;
@@ -71,14 +71,14 @@ export class UI extends Phaser.Scene {
     }
 
     // swipe / tap anywhere else
-    this.input.on('pointerdown', (p, over) => { if (over.length) return; if (this.stickDown(p)) return; this.gesture = { x: p.x, y: p.y, done: false, id: p.id }; });
+    this.input.on('pointerdown', (p, over) => { if (over.length) return; if (this.stickDown(p)) return; this.gesture = { x: p.x, y: p.y, done: false, id: p.id, t: this.time.now }; });
     this.input.on('pointermove', p => {
       if (this.stickMove(p)) return;
       const g = this.gesture; if (!g || g.done || g.id !== p.id) return;
       const dx = p.x - g.x, dy = p.y - g.y;
-      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 70) { g.done = true; this.act(this.isBoss ? (dx > 0 ? 'dashR' : 'dashL') : (dx > 0 ? 'magic' : this.world === 3 ? 'blastBack' : 'none')); }
-      else if (dy > 60) { g.done = true; this.act('slide'); }
-      else if (dy < -60) { g.done = true; this.act('jump'); }
+      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 55) { g.done = true; this.act(this.isBoss ? (dx > 0 ? 'dashR' : 'dashL') : (dx > 0 ? 'magic' : this.world === 3 ? 'blastBack' : 'none')); }
+      else if (dy > 45) { g.done = true; this.act('slide'); }
+      else if (dy < -45) { g.done = true; this.act('jump'); }
     });
     this.input.on('pointerup', p => { if (this.stickUp(p)) return;  const g = this.gesture; if (g && !g.done && g.id === p.id) this.act('jump'); this.gesture = null; });
     // keyboard
@@ -240,6 +240,14 @@ export class UI extends Phaser.Scene {
     this.registry.remove('carry');
     if (this.world === 3) { const s = this.registry.get('stage') || 1; if (s < WORLDS[3].stages.length) { this.registry.set('stage', s + 1); this.goTo('Run'); } else this.newLevel(3); return; }
     if ((this.registry.get('stage') || 1) === 1) { this.registry.set('stage', 2); this.goTo('Run'); } else this.goTo(WORLDS[this.world].boss);
+  }
+  /** A tap jumps as soon as the finger has rested ~80 ms without starting a swipe, instead of waiting for it to lift. */
+  update() {
+    const g = this.gesture, p = this.input.activePointer;
+    if (!g || g.done || this.overlay?.visible) return;
+    const ptr = this.input.manager.pointers.find(q => q.id === g.id);
+    if (!ptr || !ptr.isDown) return;
+    if (this.time.now - g.t >= 80 && Math.hypot(ptr.x - g.x, ptr.y - g.y) < 22) { g.done = true; this.act('jump'); }
   }
   setScore(n) { this.scoreTxt.setText(n.toLocaleString()); }
 

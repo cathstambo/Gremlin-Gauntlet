@@ -1,9 +1,9 @@
 // Start menu (Cath, 16 Oct 2026): GREMLIN GAUNTLET, EASY / NORMAL / HARD, the five worlds as cards in two rows
 // (title, thumbnail, best score, FULL EVENT / BOSS), and a ? button for How to Play. No sound on this screen.
 // All built worlds are open from the start. Background: Cath's art to come.
-import { Music } from '../audio/Music.js?v=20261020101023';
-import { WORLDS } from '../worlds.js?v=20261020101023';
-import { DIFF, LEVELS, getBest } from '../difficulty.js?v=20261020101023';
+import { Music } from '../audio/Music.js?v=20261020101849';
+import { WORLDS } from '../worlds.js?v=20261020101849';
+import { DIFF, LEVELS, getBest } from '../difficulty.js?v=20261020101849';
 
 const FONT = 'Lilita One, Arial Rounded MT Bold, Trebuchet MS, sans-serif';
 const BODY = 'Atkinson Hyperlegible, system-ui, sans-serif';
