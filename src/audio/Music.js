@@ -4,18 +4,21 @@
 //   World 1 boss arena:     boss chorus + boss 2 once, then the instrumental loop, a little louder.
 //   World 2 (runs and the Overlord arena): "It's a small world", on a loop.
 //   World 3 (all four Grunt runs): "Teddy Bear's Picnic", on a loop, kept well under Grunt's sounds.
+//   World 4 (runs and Rina's arena): "La Cucaracha", on a loop.
 // Each world only downloads its own music.
 const FILES = {
   music_run: ['assets/audio/music_run.opus', 'assets/audio/music_run.mp3'],
   music_boss_intro: ['assets/audio/music_boss_intro.opus', 'assets/audio/music_boss_intro.mp3'],
   music_w2: ['assets/audio/music_w2.opus', 'assets/audio/music_w2.mp3'],
   music_w3: ['assets/audio/music_w3.opus', 'assets/audio/music_w3.mp3'],
+  music_w4: ['assets/audio/music_w4.opus', 'assets/audio/music_w4.mp3'],
 };
 const TRACKS = {
   run: { vol: 0.22, parts: [['music_run', true]] },
   boss: { vol: 0.32, parts: [['music_boss_intro', false], ['music_run', true]] },
   w2: { vol: 0.24, parts: [['music_w2', true]] },
-  w3: { vol: 0.16, parts: [['music_w3', true]] },   // Cath: quieter than Grunt's sounds (sounds play at 0.55)
+  w3: { vol: 0.16, parts: [['music_w3', true]] },
+  w4: { vol: 0.24, parts: [['music_w4', true]] },   // "La Cucaracha" (Cath, 20 Oct 2026)   // Cath: quieter than Grunt's sounds (sounds play at 0.55)
 };
 const STORE = 'gremlinGauntlet.music';
 

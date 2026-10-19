@@ -6,14 +6,14 @@
 //   Phase 3 The Big Cheese Meltdown (<35%): combined attacks, a telegraphed rat stampede, bubbling cheese at the arena edges;
 //     the catapult jams and she screams at Gingy (longer vulnerable window).
 // Arena rules as the other bosses (joystick, high ground, everything aimed and telegraphed), reusing the Eddie scene's machinery.
-import { DIFF } from '../difficulty.js?v=20261020094816';
-import { Boss, GROUND_Y, BOSS_TUNING } from './Boss.js?v=20261020094816';
-import { Gremlin } from '../gremlin/Gremlin.js?v=20261020094816';
-import { Rina } from '../queso/Rina.js?v=20261020094816';
-import { Music } from '../audio/Music.js?v=20261020094816';
-import { loadQueso } from '../worlds.js?v=20261020094816';
-import { Backdrop, QUESO } from '../world/Swamp.js?v=20261020094816';
-import { bubble, GINGY_LINES } from '../creatures/Queso.js?v=20261020094816';
+import { DIFF } from '../difficulty.js?v=20261020095847';
+import { Boss, GROUND_Y, BOSS_TUNING } from './Boss.js?v=20261020095847';
+import { Gremlin } from '../gremlin/Gremlin.js?v=20261020095847';
+import { Rina } from '../queso/Rina.js?v=20261020095847';
+import { Music } from '../audio/Music.js?v=20261020095847';
+import { loadQueso } from '../worlds.js?v=20261020095847';
+import { Backdrop, QUESO } from '../world/Swamp.js?v=20261020095847';
+import { bubble, GINGY_LINES } from '../creatures/Queso.js?v=20261020095847';
 
 const W = 1920;
 const GREM_H = 330, BOSS_H = 640;
@@ -86,7 +86,7 @@ export class Cartel extends Boss {
   }
 
   drawArena() {
-    Music.play(this, null);   // (no World 4 track yet)
+    Music.play(this, 'w4');   // "La Cucaracha" carries on from the runs into the arena
     // the village, set further back than in the runs (muted, darker copies of the same art) so the cheese-rock islands,
     // Rina and everything she throws stand out
     this.bg = new Backdrop(this, GROUND_Y, { ...QUESO, near: 'q_arena_near', mid: 'q_arena_mid', nearTint: 0xffffff, midTint: 0xffffff }, { props: false });

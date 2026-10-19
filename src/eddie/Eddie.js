@@ -1,6 +1,6 @@
 // Eddie on screen: the cut-out rig as a chain of Phaser containers, plus position, moves, sinking and hit flashes.
 // The Boss scene decides WHAT he does (attacks, hops, dives); this class makes it look right.
-import { makeEddieRig, ORDER, P_, lerpPose, ease, clamp } from './moves.js?v=20261020094816';
+import { makeEddieRig, ORDER, P_, lerpPose, ease, clamp } from './moves.js?v=20261020095847';
 
 export class Eddie {
   constructor(scene, x, groundY, height) {
